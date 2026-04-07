@@ -10,5 +10,6 @@ class SnackbarService:
             content=ft.Text(message),
             bgcolor=ft.Colors.RED_700 if error else ft.Colors.BLUE_GREY_700,
         )
+        
         self._page.snack_bar.open = True
         self._page.update()

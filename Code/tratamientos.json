@@ -1,0 +1,93 @@
+{
+  "Bacterianas": {
+    "nombre_es": "Enfermedades Bacterianas",
+    "nombre_en": "Bacterial Diseases",
+    "patogenos": "Pseudomonas savastanoi pv. glycinea, Xanthomonas axonopodis pv. glycines",
+    "sintomas": "Manchas angulares acuosas de color marrón rojizo rodeadas de halos amarillos. En etapas avanzadas, las lesiones se unen formando áreas necróticas irregulares. Los centros de las lesiones viejas pueden desprenderse, dando apariencia de hoja desgarrada. Las pústulas bacterianas aparecen como pequeñas protuberancias elevadas en el envés de la hoja.",
+    "tratamiento": {
+      "quimico": "No existen bactericidas curativos efectivos una vez establecida la infección. La aplicación preventiva de productos a base de cobre (oxicloruro de cobre, hidróxido de cobre) puede reducir la diseminación del patógeno cuando se aplica antes de la aparición de los síntomas o al inicio de la infección.",
+      "cultural": "Utilizar semilla certificada libre de patógenos. Implementar rotación de cultivos con especies no hospedantes (maíz, sorgo) durante al menos dos temporadas. Eliminar residuos de cosecha infectados. Evitar el trabajo en el cultivo cuando el follaje está húmedo para reducir la diseminación mecánica.",
+      "biologico": "La aplicación de antagonistas biológicos como Bacillus subtilis ha mostrado eficacia parcial en la supresión de patógenos bacterianos foliares.",
+      "preventivo": "Seleccionar variedades con resistencia genética a tizón bacteriano. Mantener distancias de siembra adecuadas para favorecer la ventilación del follaje."
+    },
+    "urgencia": "media",
+    "fuentes": [
+      "CABI Plantwise Knowledge Bank - Bacterial blight of soybean",
+      "PlantVillage - Soybean Bacterial Blight",
+      "ANAPO - Guía de manejo fitosanitario de soya"
+    ]
+  },
+  "Fungicas": {
+    "nombre_es": "Enfermedades Fúngicas",
+    "nombre_en": "Fungal Diseases",
+    "patogenos": "Cercospora sojina, Septoria glycines, Corynespora cassiicola, Peronospora manshurica, Erysiphe diffusa, Fusarium virguliforme, Athelia rolfsii",
+    "sintomas": "Las manchas foliares fúngicas presentan morfologías variadas según el patógeno: manchas circulares con borde oscuro y centro claro (ojo de rana), manchas angulares de color marrón oscuro (septoria), manchas con anillos concéntricos (mancha objetivo). El mildiú velloso produce masas de esporulación grisácea en el envés de la hoja. El oídio aparece como polvo blanco en la superficie foliar. El síndrome de muerte súbita causa clorosis intervenal seguida de necrosis, mientras las nervaduras permanecen verdes.",
+    "tratamiento": {
+      "quimico": "Aplicación de fungicidas del grupo de los triazoles (tebuconazole, propiconazole) o estrobilurinas (azoxistrobin, piraclostrobin) al detectar los primeros síntomas o preventivamente en etapas reproductivas (R1-R3). Para oídio y mildiú, los fungicidas sistémicos son más efectivos que los de contacto. La mezcla de triazol + estrobilurina ofrece control de amplio espectro.",
+      "cultural": "Rotación de cultivos de al menos dos años con gramíneas. Eliminación de residuos infectados. Uso de variedades resistentes cuando estén disponibles. Siembra en fechas recomendadas para la zona. Mantener densidad de siembra adecuada para favorecer la circulación de aire.",
+      "biologico": "Productos a base de Trichoderma harzianum aplicados al suelo reducen la incidencia de patógenos de suelo como Fusarium y Athelia. Bacillus amyloliquefaciens ha mostrado actividad antifúngica foliar.",
+      "preventivo": "Monitoreo semanal del cultivo desde etapa vegetativa. Tratar semilla con fungicidas (carboxin + thiram) antes de la siembra. Evitar riego por aspersión que mantiene humedad foliar prolongada."
+    },
+    "urgencia": "alta",
+    "fuentes": [
+      "CABI Plantwise Knowledge Bank - Soybean fungal diseases",
+      "PlantVillage - Soybean diseases",
+      "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press"
+    ]
+  },
+  "Roya": {
+    "nombre_es": "Roya Asiática de la Soya",
+    "nombre_en": "Asian Soybean Rust",
+    "patogenos": "Phakopsora pachyrhizi",
+    "sintomas": "Lesiones foliares pequeñas (1-2 mm), de color marrón grisáceo a marrón rojizo, generalmente en el envés de la hoja. Las lesiones contienen pústulas (uredias) que al abrirse liberan esporas de color canela. En infecciones severas, las hojas se tornan amarillas y caen prematuramente, causando defoliación significativa que reduce drásticamente el rendimiento. La roya asiática puede ser confundida con pústula bacteriana en etapas tempranas; la diferencia clave es que las pústulas de roya producen esporas visibles con lupa.",
+    "tratamiento": {
+      "quimico": "Aplicación inmediata de fungicidas específicos al detectar los primeros síntomas o preventivamente en R1. Los triazoles (tebuconazole, ciproconazole, protioconazole) y sus mezclas con estrobilurinas (azoxistrobin + ciproconazole) son el estándar. Repetir la aplicación cada 15-21 días si las condiciones favorecen la enfermedad (alta humedad, temperaturas de 15-28°C). En Bolivia, consultar las recomendaciones vigentes de SENASAG para productos autorizados.",
+      "cultural": "Sembrar variedades con resistencia parcial a roya cuando estén disponibles. Adelantar la fecha de siembra para escapar al período de mayor presión de inóculo. Eliminar plantas voluntarias de soya entre temporadas. Monitorear cultivos vecinos como fuente de inóculo.",
+      "biologico": "Actualmente no existen controles biológicos comerciales con eficacia comprobada contra la roya asiática en condiciones de campo.",
+      "preventivo": "La roya asiática es la enfermedad más destructiva de la soya en Sudamérica. El monitoreo constante es esencial: revisar el envés de las hojas inferiores con lupa a partir de la etapa R1. Un retraso de 7-10 días en la aplicación del fungicida puede resultar en pérdidas del 10-80% del rendimiento. Consultar el sistema de alerta de roya de SENASAG."
+    },
+    "urgencia": "critica",
+    "fuentes": [
+      "CABI Plantwise Knowledge Bank - Phakopsora pachyrhizi",
+      "SENASAG - Sistema de monitoreo de roya de la soya",
+      "Yorinori et al. (2005) Epidemics of soybean rust in Brazil and Paraguay",
+      "Miles et al. (2011) Soybean Rust Management, Plant Health Progress"
+    ]
+  },
+  "Virales": {
+    "nombre_es": "Enfermedades Virales",
+    "nombre_en": "Viral Diseases",
+    "patogenos": "Soybean Mosaic Virus (SMV), Bean Yellow Mosaic Virus (BYMV)",
+    "sintomas": "Mosaico de tonos verde claro y verde oscuro en las hojas, deformación del limbo foliar (arrugamiento, encrespamiento), reducción del tamaño de las hojas y los folíolos. En infecciones tempranas, las plantas presentan enanismo generalizado. Los síntomas de mosaico son más evidentes en hojas jóvenes en crecimiento activo y pueden atenuarse con temperaturas altas (>30°C).",
+    "tratamiento": {
+      "quimico": "No existen tratamientos químicos curativos para enfermedades virales en plantas. Una vez que la planta está infectada, no se puede eliminar el virus.",
+      "cultural": "Usar semilla certificada libre de virus (el SMV se transmite por semilla en un 1-5%). Eliminar plantas infectadas tempranamente detectadas para reducir fuentes de inóculo. Controlar malezas hospedantes alternativas alrededor del cultivo.",
+      "biologico": "El control de vectores (áfidos) es la principal estrategia. Aplicar insecticidas dirigidos a pulgones (imidacloprid, tiametoxam en tratamiento de semilla) para reducir la transmisión. Las mariquitas y crisopas son depredadores naturales de áfidos que pueden complementar el control químico.",
+      "preventivo": "Seleccionar variedades con resistencia genética al SMV (existen genes Rsv1, Rsv3, Rsv4 en germoplasma mejorado). Evitar siembras tardías que coincidan con poblaciones altas de áfidos. Mantener barreras vivas de gramíneas (maíz, sorgo) en los bordes del lote para filtrar áfidos viruliferos."
+    },
+    "urgencia": "media",
+    "fuentes": [
+      "CABI Plantwise Knowledge Bank - Soybean Mosaic Virus",
+      "PlantVillage - Soybean Mosaic",
+      "Gunduz et al. (2004) Genetic analysis of resistance to SMV in soybean"
+    ]
+  },
+  "Plagas_Insectos": {
+    "nombre_es": "Daño por Plagas (Insectos)",
+    "nombre_en": "Insect Pest Damage",
+    "patogenos": "Lepidoptera spp. (orugas defoliadoras), Diabrotica speciosa (vaquita de San Antonio)",
+    "sintomas": "Las orugas producen defoliación visible con patrones irregulares de consumo foliar: agujeros de diversos tamaños, bordes de hoja consumidos, y esqueletización (solo quedan las nervaduras). Diabrotica speciosa produce agujeros circulares pequeños y regulares en las hojas, además de daño en raíces que afecta la absorción de nutrientes y la estabilidad de la planta.",
+    "tratamiento": {
+      "quimico": "Para orugas defoliadoras: insecticidas del grupo de los diamidas (clorantraniliprole, flubendiamida) o reguladores de crecimiento (metoxifenozida, teflubenzuron) que son selectivos y preservan enemigos naturales. Para Diabrotica: insecticidas de amplio espectro (lambda-cihalotrina, tiametoxam) aplicados al follaje o en tratamiento de semilla. Respetar los umbrales de acción: en soya vegetativa, tratar cuando se alcanza el 30% de defoliación; en soya reproductiva, tratar al 15% de defoliación.",
+      "cultural": "Rotación de cultivos para romper el ciclo de Diabrotica. Monitoreo con paño de batida (método estándar) para estimar población de orugas por metro lineal. Manejar bordes del lote y controlar malezas hospedantes.",
+      "biologico": "Productos a base de Bacillus thuringiensis (Bt) son efectivos contra orugas jóvenes y selectivos para fauna benéfica. El hongo entomopatógeno Beauveria bassiana puede complementar el control de Diabrotica. Preservar enemigos naturales (avispas parasitoides, chinches depredadoras) mediante uso racional de insecticidas.",
+      "preventivo": "Realizar muestreos semanales con paño de batida desde emergencia. Aplicar tratamiento de semilla con insecticida sistémico (tiametoxam, imidacloprid) para protección en etapas tempranas. Considerar cultivos trampa en bordes del lote."
+    },
+    "urgencia": "alta",
+    "fuentes": [
+      "CABI Plantwise Knowledge Bank - Soybean defoliating caterpillars",
+      "ANAPO - Manejo integrado de plagas en soya",
+      "Bueno et al. (2011) Integrated pest management of soybean in Brazil"
+    ]
+  }
+}
