@@ -1,6 +1,6 @@
 from pathlib import Path
 
-BASE_DIR = Path(r"D:\IA")
+BASE_DIR = Path(r"D:\Datasets")
 ENFERMA_DIR = BASE_DIR / "Soya_Enferma"
 SANA_DIR = BASE_DIR / "Soya_Sana"
 SANA_COLOR_DIR = SANA_DIR / "Color"
@@ -28,7 +28,6 @@ DISEASE_GROUPS = {
         "4.Septoria_Brown_Spot",
         "2.Vein Necrosis",
         "cercospora_leaf_blight",
-        "unused_cercospora_leaf_blight",
         "frogeye",
         "target_spot",
         "powdery Mildew",
@@ -40,7 +39,6 @@ DISEASE_GROUPS = {
         "Rust",
         "ferrugen",
         "soybean_rust",
-        "unused_soybean_rust",
     ],
     "Virales": [
         "Yellow Mosaic",
@@ -71,11 +69,9 @@ SOURCE_LABELS = {
     "Mossaic Virus": "Kaggle-vaishaligbhujade",
     "bacterial_blight": "ASDID-Zenodo",
     "cercospora_leaf_blight": "ASDID-Zenodo",
-    "unused_cercospora_leaf_blight": "ASDID-Zenodo",
     "frogeye": "ASDID-Zenodo",
     "target_spot": "ASDID-Zenodo",
     "soybean_rust": "ASDID-Zenodo",
-    "unused_soybean_rust": "ASDID-Zenodo",
     "downey_mildew": "ASDID-Zenodo",
     "Soyabean_Mosaic": "MH-SoyaHealthVision",
     "6.Bacterial leaf Blight": "India-Mendeley",
