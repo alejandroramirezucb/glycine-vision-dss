@@ -1,7 +1,6 @@
 from typing import Callable
-
 import flet as ft
-
+from presentation import theme
 from presentation.preview_builder import PreviewBuilder
 from presentation.view_state import AppState
 
@@ -17,27 +16,41 @@ class HomeBuilder:
         on_camera: Callable[[ft.ControlEvent], None],
         on_detect: Callable[[ft.ControlEvent], None],
     ) -> ft.Control:
+        status = ft.Text(
+            "Cámara en vivo — presiona Detectar salud para capturar" if state.camera_armed else "",
+            size=12, weight=ft.FontWeight.W_500, color=theme.ACCENT, text_align=ft.TextAlign.CENTER,
+        )
+        detect_disabled = not state.current_image and not state.camera_armed
+        
         return ft.Container(
-            expand=True,
-            border_radius=24,
-            padding=16,
-            bgcolor="#edf2f4",
-            border=ft.border.all(1, "#d7e3e6"),
+            width=theme.CARD_WIDTH, border_radius=theme.RADIUS_CARD, padding=18,
+            bgcolor=theme.BG_CARD, shadow=theme.card_shadow(),
             content=ft.Column(
                 spacing=14,
                 horizontal_alignment=ft.CrossAxisAlignment.CENTER,
                 controls=[
-                    ft.Text("Selecciona una imagen de soya para iniciar", size=16, weight=ft.FontWeight.W_600, color="#0f3f45", text_align=ft.TextAlign.CENTER),
-                    ft.Text("Camara lista para captura" if state.camera_armed else "", size=13, weight=ft.FontWeight.W_500, color="#1d7f87", text_align=ft.TextAlign.CENTER),
-                    self._preview.build(state.current_image),
-                    ft.Column(
-                        spacing=9,
-                        controls=[
-                            ft.ElevatedButton("Subir imagen", icon=ft.Icons.UPLOAD_FILE, width=330, height=42, on_click=on_pick, bgcolor="#1d7f87", color=ft.Colors.WHITE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=18), padding=10)),
-                            ft.ElevatedButton("Abrir camara", icon=ft.Icons.CAMERA_ALT, width=330, height=42, on_click=on_camera, bgcolor="#2a9d97", color=ft.Colors.WHITE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=18), padding=10)),
-                            ft.ElevatedButton("Detectar salud", icon=ft.Icons.HEALTH_AND_SAFETY, width=330, height=44, disabled=(state.current_image is None and not state.camera_armed), on_click=on_detect, bgcolor="#0f6b73", color=ft.Colors.WHITE, style=ft.ButtonStyle(shape=ft.RoundedRectangleBorder(radius=20), padding=10)),
-                        ],
-                    ),
+                    ft.Text("Selecciona o captura una imagen de soya", size=15,
+                            weight=ft.FontWeight.W_600, color=theme.TEXT_PRIMARY,
+                            text_align=ft.TextAlign.CENTER),
+                    status,
+                    
+                    self._preview.build(state.current_image, is_live=state.camera_armed),
+                    
+                    ft.Column(spacing=9, controls=[
+                        ft.ElevatedButton("Subir imagen", icon=ft.Icons.UPLOAD_FILE,
+                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          on_click=on_pick, bgcolor=theme.ACCENT,
+                                          color=ft.Colors.WHITE, style=theme.btn_style()),
+                        ft.ElevatedButton("Abrir cámara", icon=ft.Icons.CAMERA_ALT,
+                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          on_click=on_camera, bgcolor=theme.ACCENT_LIGHT,
+                                          color=ft.Colors.WHITE, style=theme.btn_style()),
+                        ft.ElevatedButton("Detectar salud", icon=ft.Icons.HEALTH_AND_SAFETY,
+                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          disabled=detect_disabled, on_click=on_detect,
+                                          bgcolor=theme.ACCENT_DARK,
+                                          color=ft.Colors.WHITE, style=theme.btn_style()),
+                    ]),
                 ],
             ),
         )

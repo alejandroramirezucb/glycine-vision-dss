@@ -1,9 +1,7 @@
 from pathlib import Path
-
 import numpy as np
 from PIL import Image
 import tf_keras as keras
-
 from domain.entities import PredictionItem, PredictionResult
 from domain.protocols import ImageClassifier
 
@@ -33,6 +31,7 @@ class KerasImageClassifier(ImageClassifier):
         arr = np.expand_dims(arr, axis=0)
 
         scores = self._model.predict(arr, verbose=0)[0]
+        
         if np.min(scores) < 0 or abs(float(np.sum(scores)) - 1.0) > 0.05:
             exps = np.exp(scores - np.max(scores))
             scores = exps / np.sum(exps)
@@ -44,4 +43,5 @@ class KerasImageClassifier(ImageClassifier):
             items.append(PredictionItem(label=label, confidence=float(score)))
 
         items.sort(key=lambda p: p.confidence, reverse=True)
+        
         return PredictionResult(image_path=image_path, predictions=items)

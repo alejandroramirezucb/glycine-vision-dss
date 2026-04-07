@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from domain.entities import PredictionResult
 from domain.protocols import ImageClassifier
 

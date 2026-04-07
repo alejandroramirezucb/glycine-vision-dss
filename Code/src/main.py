@@ -1,7 +1,5 @@
 from pathlib import Path
-
 import flet as ft
-
 from application.use_cases import PredictDiseaseTypeUseCase, PredictSoyHealthUseCase
 from infrastructure.camera_capture import OpenCVCameraCapture
 from infrastructure.keras_predictor import KerasImageClassifier
