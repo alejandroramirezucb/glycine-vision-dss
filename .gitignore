@@ -8,6 +8,7 @@ env/
 .venv
 .vscode/
 .idea/
+../Code/public/capturas/
 .claude/
 .DS_Store
 Thumbs.db

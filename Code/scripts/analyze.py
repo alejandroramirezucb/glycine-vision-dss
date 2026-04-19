@@ -10,15 +10,24 @@ def main():
     print(f"Fecha: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
     print("=" * 70)
 
-    n_color = len(scanner.scan(config.SANA_COLOR_DIR))
-    n_gray = len(scanner.scan(config.SANA_DIR / "Grayscale"))
-    n_seg = len(scanner.scan(config.SANA_DIR / "Segmented"))
-
+    # ── SOYA SANA ──────────────────────────────────────────────────────────
     print(f"\nSOYA SANA:")
-    print(f"  Color/:      {n_color} (se usa)")
-    print(f"  Grayscale/:  {n_gray} (se descarta)")
-    print(f"  Segmented/:  {n_seg} (se descarta)")
+    total_sana = 0
+    for source_dir in config.SANA_SOURCES:
+        n = len(scanner.scan(source_dir)) if source_dir.exists() else 0
+        status = "(existe)" if source_dir.exists() else "(NO ENCONTRADA)"
+        print(f"  {source_dir.name}/: {n} {status}")
+        total_sana += n
 
+    # Carpetas descartadas de PlantVillage
+    for subfolder in ["Grayscale", "Segmented"]:
+        path = config.SANA_DIR / subfolder
+        n = len(scanner.scan(path)) if path.exists() else 0
+        print(f"  {subfolder}/: {n} (se descarta)")
+
+    print(f"  -> Total sanas disponibles: {total_sana}")
+
+    # ── SOYA ENFERMA ────────────────────────────────────────────────────────
     print(f"\nSOYA ENFERMA POR GRUPO:")
     print("-" * 70)
 
@@ -40,11 +49,14 @@ def main():
     print(f"\n{'=' * 70}")
     print("BALANCE")
     print(f"{'=' * 70}")
-    print(f"\n  Sana (Color): {n_color}")
+    print(f"\n  Sana (todas las fuentes): {total_sana}")
     for group, n in totals.items():
-        status = f"-> seleccionar {config.MAX_PER_CLASS}" if n >= config.MAX_PER_CLASS else f"-> deficit: {config.MAX_PER_CLASS - n}"
+        if n >= config.MAX_PER_CLASS:
+            status = f"-> seleccionar {config.MAX_PER_CLASS}"
+        else:
+            status = f"-> deficit: {config.MAX_PER_CLASS - n}"
         print(f"    {group}: {n} {status}")
-    print(f"\n  Minimo: {min(totals.values())} ({min(totals, key=totals.get)})")
+    print(f"\n  Minimo enfermo: {min(totals.values())} ({min(totals, key=totals.get)})")
 
 
 if __name__ == "__main__":
