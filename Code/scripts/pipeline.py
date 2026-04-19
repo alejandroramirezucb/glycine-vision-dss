@@ -13,16 +13,13 @@ def run_quality_filter():
     print("-" * 50)
 
     # ── SOYA SANA ──────────────────────────────────────────────────────────
-    # Se recorren TODAS las fuentes sanas con un hash compartido.
-    # Así el deduplicador elimina copias exactas/casi-exactas entre fuentes
-    # (ej. la misma hoja que aparece en PlantVillage y en ASDID).
     print("\n  SOYA SANA (múltiples fuentes — hash compartido):")
     sana_hashes = {}
     sana_approved = []
 
     for source_dir in config.SANA_SOURCES:
         if not source_dir.exists():
-            print(f"      {source_dir.name}: NO ENCONTRADA (revisar ruta en config.py)")
+            print(f"      {source_dir.name}: NO ENCONTRADA")
             continue
         images = scanner.scan(source_dir)
         approved, stats = quality_filter.apply(images, sana_hashes)
@@ -30,7 +27,6 @@ def run_quality_filter():
         _print_stats(source_dir.name, stats)
 
     print(f"    -> Total sanas aprobadas: {len(sana_approved)}")
-
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     exporter.write_approved_list(
         sana_approved,
@@ -49,20 +45,35 @@ def run_quality_filter():
         group_by_source[group] = {}
         group_hashes = {}
 
+        seen_folders = set()
         for folder in folders:
+            if folder in seen_folders:
+                continue
+            seen_folders.add(folder)
+
             path = config.ENFERMA_DIR / folder
             if not path.exists():
-                print(f"      {folder}: NO ENCONTRADA")
-                continue
+                continue   # silencioso — carpeta no descargada aún
+
             images = scanner.scan(path)
+            if not images:
+                continue
+
             approved, stats = quality_filter.apply(images, group_hashes)
             group_approved[group].extend(approved)
             group_by_source[group][folder] = approved
             _print_stats(folder, stats)
 
         total = len(group_approved[group])
-        icon = "OK" if total >= config.MAX_PER_CLASS else "BAJO"
-        print(f"    -> Total: {total} [{icon}]")
+        needed = config.MAX_PER_CLASS + config.TEST_PER_CLASS
+        if total >= needed:
+            icon = "OK"
+        elif total >= config.MAX_PER_CLASS:
+            icon = "JUSTO"
+        else:
+            icon = "BAJO"
+        print(f"    -> Total aprobadas: {total} [{icon}] "
+              f"(necesitas {needed} = {config.MAX_PER_CLASS} train + {config.TEST_PER_CLASS} test)")
 
         exporter.write_approved_list(
             group_approved[group],
@@ -84,15 +95,26 @@ def run_summary(sana_approved, group_approved):
     print(f"\n PASO 2: RESUMEN")
     print("-" * 50)
     print(f"  Sana:    {len(sana_approved)}")
-    all_diseased = sum(len(a) for a in group_approved.values())
-    print(f"  Enferma: {all_diseased}")
-    print(f"\n  Por grupo:")
-    for g, a in group_approved.items():
-        print(f"    {g}: {len(a)}")
+    print(f"  Enferma: {sum(len(a) for a in group_approved.values())}")
 
-    min_available = min(len(a) for a in group_approved.values())
-    per_class = min(config.MAX_PER_CLASS, min_available)
-    print(f"\n  Balance Modelo 2: {per_class} imagenes por clase de enfermedad")
+    needed = config.MAX_PER_CLASS + config.TEST_PER_CLASS
+    print(f"\n  Por grupo (objetivo: {needed} por clase):")
+    for g, a in group_approved.items():
+        n = len(a)
+        if n >= needed:
+            st = "✓"
+        elif n >= config.MAX_PER_CLASS:
+            st = "~ (test limitado)"
+        else:
+            st = "✗ DEFICIT"
+        print(f"    {g}: {n} {st}")
+
+    # El per_class de M2 = mínimo disponible para train (restando test reservado)
+    available_for_train = {g: max(0, len(a) - config.TEST_PER_CLASS)
+                           for g, a in group_approved.items()}
+    min_train = min(available_for_train.values())
+    per_class = min(config.MAX_PER_CLASS, min_train)
+    print(f"\n  Imágenes de entrenamiento por clase (M2): {per_class}")
     return per_class
 
 
@@ -104,32 +126,31 @@ def run_selection(sana_approved, group_approved, per_class):
     m1_dir = config.TM_DIR / "Modelo1_Sana_Enferma"
     m2_dir = config.TM_DIR / "Modelo2_Tipo_Patogeno"
 
-    # ── MODELO 1: Sana vs Enferma ──────────────────────────────────────────
-    # Las 1000 sanas ahora vienen mezcladas de PlantVillage + ASDID-Healthy,
-    # lo que reduce el domain shift respecto a las imágenes de campo enfermas.
+    # ── MODELO 1 ───────────────────────────────────────────────────────────
     print("\n  MODELO 1: Sana vs Enferma")
     random.seed(config.RANDOM_SEED)
-    sana_sel = random.sample(sana_approved, min(config.MAX_PER_CLASS, len(sana_approved)))
-    ok, _ = exporter.copy_images(sana_sel, m1_dir / "Soya_Sana", "sana")
-    print(f"    Sana: {ok} copiadas")
+    sana_shuffled = sana_approved[:]
+    random.shuffle(sana_shuffled)
+    sana_train_sel = sana_shuffled[:config.MAX_PER_CLASS]
 
-    # Contar cuántas vienen de cada fuente (informativo)
-    pv_count = sum(1 for p in sana_sel if "Color" in str(p))
-    asdid_count = sum(1 for p in sana_sel if "healthy" in str(p).lower() and "Color" not in str(p))
-    print(f"      PlantVillage (Color/):  {pv_count}")
-    print(f"      ASDID (healthy/):       {asdid_count}")
+    ok, _ = exporter.copy_images(sana_train_sel, m1_dir / "Soya_Sana", "sana")
+    print(f"    Sana: {ok} para entrenamiento")
+    pv  = sum(1 for p in sana_train_sel if "Color"   in str(p))
+    asd = sum(1 for p in sana_train_sel if "healthy" in str(p).lower() and "Color" not in str(p))
+    print(f"      PlantVillage: {pv}  |  ASDID-Healthy: {asd}")
 
     all_diseased = [p for paths in group_approved.values() for p in paths]
     random.seed(config.RANDOM_SEED + 1)
     enf_sel = random.sample(all_diseased, min(config.MAX_PER_CLASS, len(all_diseased)))
     ok, _ = exporter.copy_images(enf_sel, m1_dir / "Soya_Enferma", "enf")
-    print(f"    Enferma: {ok} copiadas")
+    print(f"    Enferma: {ok} para entrenamiento")
 
-    # ── MODELO 2: Tipo de Patógeno ─────────────────────────────────────────
+    # ── MODELO 2 ───────────────────────────────────────────────────────────
     print("\n  MODELO 2: Tipo de Patogeno (5 clases)")
     for group, folders in config.DISEASE_GROUPS.items():
         paths = group_approved[group]
-        by_source = sampler.classify_by_source(paths, folders)
+        unique_folders = list(dict.fromkeys(folders))
+        by_source = sampler.classify_by_source(paths, unique_folders)
         selected, breakdown = sampler.sample(by_source, per_class)
         ok, _ = exporter.copy_images(selected, m2_dir / group, group[:4].lower())
         exporter.write_traceability(group, selected, breakdown, m2_dir)
@@ -148,14 +169,15 @@ def print_result():
     m1 = config.TM_DIR / "Modelo1_Sana_Enferma"
     m2 = config.TM_DIR / "Modelo2_Tipo_Patogeno"
     print(f"\n  Modelo 1: {m1}")
-    print(f"    Soya_Sana/     -> clase 'Soya_Sana'  (mix PlantVillage + ASDID-Healthy)")
-    print(f"    Soya_Enferma/  -> clase 'Soya_Enferma'")
+    print(f"    Soya_Sana/    -> 'healthy'   (PlantVillage + ASDID campo real)")
+    print(f"    Soya_Enferma/ -> 'diseased'")
     print(f"\n  Modelo 2: {m2}")
     for g in config.DISEASE_GROUPS:
         d = m2 / g
-        # -1 para no contar el .txt de trazabilidad
-        files = [f for f in d.glob("*.*") if f.suffix.lower() in config.VALID_EXTENSIONS] if d.exists() else []
-        print(f"    {g}/ ({len(files)} imagenes)")
+        files = [f for f in d.glob("*.*")
+                 if f.suffix.lower() in config.VALID_EXTENSIONS] if d.exists() else []
+        print(f"    {g}/ ({len(files)} imágenes de entrenamiento)")
+    print(f"\n  Ejecuta generate_test_set.py → {config.TEST_PER_CLASS} imágenes de test/clase")
 
 
 def _print_stats(name, stats):
@@ -167,13 +189,13 @@ def _print_stats(name, stats):
 
 
 def main():
-    timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     print("=" * 70)
     print("PIPELINE - Seleccion para Teachable Machine")
-    print(f"Fecha: {timestamp}")
+    print(f"Fecha: {ts}")
     print(f"Filtros: res>={config.MIN_RESOLUTION}px, pHash<={config.HASH_THRESHOLD}, color")
-    print(f"Clases enfermas: 5 | Semilla: {config.RANDOM_SEED} | Max/clase: {config.MAX_PER_CLASS}")
-    print(f"Fuentes sanas: {[str(s.name) for s in config.SANA_SOURCES]}")
+    print(f"Train/clase: {config.MAX_PER_CLASS} | Test/clase: {config.TEST_PER_CLASS} | Semilla: {config.RANDOM_SEED}")
+    print(f"Fuentes sanas: {[s.name for s in config.SANA_SOURCES]}")
     print("=" * 70)
 
     sana_approved, group_approved, _ = run_quality_filter()
