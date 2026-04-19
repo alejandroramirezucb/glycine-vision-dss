@@ -3,9 +3,17 @@ from pathlib import Path
 BASE_DIR = Path(r"D:\Datasets")
 ENFERMA_DIR = BASE_DIR / "Soya_Enferma"
 SANA_DIR = BASE_DIR / "Soya_Sana"
-SANA_COLOR_DIR = SANA_DIR / "Color"
+SANA_COLOR_DIR = SANA_DIR / "Color"          # PlantVillage (fondo controlado)
+SANA_ASDID_DIR = SANA_DIR / "healthy"        # ASDID Healthy (campo real)
 OUTPUT_DIR = BASE_DIR / "filtrado_calidad"
 TM_DIR = BASE_DIR / "teachable_machine"
+
+# Todas las fuentes de soya sana, en orden de prioridad
+# El pipeline las recorre juntas con un hash compartido para evitar duplicados cross-fuente
+SANA_SOURCES = [
+    SANA_COLOR_DIR,   # PlantVillage
+    SANA_ASDID_DIR,   # ASDID Healthy (campo real — mitiga domain shift)
+]
 
 MIN_RESOLUTION = 224
 HASH_THRESHOLD = 3
@@ -77,4 +85,7 @@ SOURCE_LABELS = {
     "6.Bacterial leaf Blight": "India-Mendeley",
     "4.Septoria_Brown_Spot": "India-Mendeley",
     "2.Vein Necrosis": "India-Mendeley",
+    # Fuentes sanas
+    "Color": "PlantVillage",
+    "healthy": "ASDID-Zenodo",
 }

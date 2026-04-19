@@ -12,15 +12,33 @@ def run_quality_filter():
     print("\n PASO 1: FILTRADO DE CALIDAD")
     print("-" * 50)
 
-    print("\n  SOYA SANA (Color/):")
+    # ── SOYA SANA ──────────────────────────────────────────────────────────
+    # Se recorren TODAS las fuentes sanas con un hash compartido.
+    # Así el deduplicador elimina copias exactas/casi-exactas entre fuentes
+    # (ej. la misma hoja que aparece en PlantVillage y en ASDID).
+    print("\n  SOYA SANA (múltiples fuentes — hash compartido):")
     sana_hashes = {}
-    sana_images = scanner.scan(config.SANA_COLOR_DIR)
-    sana_approved, sana_stats = quality_filter.apply(sana_images, sana_hashes)
-    _print_stats("Color", sana_stats)
+    sana_approved = []
+
+    for source_dir in config.SANA_SOURCES:
+        if not source_dir.exists():
+            print(f"      {source_dir.name}: NO ENCONTRADA (revisar ruta en config.py)")
+            continue
+        images = scanner.scan(source_dir)
+        approved, stats = quality_filter.apply(images, sana_hashes)
+        sana_approved.extend(approved)
+        _print_stats(source_dir.name, stats)
+
+    print(f"    -> Total sanas aprobadas: {len(sana_approved)}")
 
     config.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    exporter.write_approved_list(sana_approved, config.OUTPUT_DIR / "sana_aprobadas.txt", "Soya sana aprobadas")
+    exporter.write_approved_list(
+        sana_approved,
+        config.OUTPUT_DIR / "sana_aprobadas.txt",
+        "Soya sana aprobadas (multi-fuente)",
+    )
 
+    # ── SOYA ENFERMA ────────────────────────────────────────────────────────
     print("\n  SOYA ENFERMA:")
     group_approved = {}
     group_by_source = {}
@@ -53,7 +71,11 @@ def run_quality_filter():
         )
 
     all_diseased = [p for paths in group_approved.values() for p in paths]
-    exporter.write_approved_list(all_diseased, config.OUTPUT_DIR / "enferma_todas_aprobadas.txt", "Todas enfermas")
+    exporter.write_approved_list(
+        all_diseased,
+        config.OUTPUT_DIR / "enferma_todas_aprobadas.txt",
+        "Todas enfermas",
+    )
 
     return sana_approved, group_approved, group_by_source
 
@@ -70,7 +92,7 @@ def run_summary(sana_approved, group_approved):
 
     min_available = min(len(a) for a in group_approved.values())
     per_class = min(config.MAX_PER_CLASS, min_available)
-    print(f"\n  Balance: {per_class} imagenes por clase")
+    print(f"\n  Balance Modelo 2: {per_class} imagenes por clase de enfermedad")
     return per_class
 
 
@@ -82,11 +104,20 @@ def run_selection(sana_approved, group_approved, per_class):
     m1_dir = config.TM_DIR / "Modelo1_Sana_Enferma"
     m2_dir = config.TM_DIR / "Modelo2_Tipo_Patogeno"
 
+    # ── MODELO 1: Sana vs Enferma ──────────────────────────────────────────
+    # Las 1000 sanas ahora vienen mezcladas de PlantVillage + ASDID-Healthy,
+    # lo que reduce el domain shift respecto a las imágenes de campo enfermas.
     print("\n  MODELO 1: Sana vs Enferma")
     random.seed(config.RANDOM_SEED)
     sana_sel = random.sample(sana_approved, min(config.MAX_PER_CLASS, len(sana_approved)))
     ok, _ = exporter.copy_images(sana_sel, m1_dir / "Soya_Sana", "sana")
     print(f"    Sana: {ok} copiadas")
+
+    # Contar cuántas vienen de cada fuente (informativo)
+    pv_count = sum(1 for p in sana_sel if "Color" in str(p))
+    asdid_count = sum(1 for p in sana_sel if "healthy" in str(p).lower() and "Color" not in str(p))
+    print(f"      PlantVillage (Color/):  {pv_count}")
+    print(f"      ASDID (healthy/):       {asdid_count}")
 
     all_diseased = [p for paths in group_approved.values() for p in paths]
     random.seed(config.RANDOM_SEED + 1)
@@ -94,6 +125,7 @@ def run_selection(sana_approved, group_approved, per_class):
     ok, _ = exporter.copy_images(enf_sel, m1_dir / "Soya_Enferma", "enf")
     print(f"    Enferma: {ok} copiadas")
 
+    # ── MODELO 2: Tipo de Patógeno ─────────────────────────────────────────
     print("\n  MODELO 2: Tipo de Patogeno (5 clases)")
     for group, folders in config.DISEASE_GROUPS.items():
         paths = group_approved[group]
@@ -116,13 +148,14 @@ def print_result():
     m1 = config.TM_DIR / "Modelo1_Sana_Enferma"
     m2 = config.TM_DIR / "Modelo2_Tipo_Patogeno"
     print(f"\n  Modelo 1: {m1}")
-    print(f"    Soya_Sana/     -> clase 'healthy'")
-    print(f"    Soya_Enferma/  -> clase 'diseased'")
+    print(f"    Soya_Sana/     -> clase 'Soya_Sana'  (mix PlantVillage + ASDID-Healthy)")
+    print(f"    Soya_Enferma/  -> clase 'Soya_Enferma'")
     print(f"\n  Modelo 2: {m2}")
     for g in config.DISEASE_GROUPS:
         d = m2 / g
-        n = len(list(d.glob("*.*"))) - 1 if d.exists() else 0
-        print(f"    {g}/ ({n} imagenes)")
+        # -1 para no contar el .txt de trazabilidad
+        files = [f for f in d.glob("*.*") if f.suffix.lower() in config.VALID_EXTENSIONS] if d.exists() else []
+        print(f"    {g}/ ({len(files)} imagenes)")
 
 
 def _print_stats(name, stats):
@@ -139,7 +172,8 @@ def main():
     print("PIPELINE - Seleccion para Teachable Machine")
     print(f"Fecha: {timestamp}")
     print(f"Filtros: res>={config.MIN_RESOLUTION}px, pHash<={config.HASH_THRESHOLD}, color")
-    print(f"Clases: 5 | Semilla: {config.RANDOM_SEED} | Max/clase: {config.MAX_PER_CLASS}")
+    print(f"Clases enfermas: 5 | Semilla: {config.RANDOM_SEED} | Max/clase: {config.MAX_PER_CLASS}")
+    print(f"Fuentes sanas: {[str(s.name) for s in config.SANA_SOURCES]}")
     print("=" * 70)
 
     sana_approved, group_approved, _ = run_quality_filter()
