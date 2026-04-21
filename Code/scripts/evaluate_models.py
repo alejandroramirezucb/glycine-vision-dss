@@ -1,28 +1,44 @@
+import os
+os.environ["TF_USE_LEGACY_KERAS"] = "1"
+
 import numpy as np
 from pathlib import Path
 from PIL import Image
 import openpyxl
 from openpyxl.styles import PatternFill, Font
-from tensorflow.keras.models import load_model
+import tensorflow as tf
 from config import (
     test_folder, model_m1_path, model_m2_path, batch_size,
     archivo_excel_salida_m1, archivo_excel_salida_m2,
     disease_classes_m2, binary_classes_m1
 )
 
-class PatchedDepthwiseConv2D:
-    pass
-
 def load_model_with_fallback(model_path):
+    model_path_obj = Path(model_path)
+    model_path_str = str(model_path)
+
+    if model_path_obj.is_dir():
+        h5_candidates = list(model_path_obj.glob("*.h5")) or list(model_path_obj.rglob("*.h5"))
+        if h5_candidates:
+            model_path_str = str(h5_candidates[0])
+
     try:
-        return load_model(str(model_path))
-    except:
+        return tf.keras.models.load_model(model_path_str)
+    except Exception as first_error:
         try:
-            custom_objects = {"DepthwiseConv2D": PatchedDepthwiseConv2D}
-            return load_model(str(model_path), custom_objects=custom_objects)
-        except:
-            import tensorflow as tf
-            return tf.keras.models.load_model(str(model_path))
+            from tensorflow.keras.layers import DepthwiseConv2D
+
+            class PatchedDepthwiseConv2D(DepthwiseConv2D):
+                def __init__(self, **kwargs):
+                    kwargs.pop('groups', None)
+                    super().__init__(**kwargs)
+
+            return tf.keras.models.load_model(
+                model_path_str,
+                custom_objects={"DepthwiseConv2D": PatchedDepthwiseConv2D}
+            )
+        except Exception:
+            raise RuntimeError(f"Cannot load model: {model_path_str}. Error: {first_error}")
 
 def load_images_from_folder(folder_path, target_size=(224, 224)):
     images = []
@@ -44,30 +60,8 @@ def predict_batch(model, images, batch_size=32):
         predictions.extend(batch_predictions)
     return np.array(predictions)
 
-def calculate_metrics(true_labels, predictions):
-    predicted_labels = np.argmax(predictions, axis=1)
-    accuracy = np.mean(true_labels == predicted_labels)
 
-    precision_list = []
-    recall_list = []
-    f1_list = []
-
-    for class_idx in range(len(np.unique(true_labels))):
-        tp = np.sum((predicted_labels == class_idx) & (true_labels == class_idx))
-        fp = np.sum((predicted_labels == class_idx) & (true_labels != class_idx))
-        fn = np.sum((predicted_labels != class_idx) & (true_labels == class_idx))
-
-        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
-        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
-        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
-
-        precision_list.append(precision)
-        recall_list.append(recall)
-        f1_list.append(f1)
-
-    return accuracy, precision_list, recall_list, f1_list
-
-def write_excel(output_path, class_names, accuracies, precisions, recalls, f1_scores):
+def write_excel(output_path, class_names, image_counts, accuracies, precisions, recalls, f1_scores):
     wb = openpyxl.Workbook()
     ws = wb.active
     ws.title = "Results"
@@ -75,33 +69,31 @@ def write_excel(output_path, class_names, accuracies, precisions, recalls, f1_sc
     header_fill = PatternFill(start_color="0070C0", end_color="0070C0", fill_type="solid")
     header_font = Font(bold=True, color="FFFFFF")
 
-    ws["A1"] = "Class"
-    ws["B1"] = "Test Images"
-    ws["C1"] = "Accuracy"
-    ws["D1"] = "Precision"
-    ws["E1"] = "Recall"
-    ws["F1"] = "F1-Score"
-
-    for col in ["A1", "B1", "C1", "D1", "E1", "F1"]:
-        ws[col].fill = header_fill
-        ws[col].font = header_font
+    for col_letter, header in zip(["A", "B", "C", "D", "E", "F"],
+                                   ["Class", "Test Images", "Accuracy %", "Precision", "Recall", "F1-Score"]):
+        cell = ws[f"{col_letter}1"]
+        cell.value = header
+        cell.fill = header_fill
+        cell.font = header_font
 
     for idx, class_name in enumerate(class_names):
         row = idx + 2
+        accuracy_pct = round(accuracies[idx] * 100, 2)
         ws[f"A{row}"] = class_name
-        ws[f"B{row}"] = len(accuracies[idx])
-        ws[f"C{row}"] = accuracies[idx] * 100
-        ws[f"D{row}"] = precisions[idx]
-        ws[f"E{row}"] = recalls[idx]
-        ws[f"F{row}"] = f1_scores[idx]
+        ws[f"B{row}"] = image_counts[idx]
+        ws[f"C{row}"] = accuracy_pct
+        ws[f"D{row}"] = round(precisions[idx], 4)
+        ws[f"E{row}"] = round(recalls[idx], 4)
+        ws[f"F{row}"] = round(f1_scores[idx], 4)
 
-        accuracy_val = accuracies[idx] * 100
-        fill_color = "00B050" if accuracy_val >= 90 else "FFEB9C" if accuracy_val >= 70 else "FF0000"
+        fill_color = "00B050" if accuracy_pct >= 90 else "FFEB9C" if accuracy_pct >= 70 else "FF0000"
         ws[f"C{row}"].fill = PatternFill(start_color=fill_color, end_color=fill_color, fill_type="solid")
 
     summary_row = len(class_names) + 3
+    overall_accuracy = round(np.mean(accuracies) * 100, 2)
     ws[f"A{summary_row}"] = "Overall"
-    ws[f"C{summary_row}"] = np.mean(accuracies) * 100
+    ws[f"B{summary_row}"] = sum(image_counts)
+    ws[f"C{summary_row}"] = overall_accuracy
     ws[f"C{summary_row}"].fill = PatternFill(start_color="D3D3D3", end_color="D3D3D3", fill_type="solid")
 
     for col in ["A", "B", "C", "D", "E", "F"]:
@@ -109,56 +101,67 @@ def write_excel(output_path, class_names, accuracies, precisions, recalls, f1_sc
 
     wb.save(output_path)
 
+def evaluate_model_on_classes(model, class_names, base_folder):
+    all_images = []
+    all_true_labels = []
+    image_counts = []
+
+    for idx, class_name in enumerate(class_names):
+        class_folder = base_folder / class_name
+        if class_folder.exists():
+            images = load_images_from_folder(class_folder)
+            image_counts.append(len(images))
+            if len(images) > 0:
+                all_images.extend(images)
+                all_true_labels.extend([idx] * len(images))
+        else:
+            image_counts.append(0)
+
+    if not all_images:
+        return [], [], [], [], []
+
+    all_images = np.array(all_images)
+    all_true_labels = np.array(all_true_labels)
+    predictions = predict_batch(model, all_images, batch_size)
+    predicted_labels = np.argmax(predictions, axis=1)
+
+
+    per_class_accuracy, per_class_precision, per_class_recall, per_class_f1 = [], [], [], []
+
+    for idx in range(len(class_names)):
+        tp = np.sum((predicted_labels == idx) & (all_true_labels == idx))
+        fp = np.sum((predicted_labels == idx) & (all_true_labels != idx))
+        fn = np.sum((predicted_labels != idx) & (all_true_labels == idx))
+        total_class = np.sum(all_true_labels == idx)
+
+        class_accuracy = tp / total_class if total_class > 0 else 0
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
+        f1 = 2 * (precision * recall) / (precision + recall) if (precision + recall) > 0 else 0
+
+        per_class_accuracy.append(class_accuracy)
+        per_class_precision.append(precision)
+        per_class_recall.append(recall)
+        per_class_f1.append(f1)
+
+    return image_counts, per_class_accuracy, per_class_precision, per_class_recall, per_class_f1
+
 def evaluate_m1():
     print("\n=== EVALUATING MODEL 1 (BINARY) ===\n")
     model = load_model_with_fallback(model_m1_path)
+    base_folder = test_folder / "clasificacion_binaria"
 
-    accuracies_m1 = []
-    precisions_m1 = []
-    recalls_m1 = []
-    f1_scores_m1 = []
-
-    for class_name in binary_classes_m1:
-        class_folder = test_folder / "clasificacion_binaria" / class_name
-        if class_folder.exists():
-            images = load_images_from_folder(class_folder)
-            if len(images) > 0:
-                predictions = predict_batch(model, images, batch_size)
-                true_labels = np.zeros(len(images), dtype=int) if class_name == "soya_sana" else np.ones(len(images), dtype=int)
-
-                accuracy, precisions, recalls, f1s = calculate_metrics(true_labels, predictions)
-                accuracies_m1.append(accuracy)
-                precisions_m1.append(precisions[0] if class_name == "soya_sana" else precisions[1])
-                recalls_m1.append(recalls[0] if class_name == "soya_sana" else recalls[1])
-                f1_scores_m1.append(f1s[0] if class_name == "soya_sana" else f1s[1])
-
-    write_excel(archivo_excel_salida_m1, binary_classes_m1, accuracies_m1, precisions_m1, recalls_m1, f1_scores_m1)
+    counts, accuracies, precisions, recalls, f1s = evaluate_model_on_classes(model, binary_classes_m1, base_folder)
+    write_excel(archivo_excel_salida_m1, binary_classes_m1, counts, accuracies, precisions, recalls, f1s)
     print(f"M1 results saved to {archivo_excel_salida_m1}")
 
 def evaluate_m2():
     print("\n=== EVALUATING MODEL 2 (PATHOGEN) ===\n")
     model = load_model_with_fallback(model_m2_path)
+    base_folder = test_folder / "clasificacion_patogeno"
 
-    accuracies_m2 = []
-    precisions_m2 = []
-    recalls_m2 = []
-    f1_scores_m2 = []
-
-    for idx, class_name in enumerate(disease_classes_m2):
-        class_folder = test_folder / "clasificacion_patogeno" / class_name
-        if class_folder.exists():
-            images = load_images_from_folder(class_folder)
-            if len(images) > 0:
-                predictions = predict_batch(model, images, batch_size)
-                true_labels = np.full(len(images), idx, dtype=int)
-
-                accuracy, precisions, recalls, f1s = calculate_metrics(true_labels, predictions)
-                accuracies_m2.append(accuracy)
-                precisions_m2.append(precisions[idx])
-                recalls_m2.append(recalls[idx])
-                f1_scores_m2.append(f1s[idx])
-
-    write_excel(archivo_excel_salida_m2, disease_classes_m2, accuracies_m2, precisions_m2, recalls_m2, f1_scores_m2)
+    counts, accuracies, precisions, recalls, f1s = evaluate_model_on_classes(model, disease_classes_m2, base_folder)
+    write_excel(archivo_excel_salida_m2, disease_classes_m2, counts, accuracies, precisions, recalls, f1s)
     print(f"M2 results saved to {archivo_excel_salida_m2}")
 
 def evaluate_models():

@@ -1,4 +1,4 @@
-# Glycine Vision Dsion Support System
+# Glycine Vision Decision Support System
 
 ## Alcance
 
