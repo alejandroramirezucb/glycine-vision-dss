@@ -4,6 +4,10 @@
 
 Sistema de soporte de decision para diagnostico visual de soya usando dos modelos Keras secuenciales.
 
+### Dataset
+
+Hugging Face: [Ver dataset](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset)
+
 ### Modelo 1: Health Classification (glycine-vision-hs)
 
 Clasificacion binaria de estado general de la hoja:
@@ -44,20 +48,7 @@ Ejemplo de decision:
 python -m pip install -r Code/requirements.txt
 ```
 
-### Scripts
-
-```bash
-# Analisis preliminar del dataset
-python Code/scripts/analyze.py
-
-# Pipeline completo (filtro + muestreo + exportacion)
-python Code/scripts/pipeline.py
-
-# Generacion del dataset de prueba
-python Code/scripts/generate_test_set.py
-```
-
-### Aplicacion
+### Ejecutar
 
 ```bash
 python Code/src/main.py

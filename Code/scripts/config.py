@@ -1,173 +1,46 @@
+import os
 from pathlib import Path
 
-BASE_DIR = Path(r"D:\Datasets")
-ENFERMA_DIR = BASE_DIR / "Soya_Enferma"
-SANA_DIR = BASE_DIR / "Soya_Sana"
-SANA_COLOR_DIR = SANA_DIR / "Color"       # PlantVillage (fondo controlado)
-SANA_ASDID_DIR = SANA_DIR / "healthy"     # ASDID Healthy (campo real)
-OUTPUT_DIR = BASE_DIR / "filtrado_calidad"
-TM_DIR = BASE_DIR / "teachable_machine"
+test_folder = Path(r"D:\Datasets\test")
+train_folder = Path(r"D:\Datasets\train")
+source_dataset_folder = Path(r"D:\Datasets\Dataset")
+results_folder = Path(r"D:\Results")
 
-SANA_SOURCES = [
-    SANA_COLOR_DIR,
-    SANA_ASDID_DIR,
-]
+model_m1_path = Path(r"D:\Models\glycine-vision-hs")
+model_m2_path = Path(r"D:\Models\glycine-vision-pd")
 
-MIN_RESOLUTION = 224
-HASH_THRESHOLD = 3
-RANDOM_SEED = 42
-MAX_PER_CLASS = 800   # imágenes de entrenamiento por clase
-TEST_PER_CLASS = 100  # imágenes de test FIJAS por clase (comparables)
-VALID_EXTENSIONS = {".jpg", ".jpeg", ".png", ".bmp", ".tiff", ".tif", ".webp"}
+archivo_excel_salida_m1 = results_folder / "m1_results.xlsx"
+archivo_excel_salida_m2 = results_folder / "m2_results.xlsx"
 
-# ── NOMENCLATURA DE SUFIJOS ───────────────────────────────────────────────────
-# Sin sufijo  = fuentes originales (sivm205, ASDID, India-Mendeley, etc.)
-# Sufijo "4"  = mamun009 (Kaggle) — 14 clases
-# Sufijo "3"  = tercer dataset adicional
-# "crestamento" se EXCLUYE — no es enfermedad clasificable
-# "unused_*"  se EXCLUYE — imágenes descartadas por ASDID
-# ─────────────────────────────────────────────────────────────────────────────
+batch_size = 32
+hash_threshold_hamming = 3
+test_images_per_class_max = 100
+train_images_per_class_max = 1000
 
-DISEASE_GROUPS = {
-    "Bacterianas": [
-        # ── Originales ──────────────────────────────────────────────────────
-        "Bacterial Blight",          # Kaggle-sivm205
-        "Bacterial Pustule",         # Kaggle-sivm205
-        "bacterial_blight",          # ASDID-Zenodo
-        "6.Bacterial leaf Blight",   # India-Mendeley
-        # ── mamun009 (sufijo 4) ─────────────────────────────────────────────
-        "Bacterial Pustule4",        # Kaggle-mamun009
-        # ── Dataset 3 (sufijo 3) ────────────────────────────────────────────
-        "Bacterial Pustule 3",       # Dataset-3
-    ],
-    "Fungicas": [
-        # ── Originales ──────────────────────────────────────────────────────
-        "Brown Spot",                # Kaggle-sivm205
-        "Frogeye Leaf Spot",         # Kaggle-sivm205
-        "Target Leaf Spot",          # Kaggle-sivm205
-        "septoria",                  # Kaggle-sivm205
-        "4.Septoria_Brown_Spot",     # India-Mendeley
-        "2.Vein Necrosis",           # India-Mendeley
-        "cercospora_leaf_blight",    # ASDID-Zenodo
-        "frogeye",                   # ASDID-Zenodo
-        "target_spot",               # ASDID-Zenodo
-        "powdery Mildew",            # Kaggle-sivm205
-        "Sudden Death Syndrome",     # Kaggle-sivm205
-        "downey_mildew",             # ASDID-Zenodo
-        "Southern blight",           # Kaggle-sivm205
-        # ── mamun009 (sufijo 4) ─────────────────────────────────────────────
-        "brown_spot4",               # Kaggle-mamun009
-        "Frogeye Leaf Spot4",        # Kaggle-mamun009
-        "powdery_mildew4",           # Kaggle-mamun009
-        "septoria4",                 # Kaggle-mamun009
-        "Southern blight4",          # Kaggle-mamun009
-        "Sudden Death Syndrome4",    # Kaggle-mamun009
-        "Target Leaf Spot4",         # Kaggle-mamun009
-        # ── Dataset 3 (sufijo 3) ────────────────────────────────────────────
-        "brown_spot3",               # Dataset-3
-        "Frogeye Leaf Spot3",        # Dataset-3
-        "powdery_mildew3",           # Dataset-3
-        "septoria3",                 # Dataset-3
-        "Southern blight3",          # Dataset-3
-        "Sudden Death Syndrome3",    # Dataset-3
-        "Target Leaf Spot3",         # Dataset-3
-    ],
-    "Roya": [
-        # ── Originales ──────────────────────────────────────────────────────
-        "Rust",                      # Kaggle-sivm205
-        "ferrugen",                  # Kaggle-vaishaligbhujade
-        "soybean_rust",              # ASDID-Zenodo
-        # ── mamun009 (sufijo 4) ─────────────────────────────────────────────
-        "Rust4",                     # Kaggle-mamun009
-        "ferrugen4",                 # Kaggle-mamun009
-        # ── Dataset 3 (sufijo 3) ────────────────────────────────────────────
-        "Rust3",                     # Dataset-3
-        "ferrugen3",                 # Dataset-3
-    ],
-    "Virales": [
-        # ── Originales ──────────────────────────────────────────────────────
-        "Yellow Mosaic",             # Kaggle-vaishaligbhujade
-        "Mossaic Virus",             # Kaggle-vaishaligbhujade
-        "Soyabean_Mosaic",           # MH-SoyaHealthVision
-        # ── mamun009 (sufijo 4) — MÁS IMPORTANTES para cubrir déficit ───────
-        "Mossaic Virus4",            # Kaggle-mamun009
-        "Yellow Mosaic4",            # Kaggle-mamun009
-        # ── Dataset 3 (sufijo 3) ────────────────────────────────────────────
-        "Mossaic Virus3",            # Dataset-3
-        "Yellow Mosaic3",            # Dataset-3
-    ],
-    "Plagas_Insectos": [
-        # ── Originales ──────────────────────────────────────────────────────
-        "Caterpillar",               # Kaggle-maeloisamignoni
-        "Diabrotica speciosa",       # Kaggle-maeloisamignoni
-        # mamun009 y dataset-3 no aportan nuevas carpetas de plagas
-    ],
+disease_classes_m2 = ["bacterianas", "fungicas", "plagas_insectos", "roya", "virales"]
+binary_classes_m1 = ["soya_sana", "soya_enferma"]
+
+image_min_resolution = 224
+image_required_channels = 3
+random_seed = 42
+
+disease_mapping = {
+    "rust": "roya", "Rust": "roya", "ferrugen": "roya",
+    "bacterial_blight": "bacterianas", "Bacterial": "bacterianas", "bacterial": "bacterianas",
+    "fungal": "fungicas", "Fungal": "fungicas", "powdery": "fungicas",
+    "insect": "plagas_insectos", "Caterpillar": "plagas_insectos", "Diabrotica": "plagas_insectos",
+    "virus": "virales", "Virus": "virales", "Mossaic": "virales"
 }
 
-# Carpetas que existen en disco pero NO se usan (documentadas aquí):
-# - "crestamento"                  → no es enfermedad de soya clasificable
-# - "unused_cercospora_leaf_blight" → imágenes descartadas por ASDID (calidad baja)
-# - "unused_soybean_rust"          → imágenes descartadas por ASDID (calidad baja)
+results_folder.mkdir(parents=True, exist_ok=True)
+test_folder.mkdir(parents=True, exist_ok=True)
+train_folder.mkdir(parents=True, exist_ok=True)
 
-SOURCE_LABELS = {
-    # sivm205
-    "Bacterial Blight":       "Kaggle-sivm205",
-    "Bacterial Pustule":      "Kaggle-sivm205",
-    "Brown Spot":             "Kaggle-sivm205",
-    "Frogeye Leaf Spot":      "Kaggle-sivm205",
-    "Target Leaf Spot":       "Kaggle-sivm205",
-    "Rust":                   "Kaggle-sivm205",
-    "septoria":               "Kaggle-sivm205",
-    "powdery Mildew":         "Kaggle-sivm205",
-    "Sudden Death Syndrome":  "Kaggle-sivm205",
-    "Southern blight":        "Kaggle-sivm205",
-    # maeloisamignoni
-    "Caterpillar":            "Kaggle-maeloisamignoni",
-    "Diabrotica speciosa":    "Kaggle-maeloisamignoni",
-    # vaishaligbhujade
-    "ferrugen":               "Kaggle-vaishaligbhujade",
-    "Yellow Mosaic":          "Kaggle-vaishaligbhujade",
-    "Mossaic Virus":          "Kaggle-vaishaligbhujade",
-    # ASDID-Zenodo
-    "bacterial_blight":       "ASDID-Zenodo",
-    "cercospora_leaf_blight": "ASDID-Zenodo",
-    "frogeye":                "ASDID-Zenodo",
-    "target_spot":            "ASDID-Zenodo",
-    "soybean_rust":           "ASDID-Zenodo",
-    "downey_mildew":          "ASDID-Zenodo",
-    # MH-SoyaHealthVision
-    "Soyabean_Mosaic":        "MH-SoyaHealthVision",
-    # India-Mendeley
-    "6.Bacterial leaf Blight":"India-Mendeley",
-    "4.Septoria_Brown_Spot":  "India-Mendeley",
-    "2.Vein Necrosis":        "India-Mendeley",
-    # mamun009 (sufijo 4)
-    "Bacterial Pustule4":     "Kaggle-mamun009",
-    "brown_spot4":            "Kaggle-mamun009",
-    "Frogeye Leaf Spot4":     "Kaggle-mamun009",
-    "powdery_mildew4":        "Kaggle-mamun009",
-    "Rust4":                  "Kaggle-mamun009",
-    "ferrugen4":              "Kaggle-mamun009",
-    "septoria4":              "Kaggle-mamun009",
-    "Southern blight4":       "Kaggle-mamun009",
-    "Sudden Death Syndrome4": "Kaggle-mamun009",
-    "Target Leaf Spot4":      "Kaggle-mamun009",
-    "Yellow Mosaic4":         "Kaggle-mamun009",
-    "Mossaic Virus4":         "Kaggle-mamun009",
-    # Dataset-3 (sufijo 3)
-    "Bacterial Pustule 3":    "Dataset-3",
-    "brown_spot3":            "Dataset-3",
-    "Frogeye Leaf Spot3":     "Dataset-3",
-    "powdery_mildew3":        "Dataset-3",
-    "Rust3":                  "Dataset-3",
-    "ferrugen3":              "Dataset-3",
-    "septoria3":              "Dataset-3",
-    "Southern blight3":       "Dataset-3",
-    "Sudden Death Syndrome3": "Dataset-3",
-    "Target Leaf Spot3":      "Dataset-3",
-    "Yellow Mosaic3":         "Dataset-3",
-    "Mossaic Virus3":         "Dataset-3",
-    # Sanas
-    "Color":                  "PlantVillage",
-    "healthy":                "ASDID-Zenodo",
-}
+def validate_paths():
+    if not source_dataset_folder.exists():
+        raise FileNotFoundError(f"Source dataset folder not found: {source_dataset_folder}")
+    if not model_m1_path.exists():
+        raise FileNotFoundError(f"M1 model path not found: {model_m1_path}")
+    if not model_m2_path.exists():
+        raise FileNotFoundError(f"M2 model path not found: {model_m2_path}")
+    return True
