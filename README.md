@@ -48,6 +48,41 @@ Ejemplo de decision:
 python -m pip install -r Code/requirements.txt
 ```
 
+## Scripts
+
+- `Code/scripts/config.py`
+  - Define rutas base de dataset, modelos y resultados.
+  - Configura clases, limites de muestreo y parametros globales.
+  - Valida que existan rutas antes de ejecutar el flujo.
+
+- `Code/scripts/prepare_dataset.py`
+  - Carga imagenes desde `D:\Datasets\Dataset`.
+  - Valida calidad minima (resolucion y canales RGB).
+  - Elimina duplicados por hash MD5.
+  - Crea y copia subconjuntos para `clasificacion_binaria` y `clasificacion_patogeno`.
+
+  ```bash
+  python Code/scripts/prepare_dataset.py
+  ```
+
+- `Code/scripts/evaluate_models.py`
+  - Evalua los modelos con el set de test.
+  - Calcula accuracy, precision, recall y F1 por clase.
+  - Exporta resultados a Excel en `D:\Results`.
+
+  ```bash
+  python Code/scripts/evaluate_models.py
+  ```
+
+- `Code/scripts/pipeline.py`
+  - Valida configuracion.
+  - Ejecuta preparacion de dataset.
+  - Ejecuta evaluacion de modelos.
+
+  ```bash
+  python Code/scripts/pipeline.py
+  ```
+
 ### Ejecutar
 
 ```bash
