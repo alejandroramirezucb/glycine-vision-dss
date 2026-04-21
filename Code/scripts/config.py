@@ -1,8 +1,8 @@
 import os
 from pathlib import Path
 
-test_folder = Path(r"D:\Datasets\test")
-train_folder = Path(r"D:\Datasets\train")
+test_folder = Path(r"D:\Datasets\Test")
+train_folder = Path(r"D:\Datasets\Train")
 source_dataset_folder = Path(r"D:\Datasets\Dataset")
 results_folder = Path(r"D:\Results")
 
@@ -17,7 +17,7 @@ hash_threshold_hamming = 3
 test_images_per_class_max = 100
 train_images_per_class_max = 1000
 
-disease_classes_m2 = ["bacterianas", "fungicas", "plagas_insectos", "roya", "virales"]
+disease_classes_m2 = ["bacterianas", "fungicas", "roya", "plagas_insectos", "virales"]
 binary_classes_m1 = ["soya_sana", "soya_enferma"]
 
 image_min_resolution = 224
