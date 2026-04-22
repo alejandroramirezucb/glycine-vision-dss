@@ -8,6 +8,14 @@ Sistema de soporte de decision para diagnostico visual de soya usando dos modelo
 
 Hugging Face: [Ver dataset](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset)
 
+### Articulo Cientifico
+
+Documento: [Ver documento](./Articulo%20Cientifico.docx)
+
+### Diapositivas
+
+Diapositivas: [Ver diapositivas](https://gamma.app/docs/Glycine-Vision-Sistema-de-Triaje-Fitosanitario-Digital-para-Detec-ir5ilg0bcpnenm9)
+
 ### Modelo 1: Health Classification (glycine-vision-hs)
 
 Clasificacion binaria de estado general de la hoja:
