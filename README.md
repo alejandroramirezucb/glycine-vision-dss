@@ -10,7 +10,7 @@ Hugging Face: [Ver dataset](https://huggingface.co/datasets/alejandroramirezucb/
 
 ### Articulo Cientifico
 
-Documento: [Ver documento](./Articulo%20Cientifico.docx)
+Documento: [Ver documento](./Articulo%20Cientifico.pdf)
 
 ### Diapositivas
 
