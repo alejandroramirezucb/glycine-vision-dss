@@ -11,9 +11,9 @@ RUN --mount=type=cache,target=/root/.cache/pip \
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --timeout=300 "flet>=0.27.0" "Pillow>=9.0.0"
 
-COPY tratamientos.json .
+COPY Code/tratamientos.json .
 COPY Models/ Models/
-COPY src/ src/
+COPY Code/src/ src/
 
 EXPOSE 8550
 
