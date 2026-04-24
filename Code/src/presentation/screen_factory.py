@@ -4,7 +4,6 @@ from presentation import theme
 from presentation.layout_factory import LayoutFactory
 from presentation.view_state import AppState, Screen, is_healthy_label
 
-
 class ScreenFactory:
     def __init__(self, layout: LayoutFactory) -> None:
         self._layout = layout

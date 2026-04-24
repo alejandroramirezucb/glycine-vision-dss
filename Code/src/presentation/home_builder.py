@@ -4,7 +4,6 @@ from presentation import theme
 from presentation.preview_builder import PreviewBuilder
 from presentation.view_state import AppState
 
-
 class HomeBuilder:
     def __init__(self, preview: PreviewBuilder) -> None:
         self._preview = preview

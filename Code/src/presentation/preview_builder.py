@@ -2,7 +2,6 @@ from pathlib import Path
 import flet as ft
 from presentation import theme
 
-
 class PreviewBuilder:
     def __init__(self) -> None:
         self._live_image: ft.Image | None = None

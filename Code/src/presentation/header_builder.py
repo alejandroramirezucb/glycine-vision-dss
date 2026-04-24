@@ -2,7 +2,6 @@ from typing import Callable
 import flet as ft
 from presentation import theme
 
-
 class HeaderBuilder:
     def build(
         self,

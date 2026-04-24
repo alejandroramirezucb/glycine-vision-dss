@@ -1,10 +1,8 @@
 from pathlib import Path
 import cv2
 
-
 class CameraCaptureError(Exception):
     pass
-
 
 class CameraSession:
     def __init__(self) -> None:

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 
-
 @dataclass(frozen=True)
 class TreatmentInfo:
     disease_key: str

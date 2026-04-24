@@ -1,0 +1,10 @@
+[tool.flet]
+org = "com.glycinevision"
+
+[tool.flet.app]
+module_name = "main"
+
+[tool.flet.android.permission]
+"android.permission.CAMERA" = true
+"android.permission.READ_MEDIA_IMAGES" = true
+"android.permission.READ_EXTERNAL_STORAGE" = true

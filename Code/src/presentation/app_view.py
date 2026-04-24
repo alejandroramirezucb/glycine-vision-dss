@@ -3,7 +3,6 @@ import asyncio
 import flet as ft
 from application.use_cases import PredictDiseaseTypeUseCase, PredictSoyHealthUseCase
 from domain.protocols import TreatmentRepository
-from infrastructure.camera_capture import OpenCVCameraCapture
 from presentation import theme
 from presentation.diagnosis_controller import DiagnosisController
 from presentation.layout_factory import LayoutFactory
@@ -11,11 +10,13 @@ from presentation.screen_factory import ScreenFactory
 from presentation.ui_messages import SnackbarService
 from presentation.view_state import AppState
 
+_MOBILE = {ft.PagePlatform.ANDROID, ft.PagePlatform.IOS}
+
 
 class SoyDiagnosisApp:
     def __init__(self, page: ft.Page, health_use_case: PredictSoyHealthUseCase,
                  disease_use_case: PredictDiseaseTypeUseCase,
-                 camera_capture: OpenCVCameraCapture,
+                 camera_capture,
                  treatment_repo: TreatmentRepository) -> None:
         self._page = page
         self._state = AppState()
@@ -26,10 +27,12 @@ class SoyDiagnosisApp:
             self._state, health_use_case, disease_use_case, camera_capture, SnackbarService(page))
         self._controller.bind(self._render)
         self._preview_task_running = False
+        self._is_mobile = False
         self._file_picker = ft.FilePicker()
         self._page.services.append(self._file_picker)
 
     def run(self) -> None:
+        self._is_mobile = self._page.platform in _MOBILE
         self._page.title = "Glycine Vision DSS"
         self._page.padding = 0
         self._page.bgcolor = theme.BG_PAGE
@@ -47,13 +50,13 @@ class SoyDiagnosisApp:
                 main_axis_margin=2,
             )
         )
-        
-        if hasattr(self._page, "window") and self._page.window:
+
+        if not self._is_mobile and hasattr(self._page, "window") and self._page.window:
             w = self._page.window
             w.width = w.min_width = w.max_width = 412
             w.height = w.min_height = w.max_height = 780
             w.resizable = False
-        
+
         self._render()
 
     def _render(self) -> None:
@@ -73,6 +76,7 @@ class SoyDiagnosisApp:
                 ],
             ),
         )
+
         self._page.add(ft.Row(controls=[phone_shell], alignment=ft.MainAxisAlignment.CENTER))
         self._page.update()
 
@@ -87,8 +91,12 @@ class SoyDiagnosisApp:
         )
 
     def _open_camera(self, e: ft.ControlEvent) -> None:
+        if self._is_mobile:
+            self._page.run_task(self._pick_camera_image)
+            return
+
         self._controller.capture(e)
-        
+
         if self._state.camera_armed:
             self._start_preview_task()
 
@@ -106,6 +114,7 @@ class SoyDiagnosisApp:
 
                 if b64:
                     self._layout.update_live_preview(b64)
+
                 await asyncio.sleep(0.02)
         finally:
             self._preview_task_running = False
@@ -115,6 +124,15 @@ class SoyDiagnosisApp:
             allow_multiple=False,
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=["png", "jpg", "jpeg", "bmp", "webp", "tif", "tiff"],
+        )
+
+        if files and files[0].path:
+            self._controller.select_file(Path(files[0].path))
+
+    async def _pick_camera_image(self) -> None:
+        files = await self._file_picker.pick_files(
+            allow_multiple=False,
+            file_type=ft.FilePickerFileType.IMAGE,
         )
         
         if files and files[0].path:

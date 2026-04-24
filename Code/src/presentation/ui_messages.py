@@ -1,6 +1,5 @@
 import flet as ft
 
-
 class SnackbarService:
     def __init__(self, page: ft.Page) -> None:
         self._page = page
