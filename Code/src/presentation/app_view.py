@@ -59,6 +59,13 @@ class SoyDiagnosisApp:
 
     def _render(self) -> None:
         self._page.clean()
+        try:
+            screen = self._build_screen()
+        except Exception as exc:  # noqa: BLE001
+            screen = ft.Text(
+                f"Error al renderizar pantalla: {exc}",
+                size=13, color=ft.Colors.RED_700, selectable=True,
+            )
         phone_shell = ft.Container(
             width=theme.PHONE_WIDTH,
             padding=10,
@@ -70,7 +77,7 @@ class SoyDiagnosisApp:
                         self._controller.go_home,
                         self._controller.go_back,
                     ),
-                    self._build_screen(),
+                    screen,
                 ],
             ),
         )
