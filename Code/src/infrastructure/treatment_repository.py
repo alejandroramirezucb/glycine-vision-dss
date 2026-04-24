@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from domain.treatment import TreatmentInfo
+from domain.treatment import Fuente, TreatmentInfo
 
 _LABEL_MAP: dict[str, str] = {
     "bacterial_diseases": "Bacterianas",
@@ -21,13 +21,13 @@ class JsonTreatmentRepository:
 
     def get_by_label(self, label: str) -> TreatmentInfo | None:
         key = _LABEL_MAP.get(label.strip().lower().replace(" ", "_"))
-        
+
         if not key or key not in self._data:
             return None
-        
+
         d = self._data[key]
         t = d["tratamiento"]
-        
+
         return TreatmentInfo(
             disease_key=key,
             nombre_es=d["nombre_es"],
@@ -38,5 +38,8 @@ class JsonTreatmentRepository:
             biologico=t["biologico"],
             preventivo=t["preventivo"],
             urgencia=d["urgencia"],
-            fuentes=tuple(d.get("fuentes", [])),
+            fuentes=tuple(
+                Fuente(texto=f["texto"], url=f["url"])
+                for f in d.get("fuentes", [])
+            ),
         )

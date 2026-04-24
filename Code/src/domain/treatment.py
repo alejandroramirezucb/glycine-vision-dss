@@ -1,6 +1,11 @@
 from dataclasses import dataclass
 
 @dataclass(frozen=True)
+class Fuente:
+    texto: str
+    url: str
+
+@dataclass(frozen=True)
 class TreatmentInfo:
     disease_key: str
     nombre_es:   str
@@ -11,4 +16,4 @@ class TreatmentInfo:
     biologico:   str
     preventivo:  str
     urgencia:    str
-    fuentes:     tuple[str, ...]
+    fuentes:     tuple[Fuente, ...]
