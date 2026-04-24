@@ -23,7 +23,7 @@ def _fuente_link(f: Fuente) -> ft.Control:
         spans=[ft.TextSpan(
             f"• {f.texto}",
             url=f.url,
-            url_target=ft.UrlTarget.BLANK,
+            url_target="_blank",
             style=ft.TextStyle(
                 size=10,
                 color=theme.ACCENT,
