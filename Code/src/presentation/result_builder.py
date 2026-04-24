@@ -1,3 +1,4 @@
+import base64
 import flet as ft
 from pathlib import Path
 from domain.entities import PredictionResult
@@ -44,13 +45,27 @@ class ResultBuilder:
         top = result.top_prediction
         preview = ft.Container()
 
-        if image_path:
-            preview = ft.Container(
-                border_radius=theme.RADIUS_IMG,
-                clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                shadow=theme.card_shadow(),
-                content=ft.Image(src=str(image_path), height=theme.IMG_HEIGHT, fit=ft.BoxFit.CONTAIN),
-            )
+        if image_path and image_path.exists():
+            try:
+                from PIL import Image as _PilImg
+                import io as _io
+                img = _PilImg.open(image_path).convert("RGB")
+                img.thumbnail((600, 600))
+                buf = _io.BytesIO()
+                img.save(buf, format="JPEG", quality=80)
+                b64 = base64.b64encode(buf.getvalue()).decode()
+                preview = ft.Container(
+                    border_radius=theme.RADIUS_IMG,
+                    clip_behavior=ft.ClipBehavior.HARD_EDGE,
+                    shadow=theme.card_shadow(),
+                    content=ft.Image(
+                        src=f"data:image/jpeg;base64,{b64}",
+                        height=theme.IMG_HEIGHT,
+                        fit=ft.BoxFit.CONTAIN,
+                    ),
+                )
+            except Exception:
+                pass
         
         return ft.Container(
             width=theme.CARD_WIDTH,

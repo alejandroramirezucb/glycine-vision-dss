@@ -1,5 +1,8 @@
+import base64
+import io
 from pathlib import Path
 import flet as ft
+from PIL import Image as _PilImg
 from presentation import theme
 
 class PreviewBuilder:
@@ -48,9 +51,18 @@ class PreviewBuilder:
                                 weight=ft.FontWeight.W_500),
             )
         
+        try:
+            img = _PilImg.open(path).convert("RGB")
+            img.thumbnail((600, 600))
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=80)
+            b64 = base64.b64encode(buf.getvalue()).decode()
+            src = f"data:image/jpeg;base64,{b64}"
+        except Exception:
+            src = self._placeholder_src
         return ft.Container(
             border_radius=theme.RADIUS_IMG,
             clip_behavior=ft.ClipBehavior.HARD_EDGE,
             shadow=theme.card_shadow(),
-            content=ft.Image(src=str(path), height=theme.IMG_HEIGHT, fit=ft.BoxFit.CONTAIN),
+            content=ft.Image(src=src, height=theme.IMG_HEIGHT, fit=ft.BoxFit.CONTAIN),
         )

@@ -94,9 +94,9 @@ class SoyDiagnosisApp:
             self._treatment_repo,
         )
 
-    def _open_camera(self, e: ft.ControlEvent) -> None:
-        if self._is_mobile:
-            self._page.run_task(self._pick_camera_image)
+    async def _open_camera(self, e: ft.ControlEvent) -> None:
+        if self._is_mobile or self._controller.camera is None:
+            await self._pick_camera_image()
             return
         self._controller.capture(e)
         if self._state.camera_armed:
@@ -140,10 +140,10 @@ class SoyDiagnosisApp:
             return
 
         f = files[0]
-        
-        if f.path and Path(f.path).exists():
-            self._controller.select_file(Path(f.path))
-        elif f.bytes:
-            tmp = Path(gettempdir()) / f"glycine_{f.name or 'photo.jpg'}"
+        tmp = Path(gettempdir()) / f"glycine_{f.name or 'upload.jpg'}"
+
+        if f.bytes:
             tmp.write_bytes(f.bytes)
             self._controller.select_file(tmp)
+        elif f.path and Path(f.path).exists():
+            self._controller.select_file(Path(f.path))

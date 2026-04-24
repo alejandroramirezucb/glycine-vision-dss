@@ -97,6 +97,50 @@ python -m pip install -r Code/requirements.txt
 python Code/src/main.py
 ```
 
+## Docker (acceso web desde navegador o Android)
+
+### Construir la imagen
+
+```powershell
+docker build -t glycine-vision .
+```
+
+### Levantar el contenedor
+
+```powershell
+docker run -d --rm -p 8550:8550 --name glycine glycine-vision
+```
+
+Luego abrir en el navegador: `http://localhost:8550`
+
+Desde el celular (misma red): `http://<IP-de-tu-PC>:8550`
+
+Para obtener la IP de tu PC:
+
+```powershell
+(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Wi-Fi").IPAddress
+```
+
+### Detener el contenedor
+
+```powershell
+docker stop glycine
+```
+
+### Reconstruir y relevantar
+
+```powershell
+docker stop glycine 2>$null; docker build -t glycine-vision . && docker run -d --rm -p 8550:8550 --name glycine glycine-vision
+```
+
+### Ver logs del contenedor
+
+```powershell
+docker logs -f glycine
+```
+
+---
+
 ## Procedimiento de uso
 
 1. Cargar imagen o abrir camara.

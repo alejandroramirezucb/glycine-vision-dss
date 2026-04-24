@@ -17,6 +17,10 @@ class DiagnosisController:
         self._camera, self._messages = camera, messages
         self._render: Callable = lambda: None
 
+    @property
+    def camera(self):
+        return self._camera
+
     def bind(self, render: Callable) -> None:
         self._render = render
 
