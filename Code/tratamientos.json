@@ -12,9 +12,18 @@
     },
     "urgencia": "media",
     "fuentes": [
-      "CABI Plantwise Knowledge Bank - Bacterial blight of soybean",
-      "PlantVillage - Soybean Bacterial Blight",
-      "ANAPO - Guía de manejo fitosanitario de soya"
+      {
+        "texto": "CABI Plantwise Knowledge Bank - Bacterial blight of soybean",
+        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.44963"
+      },
+      {
+        "texto": "PlantVillage - Soybean Bacterial Blight",
+        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      },
+      {
+        "texto": "ANAPO - Guía de manejo fitosanitario de soya",
+        "url": "https://anapobolivia.org/"
+      }
     ]
   },
   "Fungicas": {
@@ -30,9 +39,18 @@
     },
     "urgencia": "alta",
     "fuentes": [
-      "CABI Plantwise Knowledge Bank - Soybean fungal diseases",
-      "PlantVillage - Soybean diseases",
-      "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press"
+      {
+        "texto": "CABI Digital Library - Soybean fungal diseases",
+        "url": "https://www.cabidigitallibrary.org/"
+      },
+      {
+        "texto": "PlantVillage - Soybean diseases",
+        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      },
+      {
+        "texto": "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press",
+        "url": "https://apsjournals.apsnet.org/doi/book/10.1094/9780890544754"
+      }
     ]
   },
   "Roya": {
@@ -48,10 +66,22 @@
     },
     "urgencia": "critica",
     "fuentes": [
-      "CABI Plantwise Knowledge Bank - Phakopsora pachyrhizi",
-      "SENASAG - Sistema de monitoreo de roya de la soya",
-      "Yorinori et al. (2005) Epidemics of soybean rust in Brazil and Paraguay",
-      "Miles et al. (2011) Soybean Rust Management, Plant Health Progress"
+      {
+        "texto": "CABI Plantwise - Phakopsora pachyrhizi (Roya asiática)",
+        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.40019"
+      },
+      {
+        "texto": "SENASAG - Servicio Nacional de Sanidad Agropecuaria (Bolivia)",
+        "url": "https://www.senasag.gob.bo/"
+      },
+      {
+        "texto": "Yorinori et al. (2005) Epidemics of soybean rust in Brazil and Paraguay. Plant Disease 89(6):675-677",
+        "url": "https://doi.org/10.1094/PD-89-0675"
+      },
+      {
+        "texto": "Miles et al. (2011) Soybean Rust Management. Plant Health Progress",
+        "url": "https://apsjournals.apsnet.org/loi/php"
+      }
     ]
   },
   "Virales": {
@@ -67,9 +97,18 @@
     },
     "urgencia": "media",
     "fuentes": [
-      "CABI Plantwise Knowledge Bank - Soybean Mosaic Virus",
-      "PlantVillage - Soybean Mosaic",
-      "Gunduz et al. (2004) Genetic analysis of resistance to SMV in soybean"
+      {
+        "texto": "CABI Plantwise - Soybean Mosaic Virus (SMV)",
+        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.48750"
+      },
+      {
+        "texto": "PlantVillage - Soybean Mosaic",
+        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      },
+      {
+        "texto": "Gunduz et al. (2004) Genetic analysis of resistance to SMV. Phytopathology 94(10):1094-1098",
+        "url": "https://doi.org/10.1094/PHYTO.2004.94.10.1094"
+      }
     ]
   },
   "Plagas_Insectos": {
@@ -85,9 +124,18 @@
     },
     "urgencia": "alta",
     "fuentes": [
-      "CABI Plantwise Knowledge Bank - Soybean defoliating caterpillars",
-      "ANAPO - Manejo integrado de plagas en soya",
-      "Bueno et al. (2011) Integrated pest management of soybean in Brazil"
+      {
+        "texto": "CABI Plantwise - Soybean defoliating caterpillars",
+        "url": "https://www.cabidigitallibrary.org/doi/10.1079/cabicompendium.13245"
+      },
+      {
+        "texto": "ANAPO - Manejo integrado de plagas en soya",
+        "url": "https://anapobolivia.org/"
+      },
+      {
+        "texto": "Bueno et al. (2011) Integrated pest management of soybean in Brazil. Crop Protection",
+        "url": "https://doi.org/10.1016/j.cropro.2011.01.002"
+      }
     ]
   }
 }

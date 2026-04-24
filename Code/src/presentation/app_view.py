@@ -1,4 +1,5 @@
 from pathlib import Path
+from tempfile import gettempdir
 import asyncio
 import flet as ft
 from application.use_cases import PredictDiseaseTypeUseCase, PredictSoyHealthUseCase
@@ -11,7 +12,6 @@ from presentation.ui_messages import SnackbarService
 from presentation.view_state import AppState
 
 _MOBILE = {ft.PagePlatform.ANDROID, ft.PagePlatform.IOS}
-
 
 class SoyDiagnosisApp:
     def __init__(self, page: ft.Page, health_use_case: PredictSoyHealthUseCase,
@@ -50,13 +50,11 @@ class SoyDiagnosisApp:
                 main_axis_margin=2,
             )
         )
-
         if not self._is_mobile and hasattr(self._page, "window") and self._page.window:
             w = self._page.window
             w.width = w.min_width = w.max_width = 412
             w.height = w.min_height = w.max_height = 780
             w.resizable = False
-
         self._render()
 
     def _render(self) -> None:
@@ -76,7 +74,6 @@ class SoyDiagnosisApp:
                 ],
             ),
         )
-
         self._page.add(ft.Row(controls=[phone_shell], alignment=ft.MainAxisAlignment.CENTER))
         self._page.update()
 
@@ -94,16 +91,13 @@ class SoyDiagnosisApp:
         if self._is_mobile:
             self._page.run_task(self._pick_camera_image)
             return
-
         self._controller.capture(e)
-
         if self._state.camera_armed:
             self._start_preview_task()
 
     def _start_preview_task(self) -> None:
         if self._preview_task_running:
             return
-        
         self._preview_task_running = True
         self._page.run_task(self._preview_loop)
 
@@ -111,10 +105,8 @@ class SoyDiagnosisApp:
         try:
             while self._state.camera_armed:
                 b64 = self._controller.get_live_frame_b64()
-
                 if b64:
                     self._layout.update_live_preview(b64)
-
                 await asyncio.sleep(0.02)
         finally:
             self._preview_task_running = False
@@ -124,16 +116,27 @@ class SoyDiagnosisApp:
             allow_multiple=False,
             file_type=ft.FilePickerFileType.CUSTOM,
             allowed_extensions=["png", "jpg", "jpeg", "bmp", "webp", "tif", "tiff"],
+            with_data=True,
         )
-
-        if files and files[0].path:
-            self._controller.select_file(Path(files[0].path))
+        await self._resolve_picked(files)
 
     async def _pick_camera_image(self) -> None:
         files = await self._file_picker.pick_files(
             allow_multiple=False,
             file_type=ft.FilePickerFileType.IMAGE,
+            with_data=True,
         )
+        await self._resolve_picked(files)
+
+    async def _resolve_picked(self, files) -> None:
+        if not files:
+            return
+
+        f = files[0]
         
-        if files and files[0].path:
-            self._controller.select_file(Path(files[0].path))
+        if f.path and Path(f.path).exists():
+            self._controller.select_file(Path(f.path))
+        elif f.bytes:
+            tmp = Path(gettempdir()) / f"glycine_{f.name or 'photo.jpg'}"
+            tmp.write_bytes(f.bytes)
+            self._controller.select_file(tmp)
