@@ -12,7 +12,6 @@ _LABEL_MAP: dict[str, str] = {
 
 _JSON_PATH = Path(__file__).resolve().parents[2] / "tratamientos.json"
 
-
 class JsonTreatmentRepository:
     def __init__(self, path: Path = _JSON_PATH) -> None:
         if not path.exists():

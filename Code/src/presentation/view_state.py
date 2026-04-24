@@ -3,12 +3,10 @@ from enum import Enum
 from pathlib import Path
 from domain.entities import PredictionResult
 
-
 class Screen(str, Enum):
     HOME = "home"
     HEALTH_RESULT = "health_result"
     DISEASE_RESULT = "disease_result"
-
 
 @dataclass
 class AppState:

@@ -9,7 +9,6 @@ from presentation.treatment_card_builder import TreatmentCardBuilder
 from presentation.view_state import AppState
 from pathlib import Path
 
-
 class LayoutFactory:
     def __init__(self) -> None:
         self._preview = PreviewBuilder()

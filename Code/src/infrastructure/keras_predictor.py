@@ -5,7 +5,6 @@ import tf_keras as keras
 from domain.entities import PredictionItem, PredictionResult
 from domain.protocols import ImageClassifier
 
-
 class KerasImageClassifier(ImageClassifier):
     def __init__(self, model_path: Path, labels: list[str]) -> None:
         self._model = keras.models.load_model(model_path, compile=False)

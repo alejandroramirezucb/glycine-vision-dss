@@ -3,7 +3,6 @@ from pathlib import Path
 from infrastructure.camera_session import CameraSession, CameraCaptureError
 from infrastructure.camera_stream import CameraStream
 
-
 class OpenCVCameraCapture:
     def __init__(self) -> None:
         self._session = CameraSession()

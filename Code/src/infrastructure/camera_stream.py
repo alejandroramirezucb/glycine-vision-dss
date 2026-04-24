@@ -4,7 +4,6 @@ import time
 from collections.abc import Callable
 import cv2
 
-
 class CameraStream:
     def __init__(self, cap, on_frame: Callable[[str], None] | None = None) -> None:
         self._cap = cap

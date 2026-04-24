@@ -1,12 +1,10 @@
 from dataclasses import dataclass
 from pathlib import Path
 
-
 @dataclass(frozen=True)
 class PredictionItem:
     label: str
     confidence: float
-
 
 @dataclass(frozen=True)
 class PredictionResult:

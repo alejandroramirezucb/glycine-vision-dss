@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 def load_labels(labels_file: Path) -> list[str]:
     labels: list[str] = []
     

@@ -2,13 +2,11 @@ import flet as ft
 from domain.treatment import TreatmentInfo
 from presentation import theme
 
-
 def _section(title: str, body: str) -> ft.Control:
     return ft.Column(spacing=3, controls=[
         ft.Text(title, size=13, weight=ft.FontWeight.W_700, color=theme.ACCENT_DARK),
         ft.Text(body, size=12, color=theme.TEXT_PRIMARY, selectable=True),
     ])
-
 
 def _urgency_chip(urgencia: str) -> ft.Control:
     color = theme.urgency_color(urgencia)
@@ -21,11 +19,9 @@ def _urgency_chip(urgencia: str) -> ft.Control:
         content=ft.Text(f"Urgencia: {label}", size=11, weight=ft.FontWeight.W_700, color=ft.Colors.WHITE),
     )
 
-
 class TreatmentCardBuilder:
     def build(self, t: TreatmentInfo) -> ft.Control:
         return ft.Column(
-            width=theme.CARD_WIDTH,
             spacing=12,
             horizontal_alignment=ft.CrossAxisAlignment.CENTER,
             controls=[

@@ -3,13 +3,11 @@ from pathlib import Path
 from domain.entities import PredictionResult
 from presentation import theme
 
-
 _LABEL_MAP = {
     "healthy": "Sana", "diseased": "Enferma",
     "bacterial diseases": "Bacterianas", "fungal diseases": "Fungicas",
     "rust disease": "Roya", "viral diseases": "Virales", "insect pests": "Plagas",
 }
-
 
 def _normalize(text: str) -> str:
     parts = text.strip().replace("_", " ").replace("-", " ").split()
@@ -19,7 +17,6 @@ def _normalize(text: str) -> str:
     
     return " ".join(parts).lower()
 
-
 def _label_es(label: str) -> str:
     if "+" in label:
         return " + ".join(_label_es(p) for p in label.split("+"))
@@ -28,7 +25,6 @@ def _label_es(label: str) -> str:
     mapped = _LABEL_MAP.get(key, key)
     
     return mapped[:1].upper() + mapped[1:]
-
 
 class ResultBuilder:
     def build(self, title: str, result: PredictionResult, accent: str, footer: ft.Control,
