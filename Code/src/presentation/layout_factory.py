@@ -38,3 +38,6 @@ class LayoutFactory:
 
     def reset_live_preview(self) -> None:
         self._preview.reset_live()
+
+    def update_flet_camera(self, cam) -> None:
+        self._preview.set_flet_camera(cam)

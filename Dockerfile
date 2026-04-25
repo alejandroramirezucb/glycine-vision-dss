@@ -9,7 +9,7 @@ RUN --mount=type=cache,target=/root/.cache/pip \
     pip install --timeout=300 --no-deps tf_keras
 
 RUN --mount=type=cache,target=/root/.cache/pip \
-    pip install --timeout=300 "flet>=0.27.0" "Pillow>=9.0.0"
+    pip install --timeout=300 "flet==0.84.0" "flet-camera==0.84.0" "Pillow>=9.0.0"
 
 COPY Code/tratamientos.json .
 COPY Models/ Models/

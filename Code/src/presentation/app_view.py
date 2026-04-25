@@ -1,3 +1,4 @@
+import base64
 from pathlib import Path
 from tempfile import gettempdir
 import asyncio
@@ -12,6 +13,7 @@ from presentation.ui_messages import SnackbarService
 from presentation.view_state import AppState
 
 _MOBILE = {ft.PagePlatform.ANDROID, ft.PagePlatform.IOS}
+_CAPTURE_PATH = Path(gettempdir()) / "glycine_web_capture.jpg"
 
 class SoyDiagnosisApp:
     def __init__(self, page: ft.Page, health_use_case: PredictSoyHealthUseCase,
@@ -28,6 +30,8 @@ class SoyDiagnosisApp:
         self._controller.bind(self._render)
         self._preview_task_running = False
         self._is_mobile = False
+        self._flet_camera = None
+        self._messages = SnackbarService(page)
         self._file_picker = ft.FilePicker()
         self._page.services.append(self._file_picker)
 
@@ -55,9 +59,14 @@ class SoyDiagnosisApp:
             w.width = w.min_width = w.max_width = 412
             w.height = w.min_height = w.max_height = 780
             w.resizable = False
+        self._page.on_resize = lambda _e: self._render()
         self._render()
 
     def _render(self) -> None:
+        # Clear web camera if no longer armed
+        if not self._state.camera_armed and self._flet_camera is not None:
+            self._flet_camera = None
+            self._layout.update_flet_camera(None)
         self._page.clean()
         try:
             screen = self._build_screen()
@@ -66,11 +75,15 @@ class SoyDiagnosisApp:
                 f"Error al renderizar pantalla: {exc}",
                 size=13, color=ft.Colors.RED_700, selectable=True,
             )
+        # shell_w: actual phone width on mobile, capped at PHONE_WIDTH on desktop/laptop
+        pw = self._page.width if self._page.width and self._page.width > 0 else theme.PHONE_WIDTH
+        shell_w = int(min(pw, theme.PHONE_WIDTH))
         phone_shell = ft.Container(
-            width=theme.PHONE_WIDTH,
+            width=shell_w,
             padding=10,
             content=ft.Column(
                 spacing=12,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
                     self._layout.build_header(
                         self._state.can_go_back,
@@ -85,22 +98,74 @@ class SoyDiagnosisApp:
         self._page.update()
 
     def _build_screen(self) -> ft.Control:
+        on_detect = (
+            self._capture_and_detect
+            if self._state.camera_armed and self._flet_camera is not None
+            else self._controller.detect_health
+        )
         return self._screens.build_by_state(
             self._state,
             self._pick_image,
             self._open_camera,
-            self._controller.detect_health,
+            on_detect,
             self._controller.detect_disease,
             self._treatment_repo,
         )
 
     async def _open_camera(self, e: ft.ControlEvent) -> None:
         if self._is_mobile or self._controller.camera is None:
-            await self._pick_camera_image()
+            await self._start_web_camera()
             return
         self._controller.capture(e)
         if self._state.camera_armed:
             self._start_preview_task()
+
+    async def _start_web_camera(self) -> None:
+        try:
+            from flet_camera import Camera as _FletCamera
+            cam = _FletCamera()
+        except Exception:
+            # flet-camera not installed — fall back to file picker
+            await self._pick_camera_image()
+            return
+        self._flet_camera = cam
+        self._layout.update_flet_camera(cam)
+        self._state.camera_armed = True
+        self._state.current_image = None
+        self._state.clear_results()
+        self._render()
+        await asyncio.sleep(0.5)  # let browser attach widget before initialize
+        try:
+            cameras = await cam.get_available_cameras()
+            if cameras:
+                await cam.initialize(cameras[0], "high")  # cameras[0] = rear
+            else:
+                raise RuntimeError("No se encontró cámara")
+        except Exception as ex:
+            self._state.camera_armed = False
+            self._flet_camera = None
+            self._layout.update_flet_camera(None)
+            self._messages.show(f"Cámara no disponible: {ex}. Usando selector de archivos.", error=True)
+            self._render()
+            await self._pick_camera_image()
+
+    async def _capture_and_detect(self, e) -> None:
+        if self._flet_camera is None:
+            return
+        try:
+            pic = await self._flet_camera.take_picture()
+            if isinstance(pic, (bytes, bytearray)):
+                _CAPTURE_PATH.write_bytes(pic)
+            else:  # base64 string
+                _CAPTURE_PATH.write_bytes(base64.b64decode(pic))
+        except Exception as ex:
+            self._messages.show(f"Error al capturar: {ex}", error=True)
+            return
+        self._state.camera_armed = False
+        self._flet_camera = None
+        self._layout.update_flet_camera(None)
+        self._state.current_image = _CAPTURE_PATH
+        self._controller.detect_health(e)
 
     def _start_preview_task(self) -> None:
         if self._preview_task_running:

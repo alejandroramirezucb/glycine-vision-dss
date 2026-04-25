@@ -22,30 +22,30 @@ class HomeBuilder:
         detect_disabled = not state.current_image and not state.camera_armed
         
         return ft.Container(
-            width=theme.CARD_WIDTH, border_radius=theme.RADIUS_CARD, padding=18,
+            border_radius=theme.RADIUS_CARD, padding=18,
             bgcolor=theme.BG_CARD, shadow=theme.card_shadow(),
             content=ft.Column(
                 spacing=14,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
                     ft.Text("Selecciona o captura una imagen de soya", size=15,
                             weight=ft.FontWeight.W_600, color=theme.TEXT_PRIMARY,
                             text_align=ft.TextAlign.CENTER),
                     status,
-                    
                     self._preview.build(state.current_image, is_live=state.camera_armed),
-                    
-                    ft.Column(spacing=9, controls=[
+                    ft.Column(spacing=9,
+                              horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
+                              controls=[
                         ft.ElevatedButton("Subir imagen", icon=ft.Icons.UPLOAD_FILE,
-                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          height=theme.BTN_HEIGHT,
                                           on_click=on_pick, bgcolor=theme.ACCENT,
                                           color=ft.Colors.WHITE, style=theme.btn_style()),
                         ft.ElevatedButton("Abrir cámara", icon=ft.Icons.CAMERA_ALT,
-                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          height=theme.BTN_HEIGHT,
                                           on_click=on_camera, bgcolor=theme.ACCENT_LIGHT,
                                           color=ft.Colors.WHITE, style=theme.btn_style()),
                         ft.ElevatedButton("Detectar salud", icon=ft.Icons.HEALTH_AND_SAFETY,
-                                          width=theme.BTN_WIDTH, height=theme.BTN_HEIGHT,
+                                          height=theme.BTN_HEIGHT,
                                           disabled=detect_disabled, on_click=on_detect,
                                           bgcolor=theme.ACCENT_DARK,
                                           color=ft.Colors.WHITE, style=theme.btn_style()),

@@ -31,14 +31,13 @@ class ResultBuilder:
     def build(self, title: str, result: PredictionResult, accent: str, footer: ft.Control,
               image_path: Path | None = None) -> ft.Control:
         rows = [
-            ft.Container(width=330, content=ft.Column(spacing=4, controls=[
+            ft.Column(spacing=4, controls=[
                 ft.Row(alignment=ft.MainAxisAlignment.SPACE_BETWEEN, controls=[
                     ft.Text(_label_es(x.label), size=14, weight=ft.FontWeight.W_600, color=theme.TEXT_PRIMARY),
                     ft.Text(f"{x.confidence * 100:.1f}%", size=14, weight=ft.FontWeight.W_700, color=accent),
                 ]),
                 ft.ProgressBar(value=max(0.0, min(1.0, x.confidence)), color=accent),
-            ]))
-            
+            ])
             for x in result.predictions
         ]
         
@@ -68,14 +67,13 @@ class ResultBuilder:
                 pass
         
         return ft.Container(
-            width=theme.CARD_WIDTH,
             border_radius=theme.RADIUS_CARD,
             bgcolor=theme.BG_CARD,
             padding=18,
             shadow=theme.card_shadow(),
             content=ft.Column(
                 spacing=12,
-                horizontal_alignment=ft.CrossAxisAlignment.CENTER,
+                horizontal_alignment=ft.CrossAxisAlignment.STRETCH,
                 controls=[
                     ft.Text(title, size=18, weight=ft.FontWeight.BOLD, color=accent,
                             text_align=ft.TextAlign.CENTER),
