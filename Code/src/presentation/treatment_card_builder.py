@@ -20,6 +20,7 @@ def _urgency_chip(urgencia: str) -> ft.Control:
 
 def _fuente_link(f: Fuente) -> ft.Control:
     return ft.Text(
+        text_align=ft.TextAlign.CENTER,
         spans=[ft.TextSpan(
             f"• {f.texto}",
             url=f.url,
