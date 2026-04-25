@@ -8,11 +8,7 @@ from presentation import theme
 class PreviewBuilder:
     def __init__(self) -> None:
         self._live_image: ft.Image | None = None
-        self._flet_camera = None
         self._placeholder_src = "data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///ywAAAAAAQABAAACAUwAOw=="
-
-    def set_flet_camera(self, cam) -> None:
-        self._flet_camera = cam
 
     def _get_or_create_live(self, src_hint: str | None = None) -> ft.Image:
         if self._live_image is None:
@@ -36,13 +32,6 @@ class PreviewBuilder:
         self._live_image = None
 
     def build(self, path: Path | None, is_live: bool = False) -> ft.Control:
-        if is_live and self._flet_camera is not None:
-            return ft.Container(
-                height=theme.IMG_HEIGHT,
-                border_radius=theme.RADIUS_IMG,
-                clip_behavior=ft.ClipBehavior.HARD_EDGE,
-                content=self._flet_camera,
-            )
         if is_live:
             return ft.Container(
                 border_radius=theme.RADIUS_IMG,
