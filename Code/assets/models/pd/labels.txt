@@ -1,0 +1,5 @@
+0 bacterial_diseases
+1 fungal_diseases
+2 rust_disease
+3 insect_pests
+4 viral_diseases

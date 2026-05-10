@@ -1,0 +1,3 @@
+analyzer:
+  errors:
+    file_names: ignore

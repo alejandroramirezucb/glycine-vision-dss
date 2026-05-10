@@ -38,112 +38,73 @@ Clasificacion de tipo de enfermedad (solo si Modelo 1 retorna `diseased`):
 - El modelo 2 devuelve un vector de probabilidades para las 5 clases.
 - El sistema ordena las clases por porcentaje y toma la de mayor valor (`top_prediction`).
 - El tratamiento mostrado en la interfaz se obtiene segun esa clase dominante.
-- La informacion de tratamiento (quimico, cultural, biologico y preventivo) se carga desde `Code/tratamientos.json`.
-
-Ejemplo de decision:
-
-- Si `fungal_diseases = 0.62` es la probabilidad mas alta, se selecciona la categoria **Fungicas** y se despliega su tratamiento asociado.
+- La informacion de tratamiento (quimico, cultural, biologico y preventivo) se carga desde `Code/assets/data/tratamientos.json`.
 
 ## Prerrequisitos
 
-- Python 3.10+
-- Dependencias en `Code/requirements.txt`
+- Python 3.10+ (para servidor de inferencia web)
+- Flutter SDK 3.x
+- Java 17+ (para build Android)
+- Dependencias Flutter: `Code/pubspec.yaml`
 - Modelos en `Models/glycine-vision-hs` y `Models/glycine-vision-pd`
 
-## Preparacion del entorno
+## Estructura del proyecto
+
+```
+Code/
+  lib/
+    domain/        ← Entities, Treatment, Protocols
+    application/   ← HealthCase, DiseaseCase
+    infrastructure/← Classifier, TreatmentRepo
+    presentation/  ← screens, widgets, state, Theme
+  android/
+  assets/
+Models/
+Scripts/
+```
+
+## Preparacion de modelos
+
+Descarga modelos de Teachable Machine (.h5) a `Models/glycine-vision-hs` y `Models/glycine-vision-pd`, luego:
 
 ```bash
-python -m pip install -r Code/requirements.txt
+python Scripts/convert_models.py
 ```
 
-## Scripts
+## Ejecucion
 
-- `Code/scripts/config.py`
-  - Define rutas base de dataset, modelos y resultados.
-  - Configura clases, limites de muestreo y parametros globales.
-  - Valida que existan rutas antes de ejecutar el flujo.
-
-- `Code/scripts/prepare_dataset.py`
-  - Carga imagenes desde `D:\Datasets\Dataset`.
-  - Valida calidad minima (resolucion y canales RGB).
-  - Elimina duplicados por hash MD5.
-  - Crea y copia subconjuntos para `clasificacion_binaria` y `clasificacion_patogeno`.
-
-  ```bash
-  python Code/scripts/prepare_dataset.py
-  ```
-
-- `Code/scripts/evaluate_models.py`
-  - Evalua los modelos con el set de test.
-  - Calcula accuracy, precision, recall y F1 por clase.
-  - Exporta resultados a Excel en `D:\Results`.
-
-  ```bash
-  python Code/scripts/evaluate_models.py
-  ```
-
-- `Code/scripts/pipeline.py`
-  - Valida configuracion.
-  - Ejecuta preparacion de dataset.
-  - Ejecuta evaluacion de modelos.
-
-  ```bash
-  python Code/scripts/pipeline.py
-  ```
-
-### Ejecutar
+### Web
 
 ```bash
-python Code/src/main.py
+cd Code && flutter pub get
+flutter run -d chrome
 ```
 
-## Docker (acceso web desde navegador o Android)
+### Windows
 
-### Construir la imagen
-
-```powershell
-docker build -t glycine-vision .
+```bash
+cd Code
+flutter pub get
+flutter run -d windows
 ```
 
-### Levantar el contenedor
+### Android APK
 
-```powershell
-docker run -d --rm -p 8550:8550 --name glycine glycine-vision
+```bash
+set JAVA_HOME=C:\java17
+cd Code
+flutter build apk --release
+# → build/app/outputs/flutter-apk/app-release.apk
+adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Luego abrir en el navegador: `http://localhost:8550`
+Requiere Java 17.
 
-Desde el celular (misma red): `http://<IP-de-tu-PC>:8550`
+### iOS (Mac)
 
-Para obtener la IP de tu PC:
-
-```powershell
-(Get-NetIPAddress -AddressFamily IPv4 -InterfaceAlias "Wi-Fi").IPAddress
+```bash
+cd Code && flutter build ipa --release
+# → build/ios/ipa/
 ```
 
-### Detener el contenedor
-
-```powershell
-docker stop glycine
-```
-
-### Reconstruir y relevantar
-
-```powershell
-docker stop glycine 2>$null; docker build -t glycine-vision . && docker run -d --rm -p 8550:8550 --name glycine glycine-vision
-```
-
-### Ver logs del contenedor
-
-```powershell
-docker logs -f glycine
-```
-
----
-
-## Procedimiento de uso
-
-1. Cargar imagen o abrir camara.
-2. Ejecutar clasificacion de salud.
-3. Si el resultado es `diseased`, ejecutar clasificacion de enfermedad.
-4. Revisar probabilidades de mayor a menor.
+Requerimientos: Xcode 15+, CocoaPods.
