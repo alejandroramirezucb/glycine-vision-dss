@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../application/DiseaseCase.dart';
+import '../LabelNames.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';
 import '../widgets/ImagePreview.dart';
@@ -32,7 +33,7 @@ class HealthResult extends StatelessWidget {
     return Consumer<AppState>(
       builder: (context, state, _) {
         final result = state.healthResult;
-        if (result == null) return const Center(child: Text('No result'));
+        if (result == null) return const Center(child: Text('Sin resultado'));
         final isHealthy =
             result.topPrediction.label.toLowerCase().contains('healthy');
 
@@ -41,7 +42,7 @@ class HealthResult extends StatelessWidget {
             children: [
               const SizedBox(height: 12),
               const Text(
-                'Soya: sana o enferma',
+                'Estado de la planta',
                 style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -50,19 +51,12 @@ class HealthResult extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               ImagePreview(imageFile: state.currentImage),
-              const SizedBox(height: 12),
-              Text(
-                'Mayor probabilidad: ${result.topPrediction.label} (${(result.topPrediction.confidence * 100).toStringAsFixed(1)}%)',
-                textAlign: TextAlign.center,
-                style: const TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  color: AppTheme.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
+              const SizedBox(height: 16),
+              _buildTopResult(result.topPrediction.label,
+                  result.topPrediction.confidence, isHealthy),
+              const SizedBox(height: 16),
               PredictionList(predictions: result.predictions),
-              const SizedBox(height: 12),
+              const SizedBox(height: 4),
               isHealthy
                   ? _buildHealthySummary()
                   : _buildDiseasedActions(context, state),
@@ -74,14 +68,43 @@ class HealthResult extends StatelessWidget {
     );
   }
 
+  Widget _buildTopResult(String label, double confidence, bool isHealthy) =>
+      Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: (isHealthy ? Colors.green : AppTheme.urgentHigh)
+              .withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isHealthy ? Icons.check_circle : Icons.warning_amber_rounded,
+              color: isHealthy ? Colors.green : AppTheme.urgentHigh,
+              size: 20,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              '${labelToEs(label)}  •  ${(confidence * 100).toStringAsFixed(1)}%',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: isHealthy ? Colors.green : AppTheme.urgentHigh,
+              ),
+            ),
+          ],
+        ),
+      );
+
   Widget _buildHealthySummary() => Container(
         padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
-          color: Colors.green.withValues(alpha: 0.1),
+          color: Colors.green.withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(8),
         ),
         child: const Text(
-          'La soya fue detectada como SANA. El flujo termina aquí.',
+          'La planta fue detectada como sana.',
           textAlign: TextAlign.center,
           style: TextStyle(
             fontSize: 12,
@@ -93,11 +116,18 @@ class HealthResult extends StatelessWidget {
 
   Widget _buildDiseasedActions(BuildContext context, AppState state) =>
       ElevatedButton.icon(
-        onPressed: () => _detectDisease(context),
-        icon: const Icon(Icons.science),
+        onPressed: state.isLoading ? null : () => _detectDisease(context),
+        icon: state.isLoading
+            ? const SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                    strokeWidth: 2, color: Colors.white),
+              )
+            : const Icon(Icons.science),
         label: state.isLoading
             ? const Text('Analizando...')
-            : const Text('Detectar enfermedad'),
+            : const Text('Identificar enfermedad'),
         style: AppTheme.elevatedButtonStyle(AppTheme.accent),
       );
 }

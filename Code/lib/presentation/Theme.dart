@@ -63,11 +63,14 @@ class AppTheme {
           surfaceTintColor: Colors.transparent,
         ),
         scrollbarTheme: ScrollbarThemeData(
-          thumbVisibility: WidgetStateProperty.all(true),
-          thickness: WidgetStateProperty.all(8),
+          thumbVisibility: WidgetStateProperty.all(false),
+          thickness: WidgetStateProperty.all(5),
           radius: const Radius.circular(8),
-          thumbColor: WidgetStateProperty.all(accent.withValues(alpha: 0.38)),
-          trackColor: WidgetStateProperty.all(accent.withValues(alpha: 0.08)),
+          crossAxisMargin: 4,
+          thumbColor: WidgetStateProperty.all(
+              Colors.grey.withValues(alpha: 0.35)),
+          trackColor: WidgetStateProperty.all(Colors.transparent),
+          trackBorderColor: WidgetStateProperty.all(Colors.transparent),
         ),
       );
 }

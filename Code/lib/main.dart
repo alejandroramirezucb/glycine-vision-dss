@@ -3,7 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'application/DiseaseCase.dart';
 import 'application/HealthCase.dart';
-import 'infrastructure/Classifier.dart';
+import 'infrastructure/Classifier.dart'
+    if (dart.library.js_interop) 'infrastructure/ClassifierStub.dart';
 import 'infrastructure/HttpClassifier.dart';
 import 'domain/Protocols.dart';
 import 'infrastructure/TreatmentRepo.dart';
@@ -29,10 +30,14 @@ void main() async {
       diseaseClassifier =
           const HttpClassifier('$serverBase/api/classify/disease');
     } else {
-      healthClassifier =
-          await TfliteClassifier.load('assets/models/hs/labels.txt');
-      diseaseClassifier =
-          await TfliteClassifier.load('assets/models/pd/labels.txt');
+      healthClassifier = await TfliteClassifier.load(
+        'assets/models/hs/model.tflite',
+        'assets/models/hs/labels.txt',
+      );
+      diseaseClassifier = await TfliteClassifier.load(
+        'assets/models/pd/model_unquant.tflite',
+        'assets/models/pd/labels.txt',
+      );
     }
 
     final treatmentRepo = await JsonTreatmentRepository.load();

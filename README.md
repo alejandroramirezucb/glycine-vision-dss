@@ -42,11 +42,12 @@ Clasificacion de tipo de enfermedad (solo si Modelo 1 retorna `diseased`):
 
 ## Prerrequisitos
 
-- Python 3.10+ (para servidor de inferencia web)
 - Flutter SDK 3.x
+- Python 3.10+ (solo para web — servidor de inferencia)
 - Java 17+ (para build Android)
-- Dependencias Flutter: `Code/pubspec.yaml`
-- Modelos en `Models/glycine-vision-hs` y `Models/glycine-vision-pd`
+- Windows: **Developer Mode activado** (requerido por plugins nativos como `tflite_flutter`)
+  → `start ms-settings:developers`
+- Modelos TFLite en `Models/glycine-vision-hs/model.tflite` y `Models/glycine-vision-pd/model_unquant.tflite`
 
 ## Estructura del proyecto
 
@@ -65,7 +66,7 @@ Scripts/
 
 ## Preparacion de modelos
 
-Descarga modelos de Teachable Machine (.h5) a `Models/glycine-vision-hs` y `Models/glycine-vision-pd`, luego:
+Coloca los `.tflite` en `Models/glycine-vision-hs/model.tflite` y `Models/glycine-vision-pd/model_unquant.tflite`, luego copia a assets:
 
 ```bash
 python Scripts/convert_models.py
@@ -73,32 +74,33 @@ python Scripts/convert_models.py
 
 ## Ejecucion
 
-### Web
+### Web (usa servidor Python para inferencia)
 
+Terminal 1:
 ```bash
-cd Code && flutter pub get
+pip install -r Scripts/requirements.txt
+python Scripts/inference_server.py
+```
+
+Terminal 2:
+```bash
+cd Code
+flutter pub get
 flutter run -d chrome
 ```
 
-### Windows
+### Android (inferencia local con TFLite)
 
 ```bash
 cd Code
 flutter pub get
-flutter run -d windows
-```
-
-### Android APK
-
-```bash
-set JAVA_HOME=C:\java17
-cd Code
+flutter run -d android
+# o para release:
 flutter build apk --release
-# → build/app/outputs/flutter-apk/app-release.apk
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 
-Requiere Java 17.
+Requiere Java 17 (`set JAVA_HOME=C:\java17`).
 
 ### iOS (Mac)
 

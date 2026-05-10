@@ -1,39 +1,44 @@
 import shutil
-from pathlib import Path
 import sys
 import io
+from pathlib import Path
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 MODELS = [
-    ("Models/glycine-vision-hs", "Code/assets/models/hs"),
-    ("Models/glycine-vision-pd", "Code/assets/models/pd"),
+    {
+        "src": "Models/glycine-vision-hs",
+        "dst": "Code/assets/models/hs",
+        "tflite": "model.tflite",
+    },
+    {
+        "src": "Models/glycine-vision-pd",
+        "dst": "Code/assets/models/pd",
+        "tflite": "model_unquant.tflite",
+    },
 ]
 
-DATA = []
+def copy_models():
+    for m in MODELS:
+        src = Path(m["src"])
+        dst = Path(m["dst"])
+        dst.mkdir(parents=True, exist_ok=True)
 
-def copy_keras_models():
-    for src_dir, dst_dir in MODELS:
-        print(f"Copying {src_dir} -> {dst_dir}")
-        src = Path(src_dir)
-        dst = Path(dst_dir)
-        dst.parent.mkdir(parents=True, exist_ok=True)
-        if dst.exists():
-            shutil.rmtree(dst)
-        shutil.copytree(src, dst)
-        print(f"  OK {dst_dir}")
+        tflite_src = src / m["tflite"]
+        tflite_dst = dst / m["tflite"]
+        if tflite_src.exists():
+            shutil.copy2(tflite_src, tflite_dst)
+            print(f"  OK {tflite_dst}")
+        else:
+            print(f"  MISSING {tflite_src} — convert H5 first")
 
-def copy_data():
-    for src, dst in DATA:
-        print(f"Copying {src} -> {dst}")
-        Path(dst).parent.mkdir(parents=True, exist_ok=True)
-        Path(dst).write_text(Path(src).read_text())
-        print(f"  OK {dst}")
+        labels_src = src / "labels.txt"
+        labels_dst = dst / "labels.txt"
+        if labels_src.exists():
+            shutil.copy2(labels_src, labels_dst)
+            print(f"  OK {labels_dst}")
 
 if __name__ == "__main__":
-    print("Copying Keras H5 models to App assets...")
-    copy_keras_models()
-    if DATA:
-        print("\nCopying treatment data...")
-        copy_data()
-    print("\nDone! Models ready. Run inference_server.py for web, APK/IPA for mobile.")
+    print("Copying TFLite models to Flutter assets...")
+    copy_models()
+    print("\nDone. Run inference_server.py for web, flutter build for mobile.")
