@@ -103,7 +103,8 @@ class MainScreen extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppTheme.bgPage,
-          body: Column(
+          body: SafeArea(
+            child: Column(
             children: [
               Center(
                 child: Container(
@@ -127,6 +128,7 @@ class MainScreen extends StatelessWidget {
                 ),
               ),
             ],
+          ),
           ),
         );
       },
