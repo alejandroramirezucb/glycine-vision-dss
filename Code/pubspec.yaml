@@ -1,4 +1,4 @@
-name: glycine_vision
+name: glycine_vision_dss
 description: Soybean disease diagnosis system with local ML inference.
 version: 1.0.0+1
 
@@ -22,6 +22,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - logo.png
     - assets/models/hs/
     - assets/models/pd/
     - assets/data/

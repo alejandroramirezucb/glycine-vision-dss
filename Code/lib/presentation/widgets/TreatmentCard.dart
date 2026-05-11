@@ -80,17 +80,20 @@ class TreatmentCard extends StatelessWidget {
 
   Widget _buildFuenteLink(Fuente fuente) => Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
-        child: InkWell(
-          onTap: () => launchUrl(
-            Uri.parse(fuente.url),
-            mode: LaunchMode.externalApplication,
-          ),
-          child: Text(
-            '• ${fuente.texto}',
-            style: const TextStyle(
-              fontSize: 10,
-              color: AppTheme.accent,
-              decoration: TextDecoration.underline,
+        child: Center(
+          child: InkWell(
+            onTap: () => launchUrl(
+              Uri.parse(fuente.url),
+              mode: LaunchMode.externalApplication,
+            ),
+            child: Text(
+              '• ${fuente.texto}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 10,
+                color: AppTheme.accent,
+                decoration: TextDecoration.underline,
+              ),
             ),
           ),
         ),

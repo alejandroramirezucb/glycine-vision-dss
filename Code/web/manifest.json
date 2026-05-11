@@ -1,6 +1,6 @@
 {
-    "name": "glycine_vision",
-    "short_name": "glycine_vision",
+    "name": "Glycine Vision DSS",
+    "short_name": "Glycine Vision",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",

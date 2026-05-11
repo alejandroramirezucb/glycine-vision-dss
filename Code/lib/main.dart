@@ -103,24 +103,30 @@ class MainScreen extends StatelessWidget {
 
         return Scaffold(
           backgroundColor: AppTheme.bgPage,
-          body: Center(
-            child: SingleChildScrollView(
-              child: Container(
-                width: width,
-                padding: const EdgeInsets.all(10),
-                child: Column(
-                  children: [
-                    AppHeader(
-                      canGoBack: state.canGoBack,
-                      onHome: state.goHome,
-                      onBack: state.pop,
-                    ),
-                    const SizedBox(height: 12),
-                    _buildScreen(state.currentScreen),
-                  ],
+          body: Column(
+            children: [
+              Center(
+                child: Container(
+                  width: width,
+                  child: AppHeader(
+                    canGoBack: state.canGoBack,
+                    onHome: state.goHome,
+                    onBack: state.pop,
+                  ),
                 ),
               ),
-            ),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Center(
+                    child: Container(
+                      width: width,
+                      padding: const EdgeInsets.all(10),
+                      child: _buildScreen(state.currentScreen),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         );
       },
