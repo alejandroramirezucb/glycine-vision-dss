@@ -33,7 +33,11 @@ migrate_working_dir/
 /android/app/debug
 /android/app/profile
 /android/app/release
+android/.gradle/
+android/app/build/
 app.*.symbols
 app.*.map.json
 **/doc/api/
 **/ios/Flutter/.last_build_id
+Code/build/
+**/build/

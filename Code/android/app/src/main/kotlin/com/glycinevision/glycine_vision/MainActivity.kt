@@ -1,4 +1,4 @@
-package com.example.glycine_vision
+package com.glycinevision.glycine_vision
 
 import io.flutter.embedding.android.FlutterActivity
 

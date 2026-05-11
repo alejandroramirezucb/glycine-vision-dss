@@ -74,28 +74,35 @@ python Scripts/convert_models.py
 
 ## Ejecucion
 
-### Web (usa servidor Python para inferencia)
+### Web
 
 Terminal 1:
+
 ```bash
 pip install -r Scripts/requirements.txt
 python Scripts/inference_server.py
 ```
 
 Terminal 2:
+
 ```bash
 cd Code
 flutter pub get
 flutter run -d chrome
 ```
 
-### Android (inferencia local con TFLite)
+### Android
 
 ```bash
+# ver servicios
+flutter devices
+
+# correr la app
 cd Code
 flutter pub get
-flutter run -d android
-# o para release:
+flutter run -d <device ID>
+
+# instalar sin cable
 flutter build apk --release
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
@@ -106,7 +113,6 @@ Requiere Java 17 (`set JAVA_HOME=C:\java17`).
 
 ```bash
 cd Code && flutter build ipa --release
-# → build/ios/ipa/
 ```
 
 Requerimientos: Xcode 15+, CocoaPods.
