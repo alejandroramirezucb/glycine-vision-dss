@@ -779,21 +779,39 @@ infer = GlycineVisionInferencia(
     ruta_clases_json="./outputs/class_indices_model2_pathogen.json",
 )
 """),
-    code("""IMG = "./test_image.jpg"
+    code("""from pathlib import Path
+
+# Buscar una imagen del dataset de test
+SPLIT = Path("./splits/test/clasificacion_patogeno")
+test_imgs = list(SPLIT.rglob("*.jpg")) + list(SPLIT.rglob("*.png"))
+
+if not test_imgs:
+    print("No hay imagenes de test. Crea una imagen dummy para prueba:")
+    import numpy as np
+    dummy = np.random.randint(0, 255, (224, 224, 3), dtype=np.uint8)
+    IMG = "./dummy_test.jpg"
+    cv2.imwrite(IMG, dummy)
+else:
+    IMG = str(test_imgs[0])
+    print(f"Usando imagen de test: {IMG}")
+
 LAT, LON = -17.78, -63.18
 
 res = infer.analizar(IMG, lat=LAT, lon=LON)
 
-print("Zonas detectadas:", len(res["zonas"]))
-print("Overall:", res["overall"])
-print("Clima:", res["clima"])
-print("Riesgo por clase:", res["riesgo_por_clase"])
-print("Onset:", res["onset"])
+print("\\n=== RESULTADOS ===")
+print(f"Zonas detectadas: {len(res['zonas'])}")
+print(f"Overall: {res['overall']}")
+print(f"Clima: {res['clima']}")
+print(f"Riesgo por clase: {res.get('riesgo_por_clase', 'N/A')}")
+print(f"Onset: {res.get('onset', 'N/A')}")
 
 plt.figure(figsize=(12, 8))
 plt.imshow(cv2.cvtColor(res["imagen_anotada"], cv2.COLOR_BGR2RGB))
 plt.axis("off")
-plt.title(f"Diagnostico: {res['overall']['estado']} - dominante: {res['overall']['clase_dominante']}")
+estado = res["overall"].get("estado", "desconocido")
+dominante = res["overall"].get("clase_dominante", "none")
+plt.title(f"Diagnostico: {estado} - {dominante}")
 plt.tight_layout()
 plt.show()
 """),
