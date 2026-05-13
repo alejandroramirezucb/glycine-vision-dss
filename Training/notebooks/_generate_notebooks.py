@@ -699,6 +699,8 @@ m2 = reconstruir_float32(m2_orig, num_clases=5, model_name="model2_pathogen")
     print(f"  Convirtiendo {path.name}...")
     tflite_model = converter.convert()
 
+    # Asegurar que el directorio existe
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_bytes(tflite_model)
     size_mb = Path(path).stat().st_size / (1024 * 1024)
     status = ""
