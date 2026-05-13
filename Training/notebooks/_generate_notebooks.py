@@ -651,14 +651,26 @@ import numpy as np
 from pathlib import Path
 
 OUT = Path("./outputs")
+
+# TFLite NO soporta mixed_float16 — cambiar a float32 para export
+original_policy = tf.keras.mixed_precision.global_policy().name
+tf.keras.mixed_precision.set_global_policy("float32")
+
 m1 = tf.keras.models.load_model(OUT / "model1_binary.keras")
 m2 = tf.keras.models.load_model(OUT / "model2_pathogen.keras")
-print("Modelos cargados OK")
+print("Modelos cargados OK (float32 para export)")
 """),
     code("""def export_tflite(model, path, target_mb=None):
     conv = tf.lite.TFLiteConverter.from_keras_model(model)
     conv.optimizations = [tf.lite.Optimize.DEFAULT]
-    tflite = conv.convert()
+    try:
+        tflite = conv.convert()
+    except Exception as e:
+        print(f"  Error en conversión {path}: {e}")
+        print("  Reintentando sin optimizaciones...")
+        conv = tf.lite.TFLiteConverter.from_keras_model(model)
+        tflite = conv.convert()
+
     Path(path).write_bytes(tflite)
     size_mb = Path(path).stat().st_size / (1024 * 1024)
     print(f"  {path} - {size_mb:.2f} MB", end="")
@@ -670,6 +682,9 @@ print("Modelos cargados OK")
 
 export_tflite(m1, OUT / "model1.tflite", target_mb=5)
 export_tflite(m2, OUT / "model2.tflite", target_mb=10)
+
+# Restaurar política original (no necesario aquí pero buena practica)
+tf.keras.mixed_precision.set_global_policy(original_policy)
 """),
     code("""def labels_from_indices(path_in, path_out):
     import json
