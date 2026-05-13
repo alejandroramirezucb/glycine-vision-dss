@@ -388,17 +388,18 @@ h1 = model.fit(
     epochs=EPOCHS_P1, callbacks=cbs_p1, verbose=1{class_weights_fit_arg},
 )
 """),
-        code(f"""# FASE 2: fine-tuning — descongelar ultimas 3 bloques de EfficientNetB0
-# get_layer('efficientnetb0') accede al sub-modelo base correctamente
-base_model = model.get_layer("efficientnetb0")
-base_model.trainable = True
+        code(f"""# FASE 2: fine-tuning — descongelar ultimas 30 layers de EfficientNetB0
+# EfficientNetB0 está aplanado directamente en model.layers (sin sub-modelo)
+# Descongelar todos, luego congelar selectivamente
+for layer in model.layers:
+    layer.trainable = True
 
 # Congelar todo excepto los ultimos 30 layers (bloques 5-6 + top)
-for layer in base_model.layers[:-30]:
+for layer in model.layers[:-30]:
     layer.trainable = False
 
 # BN congelado en fine-tuning evita inestabilidad
-for layer in base_model.layers:
+for layer in model.layers:
     if isinstance(layer, tf.keras.layers.BatchNormalization):
         layer.trainable = False
 
