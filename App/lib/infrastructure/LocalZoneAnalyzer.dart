@@ -84,6 +84,7 @@ class LocalZoneAnalyzer implements ZoneAnalyzer {
     return ZoneAnalysis(
       zones: zones,
       totalPatches: totalPatches,
+      patchSize: patchSize,
       overallHealthyPct: double.parse((100 - diseasedPct).toStringAsFixed(1)),
       overallDiseasedPct: double.parse(diseasedPct.toStringAsFixed(1)),
       dominantPathogen: dominant,

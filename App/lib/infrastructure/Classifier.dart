@@ -63,20 +63,29 @@ class TfliteClassifier implements ImageClassifier {
     final resized =
         img.copyResize(image, width: _inputSize, height: _inputSize);
 
+    final outTensor = _interpreter.getOutputTensor(0);
+    final outSize = outTensor.shape.reduce((a, b) => a * b);
     final isQuantized =
         _interpreter.getInputTensor(0).type == TensorType.uint8;
 
     if (isQuantized) {
       final input = [_toUint8Grid(resized)];
-      final output = [List<int>.filled(_labels.length, 0)];
+      final output = [List<int>.filled(outSize, 0)];
       _interpreter.run(input, output);
-      return output[0].map((v) => v / 255.0).toList();
+      return _expandBinary(output[0].map((v) => v / 255.0).toList());
     } else {
       final input = [_toFloat32Grid(resized)];
-      final output = [List<double>.filled(_labels.length, 0.0)];
+      final output = [List<double>.filled(outSize, 0.0)];
       _interpreter.run(input, output);
-      return output[0];
+      return _expandBinary(output[0]);
     }
+  }
+
+  List<double> _expandBinary(List<double> scores) {
+    if (scores.length == 1 && _labels.length == 2) {
+      return [1.0 - scores[0], scores[0]];
+    }
+    return scores;
   }
 
   List<List<List<double>>> _toFloat32Grid(img.Image image) =>

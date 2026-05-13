@@ -1,14 +1,12 @@
 import 'package:image_picker/image_picker.dart';
 import '../domain/Protocols.dart';
 import '../domain/ZoneAnalysis.dart';
-import 'Classifier.dart';
-import 'SeverityCalculator.dart';
 
 class LocalZoneAnalyzer implements ZoneAnalyzer {
   LocalZoneAnalyzer({
-    required TfliteClassifier healthModel,
-    required TfliteClassifier diseaseModel,
-    SeverityCalculator severity = const SeverityCalculator(),
+    required Object healthModel,
+    required Object diseaseModel,
+    Object? severity,
     int patchSize = 150,
     int stride = 75,
     double diseaseThreshold = 0.5,

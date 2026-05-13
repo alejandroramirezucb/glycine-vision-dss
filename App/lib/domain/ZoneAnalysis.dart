@@ -3,6 +3,7 @@ import 'ZoneDetection.dart';
 class ZoneAnalysis {
   final List<ZoneDetection> zones;
   final int totalPatches;
+  final int patchSize;
   final double overallHealthyPct;
   final double overallDiseasedPct;
   final String? dominantPathogen;
@@ -16,6 +17,7 @@ class ZoneAnalysis {
   const ZoneAnalysis({
     required this.zones,
     required this.totalPatches,
+    this.patchSize = 150,
     required this.overallHealthyPct,
     required this.overallDiseasedPct,
     required this.dominantPathogen,
@@ -39,6 +41,7 @@ class ZoneAnalysis {
     return ZoneAnalysis(
       zones: zonesRaw.map(ZoneDetection.fromJson).toList(),
       totalPatches: (overall['total_patches'] as num?)?.toInt() ?? 0,
+      patchSize: (overall['patch_size'] as num?)?.toInt() ?? 150,
       overallHealthyPct: (overall['porcentaje_sano'] as num?)?.toDouble() ?? 100.0,
       overallDiseasedPct: (overall['porcentaje_enfermo'] as num?)?.toDouble() ?? 0.0,
       dominantPathogen: overall['clase_dominante'] as String?,

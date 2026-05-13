@@ -15,18 +15,21 @@ class TreatmentCard extends StatelessWidget {
       decoration: AppTheme.cardDecoration(),
       padding: const EdgeInsets.all(18),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            treatment.nombreEs,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.accentDark,
+          Center(
+            child: Text(
+              treatment.nombreEs,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.accentDark,
+              ),
             ),
           ),
           const SizedBox(height: 12),
-          UrgencyChip(urgencia: treatment.urgencia),
+          Center(child: UrgencyChip(urgencia: treatment.urgencia)),
           const SizedBox(height: 12),
           _buildSection('Patógenos', treatment.patogenos),
           const Divider(height: 24, color: AppTheme.border),

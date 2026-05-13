@@ -88,6 +88,12 @@ def run_tflite_from_array(interp, rgb_array):
     return raw.astype(np.float32)
 
 
+def _expand_binary(scores, labels):
+    if len(scores) == 1 and len(labels) == 2:
+        return np.array([1.0 - scores[0], scores[0]])
+    return scores
+
+
 def classify(interp, labels, file_bytes):
     if interp is None:
         return {"error": "Model not loaded"}
@@ -95,7 +101,7 @@ def classify(interp, labels, file_bytes):
         tmp.write(file_bytes)
         tmp_path = tmp.name
     try:
-        scores = run_tflite_from_path(interp, tmp_path)
+        scores = _expand_binary(run_tflite_from_path(interp, tmp_path), labels)
         results = [{"label": labels[i], "confidence": float(scores[i])} for i in range(len(labels))]
         results.sort(key=lambda x: x["confidence"], reverse=True)
         return {"predictions": results}
@@ -284,21 +290,27 @@ async def analyze_zones(
         levels = []
         order = ["minima", "leve", "moderada", "severa", "critica"]
 
-        for y in range(0, h - patch_size + 1, stride):
-            for x in range(0, w - patch_size + 1, stride):
+        for y in range(0, h, stride):
+            for x in range(0, w, stride):
                 total_patches += 1
-                patch = img_bgr[y:y + patch_size, x:x + patch_size]
-                patch_rgb = cv2.cvtColor(patch, cv2.COLOR_BGR2RGB)
-                h_scores = run_tflite_from_array(health_interp, patch_rgb)
+                py2 = min(y + patch_size, h)
+                px2 = min(x + patch_size, w)
+                patch = img_bgr[y:py2, x:px2]
+                if patch.shape[0] < patch_size // 2 or patch.shape[1] < patch_size // 2:
+                    continue
+                patch_full = cv2.resize(patch, (patch_size, patch_size)) if patch.shape[:2] != (patch_size, patch_size) else patch
+                patch_rgb = cv2.cvtColor(patch_full, cv2.COLOR_BGR2RGB)
+                h_scores = _expand_binary(run_tflite_from_array(health_interp, patch_rgb), health_labels)
                 p_dis = _prob_diseased(h_scores, health_labels)
                 if p_dis < threshold:
                     continue
                 d_scores = run_tflite_from_array(disease_interp, patch_rgb)
                 cls, conf, dist = _top_class(d_scores, disease_labels)
-                sev_pct, sev_lvl, sev_urg = severity_hsv(patch)
-
+                sev_pct, sev_lvl, sev_urg = severity_hsv(patch_full)
+                if sev_pct < 2.0:
+                    continue
                 zones.append({
-                    "bbox": [int(x), int(y), int(x + patch_size), int(y + patch_size)],
+                    "bbox": [int(x), int(y), int(px2), int(py2)],
                     "patogeno": cls,
                     "confianza": round(conf, 3),
                     "distribucion": dist,
@@ -320,6 +332,7 @@ async def analyze_zones(
                 "estado": "ENFERMA",
                 "zonas_enfermas": len(zones),
                 "total_patches": total_patches,
+                "patch_size": patch_size,
                 "porcentaje_enfermo": diseased_pct,
                 "porcentaje_sano": round(100 - diseased_pct, 1),
                 "clase_dominante": dominant,
@@ -333,6 +346,7 @@ async def analyze_zones(
                 "estado": "SANA",
                 "zonas_enfermas": 0,
                 "total_patches": total_patches,
+                "patch_size": patch_size,
                 "porcentaje_enfermo": 0.0,
                 "porcentaje_sano": 100.0,
                 "clase_dominante": None,
