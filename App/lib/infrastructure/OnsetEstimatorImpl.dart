@@ -1,6 +1,7 @@
 import '../domain/ClimateData.dart';
 import '../domain/OnsetEstimate.dart';
 import '../domain/Protocols.dart';
+import '../domain/StringNormalizer.dart';
 
 class OnsetEstimatorImpl implements OnsetEstimator {
   static const Map<String, Map<String, List<int>>> _table = {
@@ -49,8 +50,8 @@ class OnsetEstimatorImpl implements OnsetEstimator {
     required String severityLevel,
     ClimateData? climate,
   }) {
-    final clase = _normalize(pathogenClass);
-    final nivel = _normalize(severityLevel);
+    final clase = normalizeKey(pathogenClass);
+    final nivel = normalizeKey(severityLevel);
     final byClass = _table[clase];
     if (byClass == null) {
       return const OnsetEstimate(minDays: 0, maxDays: 0, explanation: 'Clase desconocida');
@@ -62,63 +63,32 @@ class OnsetEstimatorImpl implements OnsetEstimator {
 
     var minD = base[0];
     var maxD = base[1];
-    final baseLabel = 'Rango base para $clase/$nivel: $minD-$maxD dias';
 
     if (climate == null) {
-      return OnsetEstimate(minDays: minD, maxDays: maxD, explanation: '$baseLabel (sin clima)');
+      return OnsetEstimate(minDays: minD, maxDays: maxD, explanation: '$minD-$maxD dias (sin clima)');
     }
 
-    double factor = 1.0;
-    final notes = <String>[];
+    final (factor, note) = _climateAdjustment(clase, climate);
+    final adjMin = (minD * factor).round().clamp(1, 999);
+    final adjMax = (maxD * factor).round().clamp(adjMin + 1, 999);
+    final explanation = note.isEmpty ? '$minD-$maxD dias' : '$note → $adjMin-$adjMax dias';
+
+    return OnsetEstimate(minDays: adjMin, maxDays: adjMax, explanation: explanation);
+  }
+
+  (double, String) _climateAdjustment(String clase, ClimateData climate) {
     final t = climate.tempC;
     final h = climate.humidity;
     final p = climate.precipMm;
 
-    if (clase == 'roya') {
-      if (h > 80 && t >= 20 && t <= 28) {
-        factor = 0.7;
-        notes.add('clima favorable acelera onset');
-      } else if (h < 50) {
-        factor = 1.3;
-        notes.add('humedad baja desacelera onset');
-      }
-    } else if (clase == 'fungicas') {
-      if (h > 75) {
-        factor = 0.8;
-        notes.add('alta humedad acelera fungicas');
-      }
-    } else if (clase == 'bacterianas') {
-      if (p > 3) {
-        factor = 0.8;
-        notes.add('lluvia favorece dispersion bacteriana');
-      }
-    } else if (clase == 'virales') {
-      if (t > 28) {
-        factor = 0.85;
-        notes.add('temperatura alta favorece vectores');
-      }
-    } else if (clase == 'plagas_insectos') {
-      if (t >= 24 && t <= 32) {
-        factor = 0.75;
-        notes.add('temperatura optima acelera ciclo de plaga');
-      }
-    }
-
-    final adjMin = (minD * factor).round().clamp(1, 999);
-    final adjMax = (maxD * factor).round().clamp(adjMin + 1, 999);
-
-    var explanation = baseLabel;
-    if (notes.isNotEmpty) {
-      explanation += ' | ajuste clima: ${notes.join(", ")} -> $adjMin-$adjMax dias';
-    }
-    return OnsetEstimate(minDays: adjMin, maxDays: adjMax, explanation: explanation);
+    return switch (clase) {
+      'roya' when h > 80 && t >= 20 && t <= 28 => (0.7, 'clima favorable acelera onset'),
+      'roya' when h < 50 => (1.3, 'humedad baja desacelera onset'),
+      'fungicas' when h > 75 => (0.8, 'alta humedad acelera fungicas'),
+      'bacterianas' when p > 3 => (0.8, 'lluvia favorece dispersion bacteriana'),
+      'virales' when t > 28 => (0.85, 'temperatura alta favorece vectores'),
+      'plagas_insectos' when t >= 24 && t <= 32 => (0.75, 'temperatura optima acelera ciclo'),
+      _ => (1.0, ''),
+    };
   }
-
-  String _normalize(String s) => s
-      .toLowerCase()
-      .replaceAll('á', 'a')
-      .replaceAll('é', 'e')
-      .replaceAll('í', 'i')
-      .replaceAll('ó', 'o')
-      .replaceAll('ú', 'u');
 }

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../application/DiseaseCase.dart';
+import '../../application/ClassifyUseCase.dart';
 import '../LabelNames.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';

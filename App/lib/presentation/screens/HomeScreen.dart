@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../application/HealthCase.dart';
+import '../../application/ClassifyUseCase.dart';
 import '../../application/ZoneAnalysisCase.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';

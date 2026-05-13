@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../domain/Protocols.dart';
+import '../domain/StringNormalizer.dart';
 import '../domain/Treatment.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
@@ -30,19 +31,19 @@ class JsonTreatmentRepository implements TreatmentRepository {
       final body = entry.value as Map<String, dynamic>;
       final defaultInfo = TreatmentInfo.fromJson(key, body);
       repo._default[key] = defaultInfo;
-      repo._default[_normalize(key)] = defaultInfo;
+      repo._default[normalizeKey(key)] = defaultInfo;
 
       final porSev = body['por_severidad'] as Map<String, dynamic>?;
       if (porSev != null) {
         final map = <String, TreatmentInfo>{};
         porSev.forEach((nivel, sevBody) {
-          map[_normalize(nivel)] = TreatmentInfo.fromSeverityEntry(
+          map[normalizeKey(nivel)] = TreatmentInfo.fromSeverityEntry(
             key,
             body,
             sevBody as Map<String, dynamic>,
           );
         });
-        repo._bySeverity[_normalize(key)] = map;
+        repo._bySeverity[normalizeKey(key)] = map;
       }
     }
 
@@ -51,27 +52,17 @@ class JsonTreatmentRepository implements TreatmentRepository {
 
   @override
   TreatmentInfo? getByLabel(String label) {
-    final norm = _normalize(label);
+    final norm = normalizeKey(label);
     final mapped = _labelMap[label] ?? _labelMap[norm] ?? norm;
     return _default[mapped] ?? _default[label];
   }
 
   @override
   TreatmentInfo? getByLabelAndSeverity(String label, String severityLevel) {
-    final norm = _normalize(label);
+    final norm = normalizeKey(label);
     final mapped = _labelMap[label] ?? _labelMap[norm] ?? norm;
     final bySev = _bySeverity[mapped];
     if (bySev == null) return getByLabel(label);
-    return bySev[_normalize(severityLevel)] ?? getByLabel(label);
+    return bySev[normalizeKey(severityLevel)] ?? getByLabel(label);
   }
-
-  static String _normalize(String s) => s
-      .toLowerCase()
-      .trim()
-      .replaceAll(' ', '_')
-      .replaceAll('á', 'a')
-      .replaceAll('é', 'e')
-      .replaceAll('í', 'i')
-      .replaceAll('ó', 'o')
-      .replaceAll('ú', 'u');
 }

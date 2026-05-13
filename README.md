@@ -52,7 +52,7 @@ Clasificacion de tipo de enfermedad (solo si Modelo 1 retorna `diseased`):
 ## Estructura del proyecto
 
 ```
-Code/
+App/
   lib/
     domain/        ← Entities, Treatment, Protocols
     application/   ← HealthCase, DiseaseCase
@@ -86,7 +86,7 @@ python Scripts/inference_server.py
 Terminal 2:
 
 ```bash
-cd Code
+cd App
 flutter pub get
 flutter run -d chrome
 ```
@@ -98,7 +98,7 @@ flutter run -d chrome
 flutter devices
 
 # correr la app
-cd Code
+cd App
 flutter pub get
 flutter run -d <device ID>
 
@@ -112,7 +112,7 @@ Requiere Java 17 (`set JAVA_HOME=C:\java17`).
 ### iOS (Mac)
 
 ```bash
-cd Code && flutter build ipa --release
+cd App && flutter build ipa --release
 ```
 
 Requerimientos: Xcode 15+, CocoaPods.

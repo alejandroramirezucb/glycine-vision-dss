@@ -194,18 +194,14 @@ TRAIN_AUG = A.Compose([
     A.Rotate(limit=45, border_mode=0, p=0.7),
     A.HorizontalFlip(p=0.5),
     A.VerticalFlip(p=0.3),
-    # Simula variacion de iluminacion en campo
     A.RandomBrightnessContrast(brightness_limit=0.3, contrast_limit=0.3, p=0.6),
     A.HueSaturationValue(hue_shift_limit=15, sat_shift_limit=30, val_shift_limit=20, p=0.5),
-    # Mejora deteccion de lesiones con bajo contraste
     A.CLAHE(clip_limit=3.0, tile_grid_size=(8, 8), p=0.4),
-    # Ruido de camara y desenfoque por movimiento
     A.OneOf([
         A.GaussianBlur(blur_limit=(3, 5), p=1.0),
         A.MotionBlur(blur_limit=5, p=1.0),
     ], p=0.3),
     A.GaussNoise(var_limit=(5, 25), p=0.25),
-    # Deformaciones geometricas suaves (simula perspectiva de hoja)
     A.OneOf([
         A.ElasticTransform(alpha=60, sigma=12, p=1.0),
         A.GridDistortion(num_steps=5, distort_limit=0.2, p=1.0),
@@ -215,12 +211,10 @@ TRAIN_AUG = A.Compose([
     A.CoarseDropout(max_holes=6, max_height=32, max_width=32, fill_value=0, p=0.2),
 ])
 
-VAL_AUG = A.Compose([])  # Sin aumentacion en validacion
+VAL_AUG = A.Compose([])
 
 
 class LeafSequence(Sequence):
-    """Generador compatible con Keras que usa albumentaciones."""
-
     def __init__(self, directory, img_size=(224, 224), batch_size=16,
                  augment=False, class_mode="binary", shuffle=True):
         self.img_size = img_size
@@ -300,7 +294,6 @@ import json
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-# Sin mixed precision — simplifica export TFLite
 tf.random.set_seed(42)
 np.random.seed(42)
 print("GPU:", tf.config.list_physical_devices("GPU"))
@@ -384,17 +377,12 @@ h1 = model.fit(
     epochs=EPOCHS_P1, callbacks=cbs_p1, verbose=1{class_weights_fit_arg},
 )
 """),
-        code(f"""# FASE 2: fine-tuning — descongelar ultimas 30 layers de EfficientNetB0
-# EfficientNetB0 está aplanado directamente en model.layers (sin sub-modelo)
-# Descongelar todos, luego congelar selectivamente
-for layer in model.layers:
+        code(f"""for layer in model.layers:
     layer.trainable = True
 
-# Congelar todo excepto los ultimos 30 layers (bloques 5-6 + top)
 for layer in model.layers[:-30]:
     layer.trainable = False
 
-# BN congelado en fine-tuning evita inestabilidad
 for layer in model.layers:
     if isinstance(layer, tf.keras.layers.BatchNormalization):
         layer.trainable = False
@@ -516,8 +504,7 @@ m1 = tf.keras.models.load_model(OUT / "model1_binary.keras")
 m2 = tf.keras.models.load_model(OUT / "model2_pathogen.keras")
 print("Modelos cargados OK")
 """),
-    code("""# Importar el generador de datos (mismo que en entrenamiento, sin augmentacion)
-import sys
+    code("""import sys
 sys.path.insert(0, "..")
 
 import albumentations as A
@@ -623,8 +610,6 @@ plt.show()
 with open(OUT / "training_metrics.json", "w") as f:
     json.dump(metrics, f, indent=2, ensure_ascii=False)
 print(json.dumps(metrics, indent=2, ensure_ascii=False))
-
-# Verificar objetivos
 print("\\n=== Verificacion de objetivos ===")
 print(f"M1 accuracy: {metrics['m1']['accuracy']:.4f}  (objetivo >= 0.85) {'OK' if metrics['m1']['accuracy'] >= 0.85 else 'FALLA'}")
 print(f"M1 F1:       {metrics['m1']['f1']:.4f}  (objetivo >= 0.85) {'OK' if metrics['m1']['f1'] >= 0.85 else 'FALLA'}")
@@ -648,21 +633,12 @@ from pathlib import Path
 
 OUT = Path("./outputs")
 
-# Cargar modelos originales (pueden estar en mixed_float16 si se entrenaron así)
 tf.keras.mixed_precision.set_global_policy("float32")
 m1_orig = tf.keras.models.load_model(OUT / "model1_binary.keras")
 m2_orig = tf.keras.models.load_model(OUT / "model2_pathogen.keras")
-print("Modelos originales cargados")
-print("M1 layers:", len(m1_orig.layers))
-print("M2 layers:", len(m2_orig.layers))
+print("Modelos cargados:", len(m1_orig.layers), "layers M1,", len(m2_orig.layers), "layers M2")
 """),
     code("""def reconstruir_float32(original, num_clases, model_name):
-    '''
-    Reconstruye el modelo en float32 puro copiando los pesos del original.
-    Necesario cuando el modelo fue entrenado con mixed_float16: los pesos
-    se guardan en float32 pero el grafo tiene operaciones float16 que TFLite
-    no puede convertir. Reconstruir en float32 elimina esas operaciones.
-    '''
     IMG = (224, 224)
     base = tf.keras.applications.EfficientNetB0(
         weights=None, include_top=False, input_shape=(*IMG, 3)
@@ -676,15 +652,10 @@ print("M2 layers:", len(m2_orig.layers))
         kernel_regularizer=tf.keras.regularizers.l2(1e-4)
     )(x)
     x = tf.keras.layers.Dropout(0.3)(x)
-    if num_clases == 1:
-        out = tf.keras.layers.Dense(1, activation="sigmoid")(x)
-    else:
-        out = tf.keras.layers.Dense(num_clases, activation="softmax")(x)
+    out = tf.keras.layers.Dense(1, activation="sigmoid")(x) if num_clases == 1 else tf.keras.layers.Dense(num_clases, activation="softmax")(x)
     nuevo = tf.keras.Model(base.input, out, name=model_name)
-
-    # Los pesos del original ya son float32 aunque se computaran en float16
     nuevo.set_weights(original.get_weights())
-    print(f"  {model_name}: {len(nuevo.layers)} layers, pesos copiados OK")
+    print(f"  {model_name}: pesos copiados OK")
     return nuevo
 
 
@@ -692,28 +663,21 @@ m1 = reconstruir_float32(m1_orig, num_clases=1, model_name="model1_binary")
 m2 = reconstruir_float32(m2_orig, num_clases=5, model_name="model2_pathogen")
 """),
     code("""def export_tflite(model, path, target_mb=None):
-    '''Convierte modelo float32 a TFLite con cuantizacion int8 dinamica.'''
     converter = tf.lite.TFLiteConverter.from_keras_model(model)
     converter.optimizations = [tf.lite.Optimize.DEFAULT]
-
     print(f"  Convirtiendo {path.name}...")
     tflite_model = converter.convert()
-
-    # Asegurar que el directorio existe
     Path(path).parent.mkdir(parents=True, exist_ok=True)
     Path(path).write_bytes(tflite_model)
     size_mb = Path(path).stat().st_size / (1024 * 1024)
-    status = ""
-    if target_mb:
-        ok = size_mb < target_mb
-        status = f" [{'OK' if ok else 'GRANDE'}]"
+    status = f" [{'OK' if size_mb < target_mb else 'GRANDE'}]" if target_mb else ""
     print(f"    {path.name}: {size_mb:.2f} MB{status}")
     return size_mb
 
 
 export_tflite(m1, OUT / "model1.tflite", target_mb=5)
 export_tflite(m2, OUT / "model2.tflite", target_mb=10)
-print("\\nExport completado. Copiar a Code/assets/models/")
+print("\\nExport completado. Copiar a App/assets/models/")
 """),
     code("""def labels_from_indices(path_in, path_out):
     import json
@@ -727,19 +691,18 @@ print("\\nExport completado. Copiar a Code/assets/models/")
 labels_from_indices(OUT / "class_indices_model1_binary.json", OUT / "labels_m1.txt")
 labels_from_indices(OUT / "class_indices_model2_pathogen.json", OUT / "labels_m2.txt")
 """),
-    code("""# Verificar inferencia M1
+    code("""dummy = np.random.rand(1, 224, 224, 3).astype(np.float32)
+
 inter1 = tf.lite.Interpreter(model_path=str(OUT / "model1.tflite"))
 inter1.allocate_tensors()
 inp1 = inter1.get_input_details()[0]
 out1 = inter1.get_output_details()[0]
 print("M1 Input:", inp1["shape"], inp1["dtype"])
 print("M1 Output:", out1["shape"], out1["dtype"])
-dummy = np.random.rand(1, 224, 224, 3).astype(np.float32)
 inter1.set_tensor(inp1["index"], dummy)
 inter1.invoke()
 print("M1 salida prueba:", inter1.get_tensor(out1["index"]))
 
-# Verificar inferencia M2
 inter2 = tf.lite.Interpreter(model_path=str(OUT / "model2.tflite"))
 inter2.allocate_tensors()
 inp2 = inter2.get_input_details()[0]
@@ -750,13 +713,13 @@ inter2.set_tensor(inp2["index"], dummy)
 inter2.invoke()
 print("M2 salida prueba:", inter2.get_tensor(out2["index"]))
 """),
-    md("""## Copiar a Code/
+    md("""## Copiar a App/
 
 ```
-Code/assets/models/hs/model.tflite          <- outputs/model1.tflite
-Code/assets/models/hs/labels.txt            <- outputs/labels_m1.txt
-Code/assets/models/pd/model_unquant.tflite  <- outputs/model2.tflite
-Code/assets/models/pd/labels.txt            <- outputs/labels_m2.txt
+App/assets/models/hs/model.tflite          <- outputs/model1.tflite
+App/assets/models/hs/labels.txt            <- outputs/labels_m1.txt
+App/assets/models/pd/model_unquant.tflite  <- outputs/model2.tflite
+App/assets/models/pd/labels.txt            <- outputs/labels_m2.txt
 ```
 """),
 ])
@@ -781,7 +744,6 @@ infer = GlycineVisionInferencia(
 """),
     code("""from pathlib import Path
 
-# Buscar una imagen del dataset de test
 SPLIT = Path("./splits/test/clasificacion_patogeno")
 test_imgs = list(SPLIT.rglob("*.jpg")) + list(SPLIT.rglob("*.png"))
 
