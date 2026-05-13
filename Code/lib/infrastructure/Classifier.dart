@@ -45,34 +45,38 @@ class TfliteClassifier implements ImageClassifier {
         : label;
   }
 
+  List<String> get labels => List.unmodifiable(_labels);
+
   @override
   Future<PredictionResult> classify(XFile imageFile) async {
     final bytes = await imageFile.readAsBytes();
     final image = img.decodeImage(bytes);
     if (image == null) throw Exception('Imagen inválida');
+    final scores = classifyImage(image);
+    return PredictionResult(
+      predictions: _buildPredictions(scores),
+      imagePath: imageFile.path,
+    );
+  }
+
+  List<double> classifyImage(img.Image image) {
     final resized =
         img.copyResize(image, width: _inputSize, height: _inputSize);
 
     final isQuantized =
         _interpreter.getInputTensor(0).type == TensorType.uint8;
 
-    List<double> scores;
     if (isQuantized) {
       final input = [_toUint8Grid(resized)];
       final output = [List<int>.filled(_labels.length, 0)];
       _interpreter.run(input, output);
-      scores = output[0].map((v) => v / 255.0).toList();
+      return output[0].map((v) => v / 255.0).toList();
     } else {
       final input = [_toFloat32Grid(resized)];
       final output = [List<double>.filled(_labels.length, 0.0)];
       _interpreter.run(input, output);
-      scores = output[0];
+      return output[0];
     }
-
-    return PredictionResult(
-      predictions: _buildPredictions(scores),
-      imagePath: imageFile.path,
-    );
   }
 
   List<List<List<double>>> _toFloat32Grid(img.Image image) =>

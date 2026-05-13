@@ -1,141 +1,243 @@
 {
-  "Bacterianas": {
+  "bacterianas": {
     "nombre_es": "Enfermedades Bacterianas",
     "nombre_en": "Bacterial Diseases",
     "patogenos": "Pseudomonas savastanoi pv. glycinea, Xanthomonas axonopodis pv. glycines",
-    "sintomas": "Manchas angulares acuosas de color marrón rojizo rodeadas de halos amarillos. En etapas avanzadas, las lesiones se unen formando áreas necróticas irregulares. Los centros de las lesiones viejas pueden desprenderse, dando apariencia de hoja desgarrada. Las pústulas bacterianas aparecen como pequeñas protuberancias elevadas en el envés de la hoja.",
-    "tratamiento": {
-      "quimico": "No existen bactericidas curativos efectivos una vez establecida la infección. La aplicación preventiva de productos a base de cobre (oxicloruro de cobre, hidróxido de cobre) puede reducir la diseminación del patógeno cuando se aplica antes de la aparición de los síntomas o al inicio de la infección.",
-      "cultural": "Utilizar semilla certificada libre de patógenos. Implementar rotación de cultivos con especies no hospedantes (maíz, sorgo) durante al menos dos temporadas. Eliminar residuos de cosecha infectados. Evitar el trabajo en el cultivo cuando el follaje está húmedo para reducir la diseminación mecánica.",
-      "biologico": "La aplicación de antagonistas biológicos como Bacillus subtilis ha mostrado eficacia parcial en la supresión de patógenos bacterianos foliares.",
-      "preventivo": "Seleccionar variedades con resistencia genética a tizón bacteriano. Mantener distancias de siembra adecuadas para favorecer la ventilación del follaje."
-    },
-    "urgencia": "media",
-    "fuentes": [
-      {
-        "texto": "CABI Plantwise Knowledge Bank - Bacterial blight of soybean",
-        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.44963"
+    "sintomas": "Manchas angulares acuosas marrón rojizo con halos amarillos. En etapas avanzadas, las lesiones se unen formando áreas necróticas irregulares. Pústulas bacterianas como pequeñas protuberancias en el envés de la hoja.",
+    "por_severidad": {
+      "minima": {
+        "quimico": "Aplicación preventiva de oxicloruro de cobre 50 WP a 300 g/100 L de agua. Solo si hay condiciones favorables (lluvia, humedad alta).",
+        "cultural": "Mejorar drenaje del lote. Evitar riego por aspersión. Inspección semanal de hojas inferiores.",
+        "biologico": "Aplicación foliar de Bacillus subtilis QST 713 a 100 mL/100 L como complemento preventivo.",
+        "preventivo": "Semilla certificada libre de patógeno. Rotación con maíz o sorgo. Distancia adecuada entre plantas.",
+        "urgencia": "baja"
       },
-      {
-        "texto": "PlantVillage - Soybean Bacterial Blight",
-        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      "leve": {
+        "quimico": "Cobre oxicloruro 50 WP 400 g/100 L + Mancozeb 80 WP 200 g/100 L. Cada 10 días, mínimo 2 aplicaciones.",
+        "cultural": "Eliminar hojas muy afectadas. No trabajar el lote con follaje mojado para reducir dispersión mecánica.",
+        "biologico": "Bacillus subtilis cada 7 días manteniendo el control biológico activo.",
+        "preventivo": "Monitoreo semanal. Aplicar antes de lluvias previstas para protección preventiva.",
+        "urgencia": "media"
       },
-      {
-        "texto": "ANAPO - Guía de manejo fitosanitario de soya",
-        "url": "https://anapobolivia.org/"
+      "moderada": {
+        "quimico": "Kasugamicina 2 SL 100 mL/100 L + Cobre 300 g/100 L. Repetir cada 7 días por 3 ciclos.",
+        "cultural": "Suspender riego por aspersión. Mejorar ventilación entre plantas reduciendo densidad si es posible.",
+        "biologico": "Combinar Bacillus subtilis + Pseudomonas fluorescens para amplio espectro antagonista.",
+        "preventivo": "Notificar al técnico agrónomo. Revisar lotes vecinos como posibles fuentes de inóculo.",
+        "urgencia": "alta"
+      },
+      "severa": {
+        "quimico": "Streptomicina 15 WP 100 g/100 L + Cobre oxicloruro 400 g/100 L cada 5-7 días. Bajo prescripción agronómica.",
+        "cultural": "Eliminar plantas con más del 50% de hojas afectadas. Desinfectar herramientas con hipoclorito al 1%.",
+        "biologico": "Suspender control biológico durante el ataque químico intenso. Reanudar tras controlar.",
+        "preventivo": "Evaluar cosecha anticipada si el cultivo está en etapa R6 o posterior.",
+        "urgencia": "alta"
+      },
+      "critica": {
+        "quimico": "Control químico ya insuficiente. Streptomicina + Cobre solo para limitar dispersión a lotes vecinos.",
+        "cultural": "Eliminar plantas afectadas. Cuarentena del área. Rotar cultivo la próxima campaña.",
+        "biologico": "Suspender temporalmente. Reanudar tras erradicación completa del foco.",
+        "preventivo": "Desinfectar herramientas y vestimenta. Notificar al SENASAG sobre el brote.",
+        "urgencia": "critica"
       }
+    },
+    "fuentes": [
+      {"texto": "CABI Plantwise - Bacterial blight of soybean", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.44963"},
+      {"texto": "PlantVillage - Soybean Bacterial Blight", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"texto": "ANAPO - Guía de manejo fitosanitario de soya", "url": "https://anapobolivia.org/"}
     ]
   },
-  "Fungicas": {
+  "fungicas": {
     "nombre_es": "Enfermedades Fúngicas",
     "nombre_en": "Fungal Diseases",
-    "patogenos": "Cercospora sojina, Septoria glycines, Corynespora cassiicola, Peronospora manshurica, Erysiphe diffusa, Fusarium virguliforme, Athelia rolfsii",
-    "sintomas": "Las manchas foliares fúngicas presentan morfologías variadas según el patógeno: manchas circulares con borde oscuro y centro claro (ojo de rana), manchas angulares de color marrón oscuro (septoria), manchas con anillos concéntricos (mancha objetivo). El mildiú velloso produce masas de esporulación grisácea en el envés de la hoja. El oídio aparece como polvo blanco en la superficie foliar. El síndrome de muerte súbita causa clorosis intervenal seguida de necrosis, mientras las nervaduras permanecen verdes.",
-    "tratamiento": {
-      "quimico": "Aplicación de fungicidas del grupo de los triazoles (tebuconazole, propiconazole) o estrobilurinas (azoxistrobin, piraclostrobin) al detectar los primeros síntomas o preventivamente en etapas reproductivas (R1-R3). Para oídio y mildiú, los fungicidas sistémicos son más efectivos que los de contacto. La mezcla de triazol + estrobilurina ofrece control de amplio espectro.",
-      "cultural": "Rotación de cultivos de al menos dos años con gramíneas. Eliminación de residuos infectados. Uso de variedades resistentes cuando estén disponibles. Siembra en fechas recomendadas para la zona. Mantener densidad de siembra adecuada para favorecer la circulación de aire.",
-      "biologico": "Productos a base de Trichoderma harzianum aplicados al suelo reducen la incidencia de patógenos de suelo como Fusarium y Athelia. Bacillus amyloliquefaciens ha mostrado actividad antifúngica foliar.",
-      "preventivo": "Monitoreo semanal del cultivo desde etapa vegetativa. Tratar semilla con fungicidas (carboxin + thiram) antes de la siembra. Evitar riego por aspersión que mantiene humedad foliar prolongada."
-    },
-    "urgencia": "alta",
-    "fuentes": [
-      {
-        "texto": "CABI Digital Library - Soybean fungal diseases",
-        "url": "https://www.cabidigitallibrary.org/"
+    "patogenos": "Cercospora sojina, Septoria glycines, Corynespora cassiicola, Peronospora manshurica, Fusarium virguliforme",
+    "sintomas": "Manchas foliares de morfología variable: circulares con borde oscuro y centro claro (ojo de rana), angulares marrón oscuro (septoria), con anillos concéntricos (mancha objetivo). Mildiú genera esporulación grisácea en el envés.",
+    "por_severidad": {
+      "minima": {
+        "quimico": "Azufre coloidal 80 WP a 300 g/100 L como preventivo. Solo aplicar si la humedad ambiental es alta.",
+        "cultural": "Mejorar ventilación entre surcos. No aplicar productos con temperatura mayor a 35°C.",
+        "biologico": "Trichoderma harzianum aplicado al suelo y foliar para fortalecer la defensa natural.",
+        "preventivo": "Sembrar variedades tolerantes. Monitoreo desde V4 con lupa para detectar primeras manchas.",
+        "urgencia": "baja"
       },
-      {
-        "texto": "PlantVillage - Soybean diseases",
-        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      "leve": {
+        "quimico": "Mancozeb 80 WP 200-250 g/100 L cada 10-12 días desde los primeros síntomas visibles.",
+        "cultural": "Aplicar en horas frescas (mañana o tarde). Lograr cobertura total del follaje.",
+        "biologico": "Trichoderma + Bacillus subtilis como complemento al control químico inicial.",
+        "preventivo": "Alternar principios activos químicos para evitar desarrollo de resistencia en el patógeno.",
+        "urgencia": "media"
       },
-      {
-        "texto": "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press",
-        "url": "https://apsjournals.apsnet.org/doi/book/10.1094/9780890544754"
+      "moderada": {
+        "quimico": "Tebuconazol 25 EC 75-100 mL/100 L + Mancozeb 80 WP 200 g/100 L. Cada 10 días, 2-3 aplicaciones.",
+        "cultural": "Eliminar hojas basales muy afectadas. Revisar y ajustar densidad de siembra para próxima campaña.",
+        "biologico": "Mantener Trichoderma como complemento. No suspender durante el tratamiento químico.",
+        "preventivo": "Monitorear lotes vecinos. Iniciar control regional si hay focos en la zona.",
+        "urgencia": "alta"
+      },
+      "severa": {
+        "quimico": "Trifloxistrobina 50 WG 75 g/100 L + Tebuconazol 25 EC 75 mL/100 L. Cada 7 días, máximo 3 aplicaciones por campaña.",
+        "cultural": "Revisar el lote completo. Evaluar pérdida económica proyectada.",
+        "biologico": "Suspender durante ataque químico intenso. Reanudar tras estabilizar.",
+        "preventivo": "Notificar al técnico agrónomo. Evaluar uso de variedades resistentes en próxima campaña.",
+        "urgencia": "alta"
+      },
+      "critica": {
+        "quimico": "Fluxapiroxad 20 SC 60 mL/100 L + Mancozeb 80 WP 200 g/100 L cada 5 días hasta controlar.",
+        "cultural": "Evaluar viabilidad económica de cosecha anticipada si está en R6 o posterior.",
+        "biologico": "Suspender temporalmente.",
+        "preventivo": "Planificar variedades resistentes y rotación con gramíneas para la próxima campaña.",
+        "urgencia": "critica"
       }
+    },
+    "fuentes": [
+      {"texto": "CABI Digital Library - Soybean fungal diseases", "url": "https://www.cabidigitallibrary.org/"},
+      {"texto": "PlantVillage - Soybean diseases", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"texto": "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press", "url": "https://apsjournals.apsnet.org/doi/book/10.1094/9780890544754"}
     ]
   },
-  "Roya": {
+  "roya": {
     "nombre_es": "Roya Asiática de la Soya",
     "nombre_en": "Asian Soybean Rust",
     "patogenos": "Phakopsora pachyrhizi",
-    "sintomas": "Lesiones foliares pequeñas (1-2 mm), de color marrón grisáceo a marrón rojizo, generalmente en el envés de la hoja. Las lesiones contienen pústulas (uredias) que al abrirse liberan esporas de color canela. En infecciones severas, las hojas se tornan amarillas y caen prematuramente, causando defoliación significativa que reduce drásticamente el rendimiento. La roya asiática puede ser confundida con pústula bacteriana en etapas tempranas; la diferencia clave es que las pústulas de roya producen esporas visibles con lupa.",
-    "tratamiento": {
-      "quimico": "Aplicación inmediata de fungicidas específicos al detectar los primeros síntomas o preventivamente en R1. Los triazoles (tebuconazole, ciproconazole, protioconazole) y sus mezclas con estrobilurinas (azoxistrobin + ciproconazole) son el estándar. Repetir la aplicación cada 15-21 días si las condiciones favorecen la enfermedad (alta humedad, temperaturas de 15-28°C). En Bolivia, consultar las recomendaciones vigentes de SENASAG para productos autorizados.",
-      "cultural": "Sembrar variedades con resistencia parcial a roya cuando estén disponibles. Adelantar la fecha de siembra para escapar al período de mayor presión de inóculo. Eliminar plantas voluntarias de soya entre temporadas. Monitorear cultivos vecinos como fuente de inóculo.",
-      "biologico": "Actualmente no existen controles biológicos comerciales con eficacia comprobada contra la roya asiática en condiciones de campo.",
-      "preventivo": "La roya asiática es la enfermedad más destructiva de la soya en Sudamérica. El monitoreo constante es esencial: revisar el envés de las hojas inferiores con lupa a partir de la etapa R1. Un retraso de 7-10 días en la aplicación del fungicida puede resultar en pérdidas del 10-80% del rendimiento. Consultar el sistema de alerta de roya de SENASAG."
-    },
-    "urgencia": "critica",
-    "fuentes": [
-      {
-        "texto": "CABI Plantwise - Phakopsora pachyrhizi (Roya asiática)",
-        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.40019"
+    "sintomas": "Lesiones foliares pequeñas (1-2 mm) marrón grisáceo a marrón rojizo en el envés. Pústulas que liberan esporas color canela. En infecciones severas defoliación masiva con pérdida drástica de rendimiento.",
+    "por_severidad": {
+      "minima": {
+        "quimico": "Tebuconazol 25 EC 75 mL/100 L PREVENTIVO desde la etapa R1 (inicio de floración).",
+        "cultural": "Monitoreo cada 5 días con lupa en el envés de hojas inferiores. Eliminar soyas voluntarias (puente verde).",
+        "biologico": "Bacillus subtilis QST 713 como complemento. No reemplaza el tratamiento químico.",
+        "preventivo": "CRÍTICO aplicar antes que avance. La roya asiática puede destruir el cultivo en 2-3 semanas si no se controla.",
+        "urgencia": "media"
       },
-      {
-        "texto": "SENASAG - Servicio Nacional de Sanidad Agropecuaria (Bolivia)",
-        "url": "https://www.senasag.gob.bo/"
+      "leve": {
+        "quimico": "Azoxistrobina 25 SC 80 mL/100 L + Tebuconazol 25 EC 75 mL/100 L cada 10-12 días.",
+        "cultural": "Aplicar antes de lluvia prevista. Usar adyuvante adherente para mejor cobertura del activo.",
+        "biologico": "Mantener Bacillus subtilis como complemento. Avisar a productores vecinos.",
+        "preventivo": "Coordinar con vecinos del lote para aplicación regional sincronizada.",
+        "urgencia": "alta"
       },
-      {
-        "texto": "Yorinori et al. (2005) Epidemics of soybean rust in Brazil and Paraguay. Plant Disease 89(6):675-677",
-        "url": "https://doi.org/10.1094/PD-89-0675"
+      "moderada": {
+        "quimico": "Picoxistrobina + Ciproconazol (Priori Xtra) 300 mL/ha cada 10 días, mínimo 2 ciclos.",
+        "cultural": "Monitoreo diario 48 horas post-aplicación. Cobertura total de toda la planta es obligatoria.",
+        "biologico": "Suspender control biológico durante el ataque químico intenso.",
+        "preventivo": "Coordinar aplicación regional con productores vecinos para reducir presión de inóculo.",
+        "urgencia": "alta"
       },
-      {
-        "texto": "Miles et al. (2011) Soybean Rust Management. Plant Health Progress",
-        "url": "https://apsjournals.apsnet.org/loi/php"
+      "severa": {
+        "quimico": "Fluxapiroxad + Piraclostrobina (Opera Ultra) en dosis alta según etiqueta, cada 7 días.",
+        "cultural": "EMERGENCIA. Notificar técnico agrónomo. Monitoreo diario del avance.",
+        "biologico": "Suspender. La carga química es alta.",
+        "preventivo": "Evaluar pérdida proyectada. Considerar uso de variedades resistentes próxima campaña.",
+        "urgencia": "critica"
+      },
+      "critica": {
+        "quimico": "Triazol + estrobilurina + protectante en dosis máximas cada 5-7 días.",
+        "cultural": "Si el cultivo está en R6, evaluar cosecha anticipada. Pérdida probable mayor al 50%.",
+        "biologico": "Suspender.",
+        "preventivo": "NOTIFICAR AL SENASAG. Planificar variedades resistentes para la próxima campaña.",
+        "urgencia": "critica"
       }
+    },
+    "fuentes": [
+      {"texto": "CABI Plantwise - Phakopsora pachyrhizi (Roya asiática)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.40019"},
+      {"texto": "SENASAG - Servicio Nacional de Sanidad Agropecuaria (Bolivia)", "url": "https://www.senasag.gob.bo/"},
+      {"texto": "Yorinori et al. (2005) Epidemics of soybean rust in Brazil. Plant Disease 89(6)", "url": "https://doi.org/10.1094/PD-89-0675"},
+      {"texto": "Miles et al. (2011) Soybean Rust Management. Plant Health Progress", "url": "https://apsjournals.apsnet.org/loi/php"}
     ]
   },
-  "Virales": {
+  "virales": {
     "nombre_es": "Enfermedades Virales",
     "nombre_en": "Viral Diseases",
     "patogenos": "Soybean Mosaic Virus (SMV), Bean Yellow Mosaic Virus (BYMV)",
-    "sintomas": "Mosaico de tonos verde claro y verde oscuro en las hojas, deformación del limbo foliar (arrugamiento, encrespamiento), reducción del tamaño de las hojas y los folíolos. En infecciones tempranas, las plantas presentan enanismo generalizado. Los síntomas de mosaico son más evidentes en hojas jóvenes en crecimiento activo y pueden atenuarse con temperaturas altas (>30°C).",
-    "tratamiento": {
-      "quimico": "No existen tratamientos químicos curativos para enfermedades virales en plantas. Una vez que la planta está infectada, no se puede eliminar el virus.",
-      "cultural": "Usar semilla certificada libre de virus (el SMV se transmite por semilla en un 1-5%). Eliminar plantas infectadas tempranamente detectadas para reducir fuentes de inóculo. Controlar malezas hospedantes alternativas alrededor del cultivo.",
-      "biologico": "El control de vectores (áfidos) es la principal estrategia. Aplicar insecticidas dirigidos a pulgones (imidacloprid, tiametoxam en tratamiento de semilla) para reducir la transmisión. Las mariquitas y crisopas son depredadores naturales de áfidos que pueden complementar el control químico.",
-      "preventivo": "Seleccionar variedades con resistencia genética al SMV (existen genes Rsv1, Rsv3, Rsv4 en germoplasma mejorado). Evitar siembras tardías que coincidan con poblaciones altas de áfidos. Mantener barreras vivas de gramíneas (maíz, sorgo) en los bordes del lote para filtrar áfidos viruliferos."
-    },
-    "urgencia": "media",
-    "fuentes": [
-      {
-        "texto": "CABI Plantwise - Soybean Mosaic Virus (SMV)",
-        "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.48750"
+    "sintomas": "Mosaico verde claro y verde oscuro en hojas, deformación del limbo (arrugamiento, encrespamiento), reducción de tamaño foliar. En infecciones tempranas, enanismo generalizado de la planta.",
+    "por_severidad": {
+      "minima": {
+        "quimico": "No hay cura viral. Control de vectores: Aceite de neem 1% + Imidacloprid 35 SC 60 mL/100 L.",
+        "cultural": "Eliminar malezas hospederas alrededor del lote. Controlar áfidos y mosca blanca.",
+        "biologico": "Trampas amarillas pegajosas para vectores. Liberar Encarsia formosa para mosca blanca.",
+        "preventivo": "Semilla certificada libre de virus. Sembrar variedades tolerantes con genes Rsv1/Rsv3.",
+        "urgencia": "media"
       },
-      {
-        "texto": "PlantVillage - Soybean Mosaic",
-        "url": "https://plantvillage.psu.edu/topics/soybean/infos"
+      "leve": {
+        "quimico": "Imidacloprid 35 SC 60 mL/100 L + Thiamethoxam 25 WG 80 g/100 L cada 7-10 días contra vectores.",
+        "cultural": "Eliminar plantas muy afectadas (síntomas claros) para reducir fuentes de inóculo.",
+        "biologico": "Mantener trampas y enemigos naturales (mariquitas, crisopas) en los bordes.",
+        "preventivo": "Revisar la fuente de semilla utilizada. Cambiar proveedor si hay sospecha.",
+        "urgencia": "alta"
       },
-      {
-        "texto": "Gunduz et al. (2004) Genetic analysis of resistance to SMV. Phytopathology 94(10):1094-1098",
-        "url": "https://doi.org/10.1094/PHYTO.2004.94.10.1094"
+      "moderada": {
+        "quimico": "Thiamethoxam 25 WG 100 g/100 L + Clorpirifós 48 EC 150 mL/100 L cada 7 días.",
+        "cultural": "Eliminar todas las plantas sintomáticas del área central del lote.",
+        "biologico": "Implementar barrera insecticida en el perímetro del lote para vectores.",
+        "preventivo": "Evaluar la pérdida económica proyectada. Considerar reemplazo del lote.",
+        "urgencia": "alta"
+      },
+      "severa": {
+        "quimico": "Continuar control intensivo de vectores. No hay tratamiento contra el virus en sí.",
+        "cultural": "Eliminar plantas infectadas. Aplicar insecticida al suelo. Limpiar herramientas con hipoclorito.",
+        "biologico": "Suspender.",
+        "preventivo": "Notificar al técnico agrónomo. Replantear variedades para la próxima campaña.",
+        "urgencia": "critica"
+      },
+      "critica": {
+        "quimico": "Continuar control de vectores para limitar dispersión a lotes vecinos.",
+        "cultural": "Destrucción del lote infectado. Cuarentena del área. Certificar semillas para próxima campaña.",
+        "biologico": "Suspender.",
+        "preventivo": "NO usar semillas propias del lote afectado. Notificar al SENASAG.",
+        "urgencia": "critica"
       }
+    },
+    "fuentes": [
+      {"texto": "CABI Plantwise - Soybean Mosaic Virus (SMV)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.48750"},
+      {"texto": "PlantVillage - Soybean Mosaic", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"texto": "Gunduz et al. (2004) Genetic analysis of resistance to SMV. Phytopathology 94(10)", "url": "https://doi.org/10.1094/PHYTO.2004.94.10.1094"}
     ]
   },
-  "Plagas_Insectos": {
+  "plagas_insectos": {
     "nombre_es": "Daño por Plagas (Insectos)",
     "nombre_en": "Insect Pest Damage",
-    "patogenos": "Lepidoptera spp. (orugas defoliadoras), Diabrotica speciosa (vaquita de San Antonio)",
-    "sintomas": "Las orugas producen defoliación visible con patrones irregulares de consumo foliar: agujeros de diversos tamaños, bordes de hoja consumidos, y esqueletización (solo quedan las nervaduras). Diabrotica speciosa produce agujeros circulares pequeños y regulares en las hojas, además de daño en raíces que afecta la absorción de nutrientes y la estabilidad de la planta.",
-    "tratamiento": {
-      "quimico": "Para orugas defoliadoras: insecticidas del grupo de los diamidas (clorantraniliprole, flubendiamida) o reguladores de crecimiento (metoxifenozida, teflubenzuron) que son selectivos y preservan enemigos naturales. Para Diabrotica: insecticidas de amplio espectro (lambda-cihalotrina, tiametoxam) aplicados al follaje o en tratamiento de semilla. Respetar los umbrales de acción: en soya vegetativa, tratar cuando se alcanza el 30% de defoliación; en soya reproductiva, tratar al 15% de defoliación.",
-      "cultural": "Rotación de cultivos para romper el ciclo de Diabrotica. Monitoreo con paño de batida (método estándar) para estimar población de orugas por metro lineal. Manejar bordes del lote y controlar malezas hospedantes.",
-      "biologico": "Productos a base de Bacillus thuringiensis (Bt) son efectivos contra orugas jóvenes y selectivos para fauna benéfica. El hongo entomopatógeno Beauveria bassiana puede complementar el control de Diabrotica. Preservar enemigos naturales (avispas parasitoides, chinches depredadoras) mediante uso racional de insecticidas.",
-      "preventivo": "Realizar muestreos semanales con paño de batida desde emergencia. Aplicar tratamiento de semilla con insecticida sistémico (tiametoxam, imidacloprid) para protección en etapas tempranas. Considerar cultivos trampa en bordes del lote."
-    },
-    "urgencia": "alta",
-    "fuentes": [
-      {
-        "texto": "CABI Plantwise - Soybean defoliating caterpillars",
-        "url": "https://www.cabidigitallibrary.org/doi/10.1079/cabicompendium.13245"
+    "patogenos": "Lepidoptera spp. (orugas defoliadoras), Diabrotica speciosa (vaquita), Anticarsia gemmatalis",
+    "sintomas": "Defoliación con patrones irregulares: agujeros de diversos tamaños, bordes consumidos, esqueletización. Diabrotica produce agujeros circulares pequeños y daño en raíces que afecta absorción de nutrientes.",
+    "por_severidad": {
+      "minima": {
+        "quimico": "No requiere químico aún. Aplicar solo si supera umbral de acción (30% defoliación en vegetativo).",
+        "cultural": "Trampas amarillas y de feromonas. Revisar bordes del lote con paño de batida.",
+        "biologico": "Bacillus thuringiensis (Dipel WP) 100 g/100 L. Trichogramma para parasitar huevos.",
+        "preventivo": "Monitoreo semanal con paño de batida desde emergencia.",
+        "urgencia": "baja"
       },
-      {
-        "texto": "ANAPO - Manejo integrado de plagas en soya",
-        "url": "https://anapobolivia.org/"
+      "leve": {
+        "quimico": "Spinosad 480 SC 20-30 mL/100 L cada 10 días, 2 aplicaciones. Selectivo y de bajo impacto.",
+        "cultural": "Aplicar al atardecer para mayor contacto del producto con las larvas activas.",
+        "biologico": "Mantener Bt + Trichogramma para preservar enemigos naturales en el lote.",
+        "preventivo": "Rotación con maíz o sorgo para romper el ciclo de plagas específicas.",
+        "urgencia": "media"
       },
-      {
-        "texto": "Bueno et al. (2011) Integrated pest management of soybean in Brazil. Crop Protection",
-        "url": "https://doi.org/10.1016/j.cropro.2011.01.002"
+      "moderada": {
+        "quimico": "Clorpirifós 48 EC 150 mL/100 L + Bt 100 g/100 L combinado. Cada 7 días.",
+        "cultural": "Monitoreo diario para estimar densidad de plaga. Ajustar dosis si avanza.",
+        "biologico": "Liberación masiva de Trichogramma como apoyo al control químico.",
+        "preventivo": "Evaluar el daño económico real vs costo del tratamiento.",
+        "urgencia": "alta"
+      },
+      "severa": {
+        "quimico": "Lambda-cialotrina 5 EC 100-150 mL/100 L cada 5-7 días. Rotar con otro principio activo.",
+        "cultural": "Evitar aplicar cerca de cosecha. Respetar el período de carencia del producto.",
+        "biologico": "Suspender durante ataque químico intenso. Reanudar tras pico.",
+        "preventivo": "Notificar a lotes vecinos para control coordinado.",
+        "urgencia": "alta"
+      },
+      "critica": {
+        "quimico": "Lambda-cialotrina 5 EC 100 mL/100 L + Clorpirifós 48 EC 150 mL/100 L cada 4-5 días.",
+        "cultural": "Evaluar pérdida económica. Plan de control biológico masivo posterior al control químico.",
+        "biologico": "Reanudar tras controlar el pico de población.",
+        "preventivo": "Planificar variedades menos susceptibles para la próxima campaña.",
+        "urgencia": "critica"
       }
+    },
+    "fuentes": [
+      {"texto": "CABI Plantwise - Soybean defoliating caterpillars", "url": "https://www.cabidigitallibrary.org/doi/10.1079/cabicompendium.13245"},
+      {"texto": "ANAPO - Manejo integrado de plagas en soya", "url": "https://anapobolivia.org/"},
+      {"texto": "Bueno et al. (2011) Integrated pest management of soybean in Brazil. Crop Protection", "url": "https://doi.org/10.1016/j.cropro.2011.01.002"}
     ]
   }
 }

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../application/HealthCase.dart';
+import '../../application/ZoneAnalysisCase.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';
 import '../widgets/ImagePreview.dart';
@@ -46,6 +47,27 @@ class _HomeScreenState extends State<HomeScreen> {
       state.setError(null);
     } catch (e) {
       if (mounted) state.setError('Error modelo 1: $e');
+    } finally {
+      state.setLoading(false);
+    }
+  }
+
+  Future<void> _analyzeZones() async {
+    final state = context.read<AppState>();
+    final useCase = context.read<AnalyzeZonesUseCase>();
+    if (state.currentImage == null) {
+      state.setError('Primero selecciona o captura una imagen.');
+      return;
+    }
+    state.setLoading(true);
+    try {
+      final analysis = await useCase.execute(state.currentImage!);
+      if (!mounted) return;
+      state.setZoneAnalysis(analysis);
+      state.push(Screen.zoneResult);
+      state.setError(null);
+    } catch (e) {
+      if (mounted) state.setError('Error análisis por zonas: $e');
     } finally {
       state.setLoading(false);
     }
@@ -119,6 +141,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   )
                 : const Text('Detectar salud'),
             style: AppTheme.elevatedButtonStyle(AppTheme.accentDark),
+          ),
+          const SizedBox(height: 9),
+          ElevatedButton.icon(
+            onPressed: state.currentImage != null && !state.isLoading
+                ? _analyzeZones
+                : null,
+            icon: const Icon(Icons.grid_view_rounded),
+            label: state.isLoading
+                ? const SizedBox(
+                    width: 16,
+                    height: 16,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Text('Análisis por zonas'),
+            style: AppTheme.elevatedButtonStyle(AppTheme.accent),
           ),
         ],
       );

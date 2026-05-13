@@ -1,15 +1,22 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/Entities.dart';
+import '../../domain/ZoneAnalysis.dart';
+import '../../domain/ClimateData.dart';
+import '../../domain/OnsetEstimate.dart';
 
-enum Screen { home, healthResult, diseaseResult }
+enum Screen { home, healthResult, diseaseResult, zoneResult }
 
 class AppState extends ChangeNotifier {
   final List<Screen> _stack = [Screen.home];
   XFile? currentImage;
   PredictionResult? healthResult;
   PredictionResult? diseaseResult;
+  ZoneAnalysis? zoneAnalysis;
+  ClimateData? climate;
+  OnsetEstimate? onset;
   bool isLoading = false;
+  bool climateLoading = false;
   String? error;
 
   Screen get currentScreen => _stack.last;
@@ -33,6 +40,9 @@ class AppState extends ChangeNotifier {
     currentImage = null;
     healthResult = null;
     diseaseResult = null;
+    zoneAnalysis = null;
+    climate = null;
+    onset = null;
     error = null;
     notifyListeners();
   }
@@ -51,6 +61,8 @@ class AppState extends ChangeNotifier {
     currentImage = image;
     healthResult = null;
     diseaseResult = null;
+    zoneAnalysis = null;
+    onset = null;
     notifyListeners();
   }
 
@@ -61,6 +73,26 @@ class AppState extends ChangeNotifier {
 
   void setDiseaseResult(PredictionResult result) {
     diseaseResult = result;
+    notifyListeners();
+  }
+
+  void setZoneAnalysis(ZoneAnalysis analysis) {
+    zoneAnalysis = analysis;
+    notifyListeners();
+  }
+
+  void setClimate(ClimateData? data) {
+    climate = data;
+    notifyListeners();
+  }
+
+  void setClimateLoading(bool v) {
+    climateLoading = v;
+    notifyListeners();
+  }
+
+  void setOnset(OnsetEstimate? est) {
+    onset = est;
     notifyListeners();
   }
 }

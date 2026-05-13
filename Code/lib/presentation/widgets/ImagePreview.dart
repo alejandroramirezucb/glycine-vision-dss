@@ -6,13 +6,20 @@ import '../Theme.dart';
 
 class ImagePreview extends StatelessWidget {
   final XFile? imageFile;
+  final double? height;
+  final BoxFit fit;
 
-  const ImagePreview({super.key, this.imageFile});
+  const ImagePreview({
+    super.key,
+    this.imageFile,
+    this.height = AppTheme.imgHeight,
+    this.fit = BoxFit.contain,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: AppTheme.imgHeight,
+      height: height,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppTheme.radiusImg),
@@ -23,9 +30,9 @@ class ImagePreview extends StatelessWidget {
 
   Widget _buildImage() {
     if (kIsWeb) {
-      return Image.network(imageFile!.path, fit: BoxFit.contain);
+      return Image.network(imageFile!.path, fit: fit);
     }
-    return Image.file(File(imageFile!.path), fit: BoxFit.contain);
+    return Image.file(File(imageFile!.path), fit: fit);
   }
 
   Widget _buildPlaceholder() => Container(

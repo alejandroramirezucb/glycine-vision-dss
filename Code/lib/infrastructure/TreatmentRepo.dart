@@ -4,30 +4,45 @@ import '../domain/Protocols.dart';
 import '../domain/Treatment.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
-  final Map<String, TreatmentInfo> _treatments = {};
+  final Map<String, TreatmentInfo> _default = {};
+  final Map<String, Map<String, TreatmentInfo>> _bySeverity = {};
 
   static const _labelMap = {
-    'bacterial_diseases': 'Bacterianas',
-    'fungal_diseases': 'Fungicas',
-    'rust_disease': 'Roya',
-    'viral_diseases': 'Virales',
-    'insect_pests': 'Plagas_Insectos',
+    'bacterial_diseases': 'bacterianas',
+    'fungal_diseases': 'fungicas',
+    'rust_disease': 'roya',
+    'viral_diseases': 'virales',
+    'insect_pests': 'plagas_insectos',
+    'Bacterianas': 'bacterianas',
+    'Fungicas': 'fungicas',
+    'Roya': 'roya',
+    'Virales': 'virales',
+    'Plagas_Insectos': 'plagas_insectos',
   };
 
   static Future<JsonTreatmentRepository> load() async {
     final repo = JsonTreatmentRepository();
-    final jsonText =
-        await rootBundle.loadString('assets/data/tratamientos.json');
+    final jsonText = await rootBundle.loadString('assets/data/tratamientos.json');
     final json = jsonDecode(jsonText) as Map<String, dynamic>;
 
     for (final entry in json.entries) {
-      final treatment =
-          TreatmentInfo.fromJson(entry.key, entry.value as Map<String, dynamic>);
-      repo._treatments[entry.key] = treatment;
-      if (_labelMap.containsValue(entry.key)) {
-        final key =
-            _labelMap.entries.firstWhere((e) => e.value == entry.key).key;
-        repo._treatments[key] = treatment;
+      final key = entry.key;
+      final body = entry.value as Map<String, dynamic>;
+      final defaultInfo = TreatmentInfo.fromJson(key, body);
+      repo._default[key] = defaultInfo;
+      repo._default[_normalize(key)] = defaultInfo;
+
+      final porSev = body['por_severidad'] as Map<String, dynamic>?;
+      if (porSev != null) {
+        final map = <String, TreatmentInfo>{};
+        porSev.forEach((nivel, sevBody) {
+          map[_normalize(nivel)] = TreatmentInfo.fromSeverityEntry(
+            key,
+            body,
+            sevBody as Map<String, dynamic>,
+          );
+        });
+        repo._bySeverity[_normalize(key)] = map;
       }
     }
 
@@ -36,8 +51,27 @@ class JsonTreatmentRepository implements TreatmentRepository {
 
   @override
   TreatmentInfo? getByLabel(String label) {
-    final normalized = label.trim().toLowerCase().replaceAll(' ', '_');
-    final mapped = _labelMap[normalized] ?? normalized;
-    return _treatments[mapped];
+    final norm = _normalize(label);
+    final mapped = _labelMap[label] ?? _labelMap[norm] ?? norm;
+    return _default[mapped] ?? _default[label];
   }
+
+  @override
+  TreatmentInfo? getByLabelAndSeverity(String label, String severityLevel) {
+    final norm = _normalize(label);
+    final mapped = _labelMap[label] ?? _labelMap[norm] ?? norm;
+    final bySev = _bySeverity[mapped];
+    if (bySev == null) return getByLabel(label);
+    return bySev[_normalize(severityLevel)] ?? getByLabel(label);
+  }
+
+  static String _normalize(String s) => s
+      .toLowerCase()
+      .trim()
+      .replaceAll(' ', '_')
+      .replaceAll('á', 'a')
+      .replaceAll('é', 'e')
+      .replaceAll('í', 'i')
+      .replaceAll('ó', 'o')
+      .replaceAll('ú', 'u');
 }
