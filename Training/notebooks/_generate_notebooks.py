@@ -300,13 +300,10 @@ import json
 from pathlib import Path
 import matplotlib.pyplot as plt
 
-# Precision mixta: ~30-40% mas rapido en T4 sin perder precision
-tf.keras.mixed_precision.set_global_policy("mixed_float16")
-
+# Sin mixed precision — simplifica export TFLite
 tf.random.set_seed(42)
 np.random.seed(42)
 print("GPU:", tf.config.list_physical_devices("GPU"))
-print("Politica precision:", tf.keras.mixed_precision.global_policy())
 
 IMG_SIZE = (224, 224)
 BATCH = 16
@@ -349,10 +346,9 @@ def construir(num_clases={num_classes}):
     )(x)
     x = tf.keras.layers.Dropout(0.3)(x)
     if num_clases == 1:
-        # mixed_float16 requiere float32 en capa final
-        out = tf.keras.layers.Dense(1, activation="sigmoid", dtype="float32")(x)
+        out = tf.keras.layers.Dense(1, activation="sigmoid")(x)
     else:
-        out = tf.keras.layers.Dense(num_clases, activation="softmax", dtype="float32")(x)
+        out = tf.keras.layers.Dense(num_clases, activation="softmax")(x)
     return tf.keras.Model(base.input, out, name="{model_name}")
 
 
@@ -652,39 +648,70 @@ from pathlib import Path
 
 OUT = Path("./outputs")
 
-# TFLite NO soporta mixed_float16 — cambiar a float32 para export
-original_policy = tf.keras.mixed_precision.global_policy().name
+# Cargar modelos originales (pueden estar en mixed_float16 si se entrenaron así)
 tf.keras.mixed_precision.set_global_policy("float32")
+m1_orig = tf.keras.models.load_model(OUT / "model1_binary.keras")
+m2_orig = tf.keras.models.load_model(OUT / "model2_pathogen.keras")
+print("Modelos originales cargados")
+print("M1 layers:", len(m1_orig.layers))
+print("M2 layers:", len(m2_orig.layers))
+"""),
+    code("""def reconstruir_float32(original, num_clases, model_name):
+    '''
+    Reconstruye el modelo en float32 puro copiando los pesos del original.
+    Necesario cuando el modelo fue entrenado con mixed_float16: los pesos
+    se guardan en float32 pero el grafo tiene operaciones float16 que TFLite
+    no puede convertir. Reconstruir en float32 elimina esas operaciones.
+    '''
+    IMG = (224, 224)
+    base = tf.keras.applications.EfficientNetB0(
+        weights=None, include_top=False, input_shape=(*IMG, 3)
+    )
+    x = base.output
+    x = tf.keras.layers.GlobalAveragePooling2D()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(0.4)(x)
+    x = tf.keras.layers.Dense(
+        256, activation="relu",
+        kernel_regularizer=tf.keras.regularizers.l2(1e-4)
+    )(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+    if num_clases == 1:
+        out = tf.keras.layers.Dense(1, activation="sigmoid")(x)
+    else:
+        out = tf.keras.layers.Dense(num_clases, activation="softmax")(x)
+    nuevo = tf.keras.Model(base.input, out, name=model_name)
 
-m1 = tf.keras.models.load_model(OUT / "model1_binary.keras")
-m2 = tf.keras.models.load_model(OUT / "model2_pathogen.keras")
-print("Modelos cargados OK (float32 para export)")
+    # Los pesos del original ya son float32 aunque se computaran en float16
+    nuevo.set_weights(original.get_weights())
+    print(f"  {model_name}: {len(nuevo.layers)} layers, pesos copiados OK")
+    return nuevo
+
+
+m1 = reconstruir_float32(m1_orig, num_clases=1, model_name="model1_binary")
+m2 = reconstruir_float32(m2_orig, num_clases=5, model_name="model2_pathogen")
 """),
     code("""def export_tflite(model, path, target_mb=None):
-    conv = tf.lite.TFLiteConverter.from_keras_model(model)
-    conv.optimizations = [tf.lite.Optimize.DEFAULT]
-    try:
-        tflite = conv.convert()
-    except Exception as e:
-        print(f"  Error en conversión {path}: {e}")
-        print("  Reintentando sin optimizaciones...")
-        conv = tf.lite.TFLiteConverter.from_keras_model(model)
-        tflite = conv.convert()
+    '''Convierte modelo float32 a TFLite con cuantizacion int8 dinamica.'''
+    converter = tf.lite.TFLiteConverter.from_keras_model(model)
+    converter.optimizations = [tf.lite.Optimize.DEFAULT]
 
-    Path(path).write_bytes(tflite)
+    print(f"  Convirtiendo {path.name}...")
+    tflite_model = converter.convert()
+
+    Path(path).write_bytes(tflite_model)
     size_mb = Path(path).stat().st_size / (1024 * 1024)
-    print(f"  {path} - {size_mb:.2f} MB", end="")
+    status = ""
     if target_mb:
-        print(f"  ({'OK' if size_mb < target_mb else 'GRANDE: revisar'})", end="")
-    print()
+        ok = size_mb < target_mb
+        status = f" [{'OK' if ok else 'GRANDE'}]"
+    print(f"    {path.name}: {size_mb:.2f} MB{status}")
     return size_mb
 
 
 export_tflite(m1, OUT / "model1.tflite", target_mb=5)
 export_tflite(m2, OUT / "model2.tflite", target_mb=10)
-
-# Restaurar política original (no necesario aquí pero buena practica)
-tf.keras.mixed_precision.set_global_policy(original_policy)
+print("\\nExport completado. Copiar a Code/assets/models/")
 """),
     code("""def labels_from_indices(path_in, path_out):
     import json
