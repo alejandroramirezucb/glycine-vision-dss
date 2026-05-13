@@ -124,6 +124,9 @@ class _ZonePainter extends CustomPainter {
   }
 
   void _drawLabel(Canvas canvas, Rect rect, ZoneDetection zone) {
+    // Skip label if zone too small (< 30px width)
+    if (rect.width < 30) return;
+
     final label =
         '${labelToEs(zone.pathogenClass)} ${zone.severityPct.toStringAsFixed(0)}%';
     final tp = TextPainter(

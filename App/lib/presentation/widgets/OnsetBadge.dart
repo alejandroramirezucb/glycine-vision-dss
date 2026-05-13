@@ -16,7 +16,7 @@ class OnsetBadge extends StatelessWidget {
         border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      child: Row(mainAxisSize: MainAxisSize.min, children: [
+      child: Row(mainAxisSize: MainAxisSize.max, children: [
         const Icon(Icons.schedule_outlined, size: 16, color: AppTheme.accent),
         const SizedBox(width: 6),
         Flexible(

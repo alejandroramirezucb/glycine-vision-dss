@@ -22,13 +22,23 @@ class ClimateInputCard extends StatelessWidget {
       decoration: AppTheme.cardDecoration(),
       padding: const EdgeInsets.all(14),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        const Text(
-          'Datos climáticos',
-          style: TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.bold,
-            color: AppTheme.accentDark,
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              'Datos climáticos',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.accentDark,
+              ),
+            ),
+            if (climate != null && onClear != null)
+              TextButton(
+                onPressed: onClear,
+                child: const Text('Quitar', style: TextStyle(fontSize: 11)),
+              ),
+          ],
         ),
         const SizedBox(height: 6),
         if (climate == null) ...[
@@ -49,14 +59,6 @@ class ClimateInputCard extends StatelessWidget {
             _kv('Humedad', '${climate!.humidity.toStringAsFixed(0)} %'),
             _kv('Lluvia', '${climate!.precipMm.toStringAsFixed(1)} mm'),
           ]),
-          if (onClear != null)
-            Align(
-              alignment: Alignment.centerRight,
-              child: TextButton(
-                onPressed: onClear,
-                child: const Text('Quitar', style: TextStyle(fontSize: 11)),
-              ),
-            ),
         ],
       ]),
     );
