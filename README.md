@@ -44,6 +44,7 @@ Clasificacion de tipo de enfermedad (solo si Modelo 1 retorna `diseased`):
 
 - Flutter SDK 3.x
 - Python 3.10+ (solo para web — servidor de inferencia)
+  - TensorFlow 2.20.0+
 - Java 17+ (para build Android)
 - Windows: **Developer Mode activado** (requerido por plugins nativos como `tflite_flutter`)
   → `start ms-settings:developers`
