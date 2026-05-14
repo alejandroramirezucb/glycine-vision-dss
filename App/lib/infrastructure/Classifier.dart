@@ -76,23 +76,38 @@ class TfliteClassifier {
   double thresholdFor(String label) =>
       _thresholds[label] ?? _defaultThreshold;
 
-  List<double> run(img.Image image) {
-    final resized = img.copyResize(image, width: _inputSize, height: _inputSize);
-    final outTensor = _interpreter.getOutputTensor(0);
-    final outSize = outTensor.shape.reduce((a, b) => a * b);
-    final isQuantized =
-        _interpreter.getInputTensor(0).type == TensorType.uint8;
+  List<double> run(img.Image image) => runBatch([image]).first;
+
+  List<List<double>> runBatch(List<img.Image> images) {
+    final n = images.length;
+    if (n == 0) return const [];
+
+    final inputDetail = _interpreter.getInputTensor(0);
+    final outputDetail = _interpreter.getOutputTensor(0);
+    final isQuantized = inputDetail.type == TensorType.uint8;
+    _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
+    _interpreter.allocateTensors();
+    final outSize = outputDetail.shape.skip(1).reduce((a, b) => a * b);
 
     if (isQuantized) {
-      final input = [_toUint8Grid(resized)];
-      final output = [List<int>.filled(outSize, 0)];
-      _interpreter.run(input, output);
-      return _expandBinary(output[0].map((v) => v / 255.0).toList());
+      final inputs = images
+          .map((image) => _toUint8Grid(
+              img.copyResize(image, width: _inputSize, height: _inputSize)))
+          .toList();
+      final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
+      _interpreter.run(inputs, output);
+      return output
+          .map((row) =>
+              _expandBinary(row.map((v) => v / 255.0).toList()))
+          .toList();
     }
-    final input = [_toFloat32Grid(resized)];
-    final output = [List<double>.filled(outSize, 0.0)];
-    _interpreter.run(input, output);
-    return _expandBinary(output[0]);
+    final inputs = images
+        .map((image) => _toFloat32Grid(
+            img.copyResize(image, width: _inputSize, height: _inputSize)))
+        .toList();
+    final output = List.generate(n, (_) => List<double>.filled(outSize, 0.0));
+    _interpreter.run(inputs, output);
+    return output.map(_expandBinary).toList();
   }
 
   List<double> _expandBinary(List<double> scores) {
@@ -106,9 +121,9 @@ class TfliteClassifier {
       List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
             final p = image.getPixelSafe(x, y);
             return [
-              (p.r.toInt() & 0xFF) / 127.5 - 1.0,
-              (p.g.toInt() & 0xFF) / 127.5 - 1.0,
-              (p.b.toInt() & 0xFF) / 127.5 - 1.0,
+              (p.r.toInt() & 0xFF).toDouble(),
+              (p.g.toInt() & 0xFF).toDouble(),
+              (p.b.toInt() & 0xFF).toDouble(),
             ];
           }));
 

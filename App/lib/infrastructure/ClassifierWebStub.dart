@@ -14,4 +14,6 @@ class TfliteClassifier {
   double thresholdFor(String label) => 0.5;
   List<double> run(Object image) =>
       throw UnsupportedError('TfliteClassifier no disponible en web');
+  List<List<double>> runBatch(List<Object> images) =>
+      throw UnsupportedError('TfliteClassifier no disponible en web');
 }

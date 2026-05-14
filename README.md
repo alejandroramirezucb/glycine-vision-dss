@@ -117,3 +117,14 @@ cd App && flutter build ipa --release
 ```
 
 Requerimientos: Xcode 15+, CocoaPods.
+
+### Notebooks
+
+Antes de cada notebook hay que colocar: 
+
+```bash
+from google.colab import drive
+drive.mount('/content/drive')
+
+%cd "/content/drive/MyDrive/glycine_vision/Training/notebooks"
+```

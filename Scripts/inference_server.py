@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import warnings
 from pathlib import Path
@@ -24,16 +25,17 @@ app.add_middleware(
 )
 
 PATCH_SIZE = 150
-STRIDE = 75
+STRIDE = 100
 MAX_SIDE = 400
 HEALTH_GATE = 0.5
 ACTIVE_THRESHOLD = 0.4
 COVERAGE_MIN_PCT = 5.0
-DEFAULT_LAT = -17.78
-DEFAULT_LON = -63.18
+LEAF_GREEN_RATIO = 0.10
+TFLITE_THREADS = max(2, os.cpu_count() or 4)
 
 SEVERITY_ORDER = ["minima", "leve", "moderada", "severa", "critica"]
-HSV_GREEN = [(np.array([30, 40, 40]), np.array([85, 255, 255]))]
+HSV_GREEN_LOW = np.array([20, 30, 30])
+HSV_GREEN_HIGH = np.array([90, 255, 255])
 HSV_LESION = [
     (np.array([10, 50, 20]), np.array([30, 255, 200])),
     (np.array([0, 50, 20]), np.array([10, 255, 180])),
@@ -42,7 +44,7 @@ HSV_NECROTIC = [(np.array([0, 0, 0]), np.array([180, 80, 60]))]
 
 
 def load_tflite(path: str) -> tf.lite.Interpreter:
-    interp = tf.lite.Interpreter(model_path=path)
+    interp = tf.lite.Interpreter(model_path=path, num_threads=TFLITE_THREADS)
     interp.allocate_tensors()
     return interp
 
@@ -76,13 +78,16 @@ except Exception as exc:
     print(f"[err] Health model load failed: {exc}")
 
 try:
-    disease_interp = load_tflite("Models/glycine-vision-pd/model_unquant.tflite")
+    disease_path = "Models/glycine-vision-pd/model.tflite"
+    if not Path(disease_path).exists():
+        disease_path = "Models/glycine-vision-pd/model_unquant.tflite"
+    disease_interp = load_tflite(disease_path)
     disease_labels = load_labels("Models/glycine-vision-pd/labels.txt")
     disease_thresholds = load_thresholds(
         "Models/glycine-vision-pd/thresholds.json",
         disease_labels,
     )
-    print("[ok] Disease model loaded:", disease_labels)
+    print(f"[ok] Disease model loaded from {disease_path}:", disease_labels)
     print("[ok] Thresholds:", disease_thresholds)
 except Exception as exc:
     disease_interp = None
@@ -91,27 +96,47 @@ except Exception as exc:
     print(f"[err] Disease model load failed: {exc}")
 
 
-def preprocess(rgb_array: np.ndarray, dtype) -> np.ndarray:
-    resized = cv2.resize(rgb_array, (224, 224))
+def preprocess_single(rgb_array: np.ndarray, dtype, target_hw: tuple[int, int]) -> np.ndarray:
+    resized = cv2.resize(rgb_array, (target_hw[1], target_hw[0]))
     if dtype == np.float32:
-        scaled = resized.astype(np.float32) / 127.5 - 1.0
-    else:
-        scaled = resized.astype(dtype)
-    return np.expand_dims(scaled, 0)
+        return resized.astype(np.float32)
+    return resized.astype(dtype)
 
 
-def run_model(interp: tf.lite.Interpreter, rgb_array: np.ndarray) -> np.ndarray:
+def batch_run(interp: tf.lite.Interpreter, patches_rgb: np.ndarray) -> np.ndarray:
+    n = patches_rgb.shape[0]
     inp = interp.get_input_details()[0]
     out = interp.get_output_details()[0]
-    interp.set_tensor(inp["index"], preprocess(rgb_array, inp["dtype"]))
+    target_shape = list(inp["shape"])
+    target_h, target_w = int(target_shape[1]), int(target_shape[2])
+    if target_shape[0] != n:
+        target_shape[0] = n
+        interp.resize_tensor_input(inp["index"], target_shape)
+        interp.allocate_tensors()
+        inp = interp.get_input_details()[0]
+        out = interp.get_output_details()[0]
+    batch = np.stack([
+        preprocess_single(p, inp["dtype"], (target_h, target_w))
+        for p in patches_rgb
+    ])
+    interp.set_tensor(inp["index"], batch)
     interp.invoke()
-    raw = interp.get_tensor(out["index"])[0]
-    return raw.astype(np.float32) / 255.0 if out["dtype"] == np.uint8 else raw.astype(np.float32)
+    raw = interp.get_tensor(out["index"])
+    if out["dtype"] == np.uint8:
+        return raw.astype(np.float32) / 255.0
+    return raw.astype(np.float32)
+
+
+def is_likely_leaf(patch_bgr: np.ndarray) -> bool:
+    hsv = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2HSV)
+    green = cv2.inRange(hsv, HSV_GREEN_LOW, HSV_GREEN_HIGH)
+    pixels = patch_bgr.shape[0] * patch_bgr.shape[1]
+    return cv2.countNonZero(green) > pixels * LEAF_GREEN_RATIO
 
 
 def severity_hsv(patch_bgr: np.ndarray) -> tuple[float, str]:
     hsv = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2HSV)
-    mask_healthy = _mask_from_ranges(hsv, HSV_GREEN)
+    mask_healthy = cv2.inRange(hsv, HSV_GREEN_LOW, HSV_GREEN_HIGH)
     mask_lesion = _mask_from_ranges(hsv, HSV_LESION)
     mask_necrotic = _mask_from_ranges(hsv, HSV_NECROTIC)
     mask_disease = cv2.bitwise_or(mask_lesion, mask_necrotic)
@@ -119,11 +144,9 @@ def severity_hsv(patch_bgr: np.ndarray) -> tuple[float, str]:
     mask_disease = cv2.morphologyEx(mask_disease, cv2.MORPH_OPEN, kernel)
     mask_disease = cv2.morphologyEx(mask_disease, cv2.MORPH_CLOSE, kernel)
     mask_leaf = cv2.bitwise_or(mask_healthy, mask_disease)
-
     total_pixels = patch_bgr.shape[0] * patch_bgr.shape[1]
     leaf_pixels = int(cv2.countNonZero(mask_leaf))
     diseased_pixels = int(cv2.countNonZero(mask_disease))
-
     if leaf_pixels < total_pixels * 0.1:
         return 0.0, "minima"
     pct = round(min(diseased_pixels / leaf_pixels * 100, 100.0), 1)
@@ -149,13 +172,20 @@ def _severity_level(pct: float) -> str:
     return "critica"
 
 
+def expand_binary(scores: np.ndarray, num_labels: int) -> np.ndarray:
+    if scores.ndim == 1 and scores.shape[0] == 1 and num_labels == 2:
+        return np.array([1.0 - scores[0], scores[0]], dtype=np.float32)
+    if scores.ndim == 2 and scores.shape[1] == 1 and num_labels == 2:
+        return np.concatenate([1.0 - scores, scores], axis=1)
+    return scores
+
+
 def probability_diseased(scores: np.ndarray, labels: list[str]) -> float:
-    if len(scores) == 1:
-        return float(scores[0]) if any("enferm" in l.lower() or "diseased" in l.lower() for l in labels[-1:]) else float(scores[0])
+    expanded = expand_binary(scores, len(labels))
     for i, label in enumerate(labels):
         if "enferm" in label.lower() or "diseased" in label.lower():
-            return float(scores[i])
-    return float(scores[-1])
+            return float(expanded[i])
+    return float(expanded[-1])
 
 
 def active_diseases(scores: np.ndarray, severity_pct: float) -> list[dict]:
@@ -205,36 +235,48 @@ def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int]:
     if health_interp is None or disease_interp is None:
         return [], 0
     height, width = image_bgr.shape[:2]
-    zones = []
+    candidates = []
     total_patches = 0
     for y in range(0, height - PATCH_SIZE + 1, STRIDE):
         for x in range(0, width - PATCH_SIZE + 1, STRIDE):
             total_patches += 1
             patch_bgr = image_bgr[y:y + PATCH_SIZE, x:x + PATCH_SIZE]
-            zone = analyze_patch(patch_bgr, x, y)
-            if zone is not None:
-                zones.append(zone)
+            if not is_likely_leaf(patch_bgr):
+                continue
+            patch_rgb = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2RGB)
+            candidates.append((x, y, patch_bgr, patch_rgb))
+
+    if not candidates:
+        return [], total_patches
+
+    patches_rgb = np.stack([c[3] for c in candidates])
+    health_scores = batch_run(health_interp, patches_rgb)
+    diseased_idx = [
+        i for i in range(len(candidates))
+        if probability_diseased(health_scores[i], health_labels) >= HEALTH_GATE
+    ]
+    if not diseased_idx:
+        return [], total_patches
+
+    diseased_patches = patches_rgb[diseased_idx]
+    disease_scores = batch_run(disease_interp, diseased_patches)
+
+    zones = []
+    for j, idx in enumerate(diseased_idx):
+        x, y, patch_bgr, _ = candidates[idx]
+        sev_pct, sev_lvl = severity_hsv(patch_bgr)
+        if sev_pct < 2.0:
+            continue
+        actives = active_diseases(disease_scores[j], sev_pct)
+        if not actives:
+            continue
+        zones.append({
+            "bbox": [x, y, x + PATCH_SIZE, y + PATCH_SIZE],
+            "severidad_pct": sev_pct,
+            "nivel": sev_lvl,
+            "enfermedades": actives,
+        })
     return zones, total_patches
-
-
-def analyze_patch(patch_bgr: np.ndarray, x: int, y: int) -> Optional[dict]:
-    patch_rgb = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2RGB)
-    health_scores = run_model(health_interp, patch_rgb)
-    if probability_diseased(health_scores, health_labels) < HEALTH_GATE:
-        return None
-    severity_pct, severity_level = severity_hsv(patch_bgr)
-    if severity_pct < 2.0:
-        return None
-    disease_scores = run_model(disease_interp, patch_rgb)
-    actives = active_diseases(disease_scores, severity_pct)
-    if not actives:
-        return None
-    return {
-        "bbox": [x, y, x + PATCH_SIZE, y + PATCH_SIZE],
-        "severidad_pct": severity_pct,
-        "nivel": severity_level,
-        "enfermedades": actives,
-    }
 
 
 def aggregate_findings(zones: list[dict], total_patches: int) -> list[dict]:

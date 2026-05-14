@@ -13,10 +13,11 @@ import 'SeverityCalculator.dart';
 
 class LocalDiagnoser implements Diagnoser {
   static const int _defaultPatchSize = 150;
-  static const int _defaultStride = 75;
+  static const int _defaultStride = 100;
   static const int _defaultMaxSide = 400;
   static const double _defaultDiseaseGate = 0.5;
   static const double _defaultActiveThreshold = 0.4;
+  static const double _leafGreenRatio = 0.10;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -94,42 +95,70 @@ class LocalDiagnoser implements Diagnoser {
   }
 
   _ScanResult _scanImage(img.Image image) {
-    final zones = <Zone>[];
+    final candidates = <_Candidate>[];
     var totalPatches = 0;
     for (var y = 0; y + patchSize <= image.height; y += stride) {
       for (var x = 0; x + patchSize <= image.width; x += stride) {
         totalPatches++;
-        final patch = img.copyCrop(image, x: x, y: y, width: patchSize, height: patchSize);
-        final zone = _analyzePatch(patch, x, y);
-        if (zone != null) zones.add(zone);
+        final patch = img.copyCrop(image,
+            x: x, y: y, width: patchSize, height: patchSize);
+        if (!_isLikelyLeaf(patch)) continue;
+        candidates.add(_Candidate(x, y, patch));
       }
+    }
+    if (candidates.isEmpty) return _ScanResult(const [], totalPatches);
+
+    final healthScores =
+        _healthModel.runBatch(candidates.map((c) => c.patch).toList());
+    final diseasedIndexes = <int>[];
+    for (var i = 0; i < candidates.length; i++) {
+      if (_probabilityDiseased(healthScores[i]) >= healthGate) {
+        diseasedIndexes.add(i);
+      }
+    }
+    if (diseasedIndexes.isEmpty) return _ScanResult(const [], totalPatches);
+
+    final diseasedPatches =
+        diseasedIndexes.map((i) => candidates[i].patch).toList();
+    final diseaseScores = _diseaseModel.runBatch(diseasedPatches);
+
+    final zones = <Zone>[];
+    for (var j = 0; j < diseasedIndexes.length; j++) {
+      final candidate = candidates[diseasedIndexes[j]];
+      final severity = _severity.calculate(candidate.patch);
+      if (severity.percent < 2.0) continue;
+      final actives = _activeDiseases(diseaseScores[j], severity.percent);
+      if (actives.isEmpty) continue;
+      zones.add(Zone(
+        bbox: Rect.fromLTWH(
+          candidate.x.toDouble(),
+          candidate.y.toDouble(),
+          patchSize.toDouble(),
+          patchSize.toDouble(),
+        ),
+        severityPct: severity.percent,
+        severityLevel: severity.level,
+        activeDiseases: actives,
+      ));
     }
     return _ScanResult(zones, totalPatches);
   }
 
-  Zone? _analyzePatch(img.Image patch, int x, int y) {
-    final healthScores = _healthModel.run(patch);
-    final probDiseased = _probabilityDiseased(healthScores);
-    if (probDiseased < healthGate) return null;
-
-    final severity = _severity.calculate(patch);
-    if (severity.percent < 2.0) return null;
-
-    final diseaseScores = _diseaseModel.run(patch);
-    final actives = _activeDiseases(diseaseScores, severity.percent);
-    if (actives.isEmpty) return null;
-
-    return Zone(
-      bbox: Rect.fromLTWH(
-        x.toDouble(),
-        y.toDouble(),
-        patchSize.toDouble(),
-        patchSize.toDouble(),
-      ),
-      severityPct: severity.percent,
-      severityLevel: severity.level,
-      activeDiseases: actives,
-    );
+  bool _isLikelyLeaf(img.Image patch) {
+    var greenCount = 0;
+    var sampleCount = 0;
+    for (var y = 0; y < patch.height; y += 4) {
+      for (var x = 0; x < patch.width; x += 4) {
+        final p = patch.getPixelSafe(x, y);
+        final r = p.r.toInt();
+        final g = p.g.toInt();
+        final b = p.b.toInt();
+        if (g > 40 && g > r * 1.05 && g > b * 1.05) greenCount++;
+        sampleCount++;
+      }
+    }
+    if (sampleCount == 0) return false;
+    return greenCount / sampleCount > _leafGreenRatio;
   }
 
   double _probabilityDiseased(List<double> scores) {
@@ -189,7 +218,8 @@ class LocalDiagnoser implements Diagnoser {
       );
     }).toList();
     findings.sort((a, b) {
-      final s = _rankSeverity(b.severityLevel).compareTo(_rankSeverity(a.severityLevel));
+      final s = _rankSeverity(b.severityLevel)
+          .compareTo(_rankSeverity(a.severityLevel));
       return s != 0 ? s : b.coveragePct.compareTo(a.coveragePct);
     });
     return findings;
@@ -231,6 +261,14 @@ class _ScanResult {
   final int totalPatches;
 
   const _ScanResult(this.zones, this.totalPatches);
+}
+
+class _Candidate {
+  final int x;
+  final int y;
+  final img.Image patch;
+
+  const _Candidate(this.x, this.y, this.patch);
 }
 
 class _LabelScore {
