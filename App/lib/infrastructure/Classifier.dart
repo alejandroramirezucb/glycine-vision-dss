@@ -1,68 +1,83 @@
+import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
-import 'package:image_picker/image_picker.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
-import '../domain/Entities.dart';
-import '../domain/Protocols.dart';
 
-class TfliteClassifier implements ImageClassifier {
+class TfliteClassifier {
+  static const int _defaultInputSize = 224;
+  static const double _defaultThreshold = 0.5;
+
   final Interpreter _interpreter;
   final List<String> _labels;
+  final Map<String, double> _thresholds;
   final int _inputSize;
 
   TfliteClassifier._({
     required Interpreter interpreter,
     required List<String> labels,
+    required Map<String, double> thresholds,
     required int inputSize,
   })  : _interpreter = interpreter,
         _labels = labels,
+        _thresholds = thresholds,
         _inputSize = inputSize;
 
-  static Future<TfliteClassifier> load(
-    String modelAsset,
-    String labelsAsset, {
-    int inputSize = 224,
+  static Future<TfliteClassifier> load({
+    required String modelAsset,
+    required String labelsAsset,
+    String? thresholdsAsset,
+    int inputSize = _defaultInputSize,
   }) async {
     final interpreter = await Interpreter.fromAsset(modelAsset);
-    final labelsText = await rootBundle.loadString(labelsAsset);
-    final labels = labelsText
+    final labels = await _loadLabels(labelsAsset);
+    final thresholds = thresholdsAsset == null
+        ? <String, double>{}
+        : await _loadThresholds(thresholdsAsset, labels);
+    return TfliteClassifier._(
+      interpreter: interpreter,
+      labels: labels,
+      thresholds: thresholds,
+      inputSize: inputSize,
+    );
+  }
+
+  static Future<List<String>> _loadLabels(String asset) async {
+    final text = await rootBundle.loadString(asset);
+    return text
         .split('\n')
         .map((l) => l.trim())
         .where((l) => l.isNotEmpty)
         .map(_stripIndex)
         .toList();
-    return TfliteClassifier._(
-      interpreter: interpreter,
-      labels: labels,
-      inputSize: inputSize,
-    );
+  }
+
+  static Future<Map<String, double>> _loadThresholds(
+    String asset,
+    List<String> labels,
+  ) async {
+    try {
+      final text = await rootBundle.loadString(asset);
+      final json = jsonDecode(text) as Map<String, dynamic>;
+      return json.map((k, v) => MapEntry(k, (v as num).toDouble()));
+    } catch (_) {
+      return {for (final l in labels) l: _defaultThreshold};
+    }
   }
 
   static String _stripIndex(String label) {
     final parts = label.split(' ');
-    return (parts.length >= 2 && int.tryParse(parts[0]) != null)
+    return parts.length >= 2 && int.tryParse(parts[0]) != null
         ? parts.sublist(1).join(' ')
         : label;
   }
 
   List<String> get labels => List.unmodifiable(_labels);
 
-  @override
-  Future<PredictionResult> classify(XFile imageFile) async {
-    final bytes = await imageFile.readAsBytes();
-    final image = img.decodeImage(bytes);
-    if (image == null) throw Exception('Imagen inválida');
-    final scores = classifyImage(image);
-    return PredictionResult(
-      predictions: _buildPredictions(scores),
-      imagePath: imageFile.path,
-    );
-  }
+  double thresholdFor(String label) =>
+      _thresholds[label] ?? _defaultThreshold;
 
-  List<double> classifyImage(img.Image image) {
-    final resized =
-        img.copyResize(image, width: _inputSize, height: _inputSize);
-
+  List<double> run(img.Image image) {
+    final resized = img.copyResize(image, width: _inputSize, height: _inputSize);
     final outTensor = _interpreter.getOutputTensor(0);
     final outSize = outTensor.shape.reduce((a, b) => a * b);
     final isQuantized =
@@ -73,12 +88,11 @@ class TfliteClassifier implements ImageClassifier {
       final output = [List<int>.filled(outSize, 0)];
       _interpreter.run(input, output);
       return _expandBinary(output[0].map((v) => v / 255.0).toList());
-    } else {
-      final input = [_toFloat32Grid(resized)];
-      final output = [List<double>.filled(outSize, 0.0)];
-      _interpreter.run(input, output);
-      return _expandBinary(output[0]);
     }
+    final input = [_toFloat32Grid(resized)];
+    final output = [List<double>.filled(outSize, 0.0)];
+    _interpreter.run(input, output);
+    return _expandBinary(output[0]);
   }
 
   List<double> _expandBinary(List<double> scores) {
@@ -92,9 +106,9 @@ class TfliteClassifier implements ImageClassifier {
       List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
             final p = image.getPixelSafe(x, y);
             return [
-              ((p.r as int) & 0xFF) / 127.5 - 1.0,
-              ((p.g as int) & 0xFF) / 127.5 - 1.0,
-              ((p.b as int) & 0xFF) / 127.5 - 1.0,
+              (p.r.toInt() & 0xFF) / 127.5 - 1.0,
+              (p.g.toInt() & 0xFF) / 127.5 - 1.0,
+              (p.b.toInt() & 0xFF) / 127.5 - 1.0,
             ];
           }));
 
@@ -102,18 +116,9 @@ class TfliteClassifier implements ImageClassifier {
       List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
             final p = image.getPixelSafe(x, y);
             return [
-              (p.r as int) & 0xFF,
-              (p.g as int) & 0xFF,
-              (p.b as int) & 0xFF,
+              p.r.toInt() & 0xFF,
+              p.g.toInt() & 0xFF,
+              p.b.toInt() & 0xFF,
             ];
           }));
-
-  List<PredictionItem> _buildPredictions(List<double> probs) {
-    final items = [
-      for (var i = 0; i < probs.length && i < _labels.length; i++)
-        PredictionItem(label: _labels[i], confidence: probs[i])
-    ];
-    items.sort((a, b) => b.confidence.compareTo(a.confidence));
-    return items;
-  }
 }

@@ -1,77 +1,46 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'application/ClassifyUseCase.dart';
-import 'application/ZoneAnalysisCase.dart';
-import 'application/ClimateCase.dart';
-import 'application/OnsetCase.dart';
-import 'infrastructure/Classifier.dart'
-    if (dart.library.js_interop) 'infrastructure/ClassifierStub.dart';
-import 'infrastructure/HttpClassifier.dart';
-import 'infrastructure/HttpZoneAnalyzer.dart';
-import 'infrastructure/LocalZoneAnalyzer.dart'
-    if (dart.library.js_interop) 'infrastructure/LocalZoneAnalyzerStub.dart';
-import 'infrastructure/OpenMeteoClient.dart';
-import 'infrastructure/OnsetEstimatorImpl.dart';
+import 'application/DiagnoseUseCase.dart';
+import 'domain/Diagnoser.dart';
 import 'domain/Protocols.dart';
+import 'infrastructure/Classifier.dart'
+    if (dart.library.js_interop) 'infrastructure/ClassifierWebStub.dart';
+import 'infrastructure/HttpDiagnoser.dart';
+import 'infrastructure/LocalDiagnoser.dart'
+    if (dart.library.js_interop) 'infrastructure/LocalDiagnoserWebStub.dart';
+import 'infrastructure/OnsetEstimatorImpl.dart';
+import 'infrastructure/OpenMeteoClient.dart';
 import 'infrastructure/TreatmentRepo.dart';
-import 'presentation/screens/DiseaseResult.dart';
-import 'presentation/screens/HealthResult.dart';
-import 'presentation/screens/HomeScreen.dart';
-import 'presentation/screens/ZoneResult.dart';
-import 'presentation/state/AppState.dart';
 import 'presentation/Theme.dart';
+import 'presentation/screens/DiagnoseResult.dart';
+import 'presentation/screens/HomeScreen.dart';
+import 'presentation/state/AppState.dart';
 import 'presentation/widgets/AppHeader.dart';
+
+const _serverBase = 'http://localhost:8001';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  const serverBase = 'http://localhost:8001';
-
   try {
-    final ImageClassifier healthClassifier;
-    final ImageClassifier diseaseClassifier;
-    final ZoneAnalyzer zoneAnalyzer;
-
-    if (kIsWeb) {
-      healthClassifier =
-          const HttpClassifier('$serverBase/api/classify/health');
-      diseaseClassifier =
-          const HttpClassifier('$serverBase/api/classify/disease');
-      zoneAnalyzer = const HttpZoneAnalyzer('$serverBase/api/analyze/zones');
-    } else {
-      final healthLocal = await TfliteClassifier.load(
-        'assets/models/hs/model.tflite',
-        'assets/models/hs/labels.txt',
-      );
-      final diseaseLocal = await TfliteClassifier.load(
-        'assets/models/pd/model_unquant.tflite',
-        'assets/models/pd/labels.txt',
-      );
-      healthClassifier = healthLocal;
-      diseaseClassifier = diseaseLocal;
-      zoneAnalyzer = LocalZoneAnalyzer(
-        healthModel: healthLocal,
-        diseaseModel: diseaseLocal,
-      );
-    }
-
     final treatmentRepo = await JsonTreatmentRepository.load();
     final climateRepo = OpenMeteoClient();
     const onsetEstimator = OnsetEstimatorImpl();
+    final diagnoser = await _buildDiagnoser(
+      treatmentRepo: treatmentRepo,
+      climateRepo: climateRepo,
+      onsetEstimator: onsetEstimator,
+    );
 
     runApp(
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => AppState()),
-          Provider.value(value: PredictHealthUseCase(healthClassifier)),
-          Provider.value(value: PredictDiseaseUseCase(diseaseClassifier)),
-          Provider.value(value: AnalyzeZonesUseCase(zoneAnalyzer)),
-          Provider.value(value: FetchClimateUseCase(climateRepo)),
-          Provider.value(value: const EstimateOnsetUseCase(onsetEstimator)),
+          Provider<TreatmentRepository>.value(value: treatmentRepo),
           Provider<ClimateRepository>.value(value: climateRepo),
           Provider<OnsetEstimator>.value(value: onsetEstimator),
-          Provider.value(value: treatmentRepo as TreatmentRepository),
+          Provider<Diagnoser>.value(value: diagnoser),
+          Provider(create: (ctx) => DiagnoseUseCase(ctx.read<Diagnoser>())),
         ],
         child: const GlycineVisionApp(),
       ),
@@ -83,6 +52,36 @@ void main() async {
       ),
     ));
   }
+}
+
+Future<Diagnoser> _buildDiagnoser({
+  required TreatmentRepository treatmentRepo,
+  required ClimateRepository climateRepo,
+  required OnsetEstimator onsetEstimator,
+}) async {
+  if (kIsWeb) {
+    return HttpDiagnoser(
+      endpoint: '$_serverBase/api/diagnose',
+      treatments: treatmentRepo,
+      onsetEstimator: onsetEstimator,
+    );
+  }
+  final healthModel = await TfliteClassifier.load(
+    modelAsset: 'assets/models/hs/model.tflite',
+    labelsAsset: 'assets/models/hs/labels.txt',
+  );
+  final diseaseModel = await TfliteClassifier.load(
+    modelAsset: 'assets/models/pd/model_unquant.tflite',
+    labelsAsset: 'assets/models/pd/labels.txt',
+    thresholdsAsset: 'assets/models/pd/thresholds.json',
+  );
+  return LocalDiagnoser(
+    healthModel: healthModel,
+    diseaseModel: diseaseModel,
+    treatments: treatmentRepo,
+    climateRepo: climateRepo,
+    onsetEstimator: onsetEstimator,
+  );
 }
 
 class GlycineVisionApp extends StatelessWidget {
@@ -102,11 +101,9 @@ class GlycineVisionApp extends StatelessWidget {
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
-  Widget _buildScreen(Screen screen) => switch (screen) {
+  Widget _renderScreen(Screen screen) => switch (screen) {
         Screen.home => const HomeScreen(),
-        Screen.healthResult => const HealthResult(),
-        Screen.diseaseResult => const DiseaseResult(),
-        Screen.zoneResult => const ZoneResult(),
+        Screen.diagnoseResult => const DiagnoseResult(),
       };
 
   @override
@@ -146,7 +143,7 @@ class MainScreen extends StatelessWidget {
                       child: Container(
                         width: width,
                         padding: const EdgeInsets.all(10),
-                        child: _buildScreen(state.currentScreen),
+                        child: _renderScreen(state.currentScreen),
                       ),
                     ),
                   ),

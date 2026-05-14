@@ -1,4 +1,31 @@
 {
+  "_meta": {
+    "incompatibilities": [
+      {
+        "productos": ["cobre", "aceite mineral"],
+        "razon": "Mezcla fitotóxica que puede causar quemaduras foliares severas en soya"
+      },
+      {
+        "productos": ["streptomicina", "cobre"],
+        "razon": "Antagonismo: el cobre puede reducir la efectividad bactericida de la streptomicina si se mezclan en el mismo tanque"
+      },
+      {
+        "productos": ["azufre", "aceite"],
+        "razon": "Reacción exotérmica con riesgo de fitotoxicidad cuando temperatura supera 28°C"
+      },
+      {
+        "productos": ["mancozeb", "cobre"],
+        "razon": "Sinergia química con riesgo de precipitación si el agua tiene pH alcalino; aplicar por separado"
+      }
+    ],
+    "ventanas_aplicacion": {
+      "minima": "monitoreo cada 7 días sin tratamiento inmediato",
+      "leve": "aplicar en los próximos 7 días",
+      "moderada": "aplicar en las próximas 48-72 horas",
+      "severa": "aplicar en las próximas 24 horas",
+      "critica": "aplicación inmediata; consultar agrónomo"
+    }
+  },
   "bacterianas": {
     "nombre_es": "Enfermedades Bacterianas",
     "nombre_en": "Bacterial Diseases",

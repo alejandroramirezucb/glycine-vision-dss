@@ -31,9 +31,9 @@ class SeverityCalculator {
     for (var y = 0; y < h; y++) {
       for (var x = 0; x < w; x++) {
         final p = patch.getPixelSafe(x, y);
-        final r = (p.r as num).toInt() & 0xFF;
-        final g = (p.g as num).toInt() & 0xFF;
-        final b = (p.b as num).toInt() & 0xFF;
+        final r = p.r.toInt() & 0xFF;
+        final g = p.g.toInt() & 0xFF;
+        final b = p.b.toInt() & 0xFF;
         final hsv = _rgbToHsvCv(r, g, b);
         final hh = hsv[0];
         final ss = hsv[1];
