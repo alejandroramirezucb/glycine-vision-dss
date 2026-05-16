@@ -80,13 +80,63 @@ class TfliteClassifier {
 
   List<double> run(img.Image image) => runBatch([image]).first;
 
+  /// Batch inference sampling pixel regions directly from [source] image.
+  /// Eliminates intermediate copyCrop/copyResize — samples pixels on the fly.
+  List<List<double>> runBatchFromSource(
+    img.Image source,
+    List<({int x, int y})> regions,
+    int patchSize,
+  ) {
+    final n = regions.length;
+    if (n == 0) return const [];
+
+    final isQuantized =
+        _interpreter.getInputTensor(0).type == TensorType.uint8;
+    if (_lastBatchSize != n) {
+      _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
+      _interpreter.allocateTensors();
+      _lastBatchSize = n;
+    }
+
+    final outSize = _interpreter
+        .getOutputTensor(0)
+        .shape
+        .skip(1)
+        .reduce((a, b) => a * b);
+    final pixelsPerImage = _inputSize * _inputSize * 3;
+
+    if (isQuantized) {
+      final inputFlat = Uint8List(n * pixelsPerImage);
+      for (var i = 0; i < n; i++) {
+        _fillUint8Region(
+            source, regions[i].x, regions[i].y, patchSize, inputFlat,
+            i * pixelsPerImage);
+      }
+      final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
+      _interpreter.run(inputFlat, output);
+      return output
+          .map((row) => _expandBinary(row.map((v) => v / 255.0).toList()))
+          .toList();
+    }
+
+    final inputFlat = Float32List(n * pixelsPerImage);
+    for (var i = 0; i < n; i++) {
+      _fillFloat32Region(
+          source, regions[i].x, regions[i].y, patchSize, inputFlat,
+          i * pixelsPerImage);
+    }
+    final output =
+        List.generate(n, (_) => List<double>.filled(outSize, 0.0));
+    _interpreter.run(inputFlat, output);
+    return output.map(_expandBinary).toList();
+  }
+
   List<List<double>> runBatch(List<img.Image> images) {
     final n = images.length;
     if (n == 0) return const [];
 
     final isQuantized =
         _interpreter.getInputTensor(0).type == TensorType.uint8;
-
     if (_lastBatchSize != n) {
       _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
       _interpreter.allocateTensors();
@@ -128,6 +178,50 @@ class TfliteClassifier {
         List.generate(n, (_) => List<double>.filled(outSize, 0.0));
     _interpreter.run(inputFlat, output);
     return output.map(_expandBinary).toList();
+  }
+
+  void _fillFloat32Region(
+    img.Image src,
+    int srcX,
+    int srcY,
+    int srcSize,
+    Float32List buffer,
+    int offset,
+  ) {
+    final xScale = srcSize / _inputSize;
+    final yScale = srcSize / _inputSize;
+    for (var dy = 0; dy < _inputSize; dy++) {
+      final sy = (srcY + dy * yScale).round().clamp(0, src.height - 1);
+      for (var dx = 0; dx < _inputSize; dx++) {
+        final sx = (srcX + dx * xScale).round().clamp(0, src.width - 1);
+        final p = src.getPixel(sx, sy);
+        buffer[offset++] = (p.r.toInt() & 0xFF).toDouble();
+        buffer[offset++] = (p.g.toInt() & 0xFF).toDouble();
+        buffer[offset++] = (p.b.toInt() & 0xFF).toDouble();
+      }
+    }
+  }
+
+  void _fillUint8Region(
+    img.Image src,
+    int srcX,
+    int srcY,
+    int srcSize,
+    Uint8List buffer,
+    int offset,
+  ) {
+    final xScale = srcSize / _inputSize;
+    final yScale = srcSize / _inputSize;
+    for (var dy = 0; dy < _inputSize; dy++) {
+      final sy = (srcY + dy * yScale).round().clamp(0, src.height - 1);
+      for (var dx = 0; dx < _inputSize; dx++) {
+        final sx = (srcX + dx * xScale).round().clamp(0, src.width - 1);
+        final p = src.getPixel(sx, sy);
+        buffer[offset++] = p.r.toInt() & 0xFF;
+        buffer[offset++] = p.g.toInt() & 0xFF;
+        buffer[offset++] = p.b.toInt() & 0xFF;
+      }
+    }
   }
 
   void _fillFloat32Buffer(img.Image image, Float32List buffer, int offset) {

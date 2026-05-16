@@ -15,9 +15,9 @@ class LocalDiagnoser implements Diagnoser {
   static const int _defaultPatchSize = 150;
   static const int _defaultStride = 100;
   static const int _defaultMaxSide = 400;
-  static const double _defaultDiseaseGate = 0.5;
+  static const double _defaultDiseaseGate = 0.35;
   static const double _defaultActiveThreshold = 0.4;
-  static const double _leafGreenRatio = 0.10;
+  static const double _leafGreenRatio = 0.07;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -95,21 +95,21 @@ class LocalDiagnoser implements Diagnoser {
   }
 
   _ScanResult _scanImage(img.Image image) {
-    final candidates = <_Candidate>[];
+    final candidates = <({int x, int y})>[];
     var totalPatches = 0;
+
     for (var y = 0; y + patchSize <= image.height; y += stride) {
       for (var x = 0; x + patchSize <= image.width; x += stride) {
         totalPatches++;
-        final patch = img.copyCrop(image,
-            x: x, y: y, width: patchSize, height: patchSize);
-        if (!_isLikelyLeaf(patch)) continue;
-        candidates.add(_Candidate(x, y, patch));
+        if (!_isLikelyLeafInRegion(image, x, y)) continue;
+        candidates.add((x: x, y: y));
       }
     }
     if (candidates.isEmpty) return _ScanResult(const [], totalPatches);
 
+    // Health check: batch inference directly from source — no copyCrop/copyResize
     final healthScores =
-        _healthModel.runBatch(candidates.map((c) => c.patch).toList());
+        _healthModel.runBatchFromSource(image, candidates, patchSize);
     final diseasedIndexes = <int>[];
     for (var i = 0; i < candidates.length; i++) {
       if (_probabilityDiseased(healthScores[i]) >= healthGate) {
@@ -118,21 +118,27 @@ class LocalDiagnoser implements Diagnoser {
     }
     if (diseasedIndexes.isEmpty) return _ScanResult(const [], totalPatches);
 
-    final diseasedPatches =
-        diseasedIndexes.map((i) => candidates[i].patch).toList();
-    final diseaseScores = _diseaseModel.runBatch(diseasedPatches);
+    final diseasedCandidates = [
+      for (final i in diseasedIndexes) candidates[i]
+    ];
+    // Disease classification: also from source directly
+    final diseaseScores =
+        _diseaseModel.runBatchFromSource(image, diseasedCandidates, patchSize);
 
     final zones = <Zone>[];
     for (var j = 0; j < diseasedIndexes.length; j++) {
-      final candidate = candidates[diseasedIndexes[j]];
-      final severity = _severity.calculate(candidate.patch);
+      final pos = candidates[diseasedIndexes[j]];
+      // copyCrop only for confirmed-diseased patches (few), for HSV severity
+      final patch = img.copyCrop(
+          image, x: pos.x, y: pos.y, width: patchSize, height: patchSize);
+      final severity = _severity.calculate(patch);
       if (severity.percent < 2.0) continue;
       final actives = _activeDiseases(diseaseScores[j], severity.percent);
       if (actives.isEmpty) continue;
       zones.add(Zone(
         bbox: Rect.fromLTWH(
-          candidate.x.toDouble(),
-          candidate.y.toDouble(),
+          pos.x.toDouble(),
+          pos.y.toDouble(),
           patchSize.toDouble(),
           patchSize.toDouble(),
         ),
@@ -144,28 +150,32 @@ class LocalDiagnoser implements Diagnoser {
     return _ScanResult(zones, totalPatches);
   }
 
-  bool _isLikelyLeaf(img.Image patch) {
+  // Checks green pixel ratio directly in source image — no intermediate copy
+  bool _isLikelyLeafInRegion(img.Image image, int startX, int startY) {
     var greenCount = 0;
     var sampleCount = 0;
-    for (var y = 0; y < patch.height; y += 4) {
-      for (var x = 0; x < patch.width; x += 4) {
-        final p = patch.getPixelSafe(x, y);
-        final r = p.r.toInt();
+    final endY = (startY + patchSize).clamp(0, image.height);
+    final endX = (startX + patchSize).clamp(0, image.width);
+    for (var y = startY; y < endY; y += 4) {
+      for (var x = startX; x < endX; x += 4) {
+        final p = image.getPixel(x, y);
         final g = p.g.toInt();
+        final r = p.r.toInt();
         final b = p.b.toInt();
-        if (g > 40 && g > r * 1.05 && g > b * 1.05) greenCount++;
+        // Green leaf tissue OR yellow diseased tissue (R≈G, B low)
+        if ((g > 40 && g > r * 1.05 && g > b * 1.05) ||
+            (g > 60 && r > 60 && b < 80)) greenCount++;
         sampleCount++;
       }
     }
-    if (sampleCount == 0) return false;
-    return greenCount / sampleCount > _leafGreenRatio;
+    return sampleCount > 0 && greenCount / sampleCount > _leafGreenRatio;
   }
 
   double _probabilityDiseased(List<double> scores) {
     if (scores.isEmpty) return 0.0;
     // After _expandBinary for binary model: scores = [P(enferma), P(sana)]
     // enferma sorts alphabetically before sana → always class 0 in training
-    // So scores[0] is always P(enferma) regardless of labels file ordering.
+    // scores[0] is always P(enferma) regardless of labels file ordering.
     if (_healthModel.labels.length == 2) return scores[0];
     final labels = _healthModel.labels;
     for (var i = 0; i < labels.length && i < scores.length; i++) {
@@ -183,7 +193,8 @@ class LocalDiagnoser implements Diagnoser {
     return scores[0];
   }
 
-  List<ActiveDisease> _activeDiseases(List<double> scores, double totalSeverityPct) {
+  List<ActiveDisease> _activeDiseases(
+      List<double> scores, double totalSeverityPct) {
     final labels = _diseaseModel.labels;
     final hits = <_LabelScore>[];
     for (var i = 0; i < scores.length && i < labels.length; i++) {
@@ -218,7 +229,8 @@ class LocalDiagnoser implements Diagnoser {
     }
     final findings = byClass.entries.map((entry) {
       final acc = entry.value;
-      final coverage = totalPatches == 0 ? 0.0 : acc.count / totalPatches * 100;
+      final coverage =
+          totalPatches == 0 ? 0.0 : acc.count / totalPatches * 100;
       return DiseaseFinding(
         pathogenClass: entry.key,
         coveragePct: coverage,
@@ -257,7 +269,8 @@ class LocalDiagnoser implements Diagnoser {
     }
   }
 
-  OnsetEstimate? _estimateOnset(List<DiseaseFinding> findings, ClimateData? climate) {
+  OnsetEstimate? _estimateOnset(
+      List<DiseaseFinding> findings, ClimateData? climate) {
     if (findings.isEmpty) return null;
     final worst = findings.first;
     return _onsetEstimator.estimate(
@@ -271,22 +284,12 @@ class LocalDiagnoser implements Diagnoser {
 class _ScanResult {
   final List<Zone> zones;
   final int totalPatches;
-
   const _ScanResult(this.zones, this.totalPatches);
-}
-
-class _Candidate {
-  final int x;
-  final int y;
-  final img.Image patch;
-
-  const _Candidate(this.x, this.y, this.patch);
 }
 
 class _LabelScore {
   final String label;
   final double score;
-
   const _LabelScore(this.label, this.score);
 }
 

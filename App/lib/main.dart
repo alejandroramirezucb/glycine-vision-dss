@@ -69,6 +69,7 @@ Future<Diagnoser> _buildDiagnoser({
   final healthModel = await TfliteClassifier.load(
     modelAsset: 'assets/models/hs/model.tflite',
     labelsAsset: 'assets/models/hs/labels.txt',
+    inputSize: 240,
   );
   final diseaseModel = await TfliteClassifier.load(
     modelAsset: 'assets/models/pd/model_unquant.tflite',

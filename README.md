@@ -109,7 +109,7 @@ flutter pub get
 flutter run -d <device ID>
 
 # instalar sin cable
-flutter build apk --release
+flutter build apk --release && flutter install
 adb install build/app/outputs/flutter-apk/app-release.apk
 ```
 

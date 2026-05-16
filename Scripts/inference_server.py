@@ -27,10 +27,10 @@ app.add_middleware(
 PATCH_SIZE = 150
 STRIDE = 100
 MAX_SIDE = 400
-HEALTH_GATE = 0.5
+HEALTH_GATE = 0.35
 ACTIVE_THRESHOLD = 0.4
 COVERAGE_MIN_PCT = 5.0
-LEAF_GREEN_RATIO = 0.10
+LEAF_GREEN_RATIO = 0.07
 TFLITE_THREADS = max(2, os.cpu_count() or 4)
 
 SEVERITY_ORDER = ["minima", "leve", "moderada", "severa", "critica"]
@@ -129,9 +129,13 @@ def batch_run(interp: tf.lite.Interpreter, patches_rgb: np.ndarray) -> np.ndarra
 
 def is_likely_leaf(patch_bgr: np.ndarray) -> bool:
     hsv = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2HSV)
+    # Green areas (healthy tissue)
     green = cv2.inRange(hsv, HSV_GREEN_LOW, HSV_GREEN_HIGH)
+    # Yellow areas (diseased tissue: H 15-30, some saturation)
+    yellow = cv2.inRange(hsv, np.array([10, 40, 60]), np.array([35, 255, 255]))
+    leaf = cv2.bitwise_or(green, yellow)
     pixels = patch_bgr.shape[0] * patch_bgr.shape[1]
-    return cv2.countNonZero(green) > pixels * LEAF_GREEN_RATIO
+    return cv2.countNonZero(leaf) > pixels * LEAF_GREEN_RATIO
 
 
 def severity_hsv(patch_bgr: np.ndarray) -> tuple[float, str]:
