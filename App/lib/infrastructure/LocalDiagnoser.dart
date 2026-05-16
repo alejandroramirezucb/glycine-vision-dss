@@ -162,13 +162,25 @@ class LocalDiagnoser implements Diagnoser {
   }
 
   double _probabilityDiseased(List<double> scores) {
+    if (scores.isEmpty) return 0.0;
+    // After _expandBinary for binary model: scores = [P(enferma), P(sana)]
+    // enferma sorts alphabetically before sana → always class 0 in training
+    // So scores[0] is always P(enferma) regardless of labels file ordering.
+    if (_healthModel.labels.length == 2) return scores[0];
     final labels = _healthModel.labels;
     for (var i = 0; i < labels.length && i < scores.length; i++) {
       final l = labels[i].toLowerCase();
-      if (l.contains('enferm') || l.contains('diseased')) return scores[i];
+      if (l.contains('enferm') || l.contains('diseased') || l.contains('sick')) {
+        return scores[i];
+      }
     }
-    if (scores.length == 1) return scores[0];
-    return scores.length > 1 ? scores[1] : 0.0;
+    for (var i = 0; i < labels.length && i < scores.length; i++) {
+      final l = labels[i].toLowerCase();
+      if (l.contains('sana') || l.contains('health') || l.contains('normal')) {
+        return 1.0 - scores[i];
+      }
+    }
+    return scores[0];
   }
 
   List<ActiveDisease> _activeDiseases(List<double> scores, double totalSeverityPct) {

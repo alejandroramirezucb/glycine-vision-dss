@@ -80,8 +80,13 @@ python Scripts/convert_models.py
 Terminal 1:
 
 ```bash
-pip install -r Scripts/requirements.txt
-python Scripts/inference_server.py
+cd Scripts
+
+py -3.12 -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+pip install -r requirements.txt
+python inference_server.py
 ```
 
 Terminal 2:
@@ -120,7 +125,7 @@ Requerimientos: Xcode 15+, CocoaPods.
 
 ### Notebooks
 
-Antes de cada notebook hay que colocar: 
+Antes de cada notebook hay que colocar:
 
 ```bash
 from google.colab import drive

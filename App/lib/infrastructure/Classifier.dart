@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -11,6 +12,7 @@ class TfliteClassifier {
   final List<String> _labels;
   final Map<String, double> _thresholds;
   final int _inputSize;
+  int _lastBatchSize = -1;
 
   TfliteClassifier._({
     required Interpreter interpreter,
@@ -82,32 +84,72 @@ class TfliteClassifier {
     final n = images.length;
     if (n == 0) return const [];
 
-    final inputDetail = _interpreter.getInputTensor(0);
-    final outputDetail = _interpreter.getOutputTensor(0);
-    final isQuantized = inputDetail.type == TensorType.uint8;
-    _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
-    _interpreter.allocateTensors();
-    final outSize = outputDetail.shape.skip(1).reduce((a, b) => a * b);
+    final isQuantized =
+        _interpreter.getInputTensor(0).type == TensorType.uint8;
+
+    if (_lastBatchSize != n) {
+      _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
+      _interpreter.allocateTensors();
+      _lastBatchSize = n;
+    }
+
+    final outSize = _interpreter
+        .getOutputTensor(0)
+        .shape
+        .skip(1)
+        .reduce((a, b) => a * b);
+    final pixelsPerImage = _inputSize * _inputSize * 3;
 
     if (isQuantized) {
-      final inputs = images
-          .map((image) => _toUint8Grid(
-              img.copyResize(image, width: _inputSize, height: _inputSize)))
-          .toList();
+      final inputFlat = Uint8List(n * pixelsPerImage);
+      for (var i = 0; i < n; i++) {
+        _fillUint8Buffer(
+          img.copyResize(images[i], width: _inputSize, height: _inputSize),
+          inputFlat,
+          i * pixelsPerImage,
+        );
+      }
       final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
-      _interpreter.run(inputs, output);
+      _interpreter.run(inputFlat, output);
       return output
-          .map((row) =>
-              _expandBinary(row.map((v) => v / 255.0).toList()))
+          .map((row) => _expandBinary(row.map((v) => v / 255.0).toList()))
           .toList();
     }
-    final inputs = images
-        .map((image) => _toFloat32Grid(
-            img.copyResize(image, width: _inputSize, height: _inputSize)))
-        .toList();
-    final output = List.generate(n, (_) => List<double>.filled(outSize, 0.0));
-    _interpreter.run(inputs, output);
+
+    final inputFlat = Float32List(n * pixelsPerImage);
+    for (var i = 0; i < n; i++) {
+      _fillFloat32Buffer(
+        img.copyResize(images[i], width: _inputSize, height: _inputSize),
+        inputFlat,
+        i * pixelsPerImage,
+      );
+    }
+    final output =
+        List.generate(n, (_) => List<double>.filled(outSize, 0.0));
+    _interpreter.run(inputFlat, output);
     return output.map(_expandBinary).toList();
+  }
+
+  void _fillFloat32Buffer(img.Image image, Float32List buffer, int offset) {
+    for (var y = 0; y < _inputSize; y++) {
+      for (var x = 0; x < _inputSize; x++) {
+        final p = image.getPixelSafe(x, y);
+        buffer[offset++] = (p.r.toInt() & 0xFF).toDouble();
+        buffer[offset++] = (p.g.toInt() & 0xFF).toDouble();
+        buffer[offset++] = (p.b.toInt() & 0xFF).toDouble();
+      }
+    }
+  }
+
+  void _fillUint8Buffer(img.Image image, Uint8List buffer, int offset) {
+    for (var y = 0; y < _inputSize; y++) {
+      for (var x = 0; x < _inputSize; x++) {
+        final p = image.getPixelSafe(x, y);
+        buffer[offset++] = p.r.toInt() & 0xFF;
+        buffer[offset++] = p.g.toInt() & 0xFF;
+        buffer[offset++] = p.b.toInt() & 0xFF;
+      }
+    }
   }
 
   List<double> _expandBinary(List<double> scores) {
@@ -116,24 +158,4 @@ class TfliteClassifier {
     }
     return scores;
   }
-
-  List<List<List<double>>> _toFloat32Grid(img.Image image) =>
-      List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
-            final p = image.getPixelSafe(x, y);
-            return [
-              (p.r.toInt() & 0xFF).toDouble(),
-              (p.g.toInt() & 0xFF).toDouble(),
-              (p.b.toInt() & 0xFF).toDouble(),
-            ];
-          }));
-
-  List<List<List<int>>> _toUint8Grid(img.Image image) =>
-      List.generate(_inputSize, (y) => List.generate(_inputSize, (x) {
-            final p = image.getPixelSafe(x, y);
-            return [
-              p.r.toInt() & 0xFF,
-              p.g.toInt() & 0xFF,
-              p.b.toInt() & 0xFF,
-            ];
-          }));
 }
