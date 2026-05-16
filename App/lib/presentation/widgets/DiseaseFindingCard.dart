@@ -192,9 +192,11 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             value,
+            textAlign: TextAlign.center,
             style: const TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.bold,
@@ -203,6 +205,7 @@ class _Metric extends StatelessWidget {
           ),
           Text(
             label,
+            textAlign: TextAlign.center,
             style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
           ),
         ],

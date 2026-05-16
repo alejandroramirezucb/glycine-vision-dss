@@ -11,6 +11,7 @@ class DiagnoseResult {
   final int imageHeight;
   final int patchSize;
   final int totalPatches;
+  final int leafPatches;
   final ClimateData? climate;
   final OnsetEstimate? onset;
   final TreatmentPlan treatmentPlan;
@@ -22,6 +23,7 @@ class DiagnoseResult {
     required this.imageHeight,
     required this.patchSize,
     required this.totalPatches,
+    required this.leafPatches,
     required this.climate,
     required this.onset,
     required this.treatmentPlan,

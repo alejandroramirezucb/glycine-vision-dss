@@ -149,8 +149,8 @@ class _ZoneCounter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final diseased = result.zones.length;
-    final total = result.totalPatches;
-    final pct = total == 0 ? 0.0 : diseased / total * 100;
+    final leaf = result.leafPatches;
+    final pct = leaf == 0 ? 0.0 : diseased / leaf * 100;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -165,7 +165,7 @@ class _ZoneCounter extends StatelessWidget {
           const SizedBox(width: 8),
           Expanded(
             child: Text(
-              '$diseased zonas con enfermedad de $total analizadas (${pct.toStringAsFixed(0)}% del follaje)',
+              '$diseased zonas enfermas de $leaf zonas de follaje (${pct.toStringAsFixed(0)}% del follaje)',
               style: const TextStyle(
                 fontSize: 12,
                 color: AppTheme.textPrimary,

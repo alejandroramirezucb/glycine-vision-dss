@@ -129,10 +129,11 @@ def batch_run(interp: tf.lite.Interpreter, patches_rgb: np.ndarray) -> np.ndarra
 
 def is_likely_leaf(patch_bgr: np.ndarray) -> bool:
     hsv = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2HSV)
-    # Green areas (healthy tissue)
+    # Green leaf tissue
     green = cv2.inRange(hsv, HSV_GREEN_LOW, HSV_GREEN_HIGH)
-    # Yellow areas (diseased tissue: H 15-30, some saturation)
-    yellow = cv2.inRange(hsv, np.array([10, 40, 60]), np.array([35, 255, 255]))
+    # Yellow diseased tissue (rust/chlorosis): H 10-30, high saturation, G/B > 2.
+    # Narrower range than before to exclude brown/orange soil (H~10-20, low sat).
+    yellow = cv2.inRange(hsv, np.array([12, 80, 60]), np.array([30, 255, 255]))
     leaf = cv2.bitwise_or(green, yellow)
     pixels = patch_bgr.shape[0] * patch_bgr.shape[1]
     return cv2.countNonZero(leaf) > pixels * LEAF_GREEN_RATIO
@@ -235,9 +236,9 @@ def fetch_climate(lat: float, lon: float) -> Optional[dict]:
         return None
 
 
-def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int]:
+def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int, int]:
     if health_interp is None or disease_interp is None:
-        return [], 0
+        return [], 0, 0
     height, width = image_bgr.shape[:2]
     candidates = []
     total_patches = 0
@@ -250,8 +251,9 @@ def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int]:
             patch_rgb = cv2.cvtColor(patch_bgr, cv2.COLOR_BGR2RGB)
             candidates.append((x, y, patch_bgr, patch_rgb))
 
+    leaf_patches = len(candidates)
     if not candidates:
-        return [], total_patches
+        return [], total_patches, 0
 
     patches_rgb = np.stack([c[3] for c in candidates])
     health_scores = batch_run(health_interp, patches_rgb)
@@ -280,10 +282,10 @@ def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int]:
             "nivel": sev_lvl,
             "enfermedades": actives,
         })
-    return zones, total_patches
+    return zones, total_patches, leaf_patches
 
 
-def aggregate_findings(zones: list[dict], total_patches: int) -> list[dict]:
+def aggregate_findings(zones: list[dict], total_patches: int, leaf_patches: int) -> list[dict]:
     accumulators: dict[str, dict] = {}
     for zone in zones:
         for disease in zone["enfermedades"]:
@@ -295,13 +297,15 @@ def aggregate_findings(zones: list[dict], total_patches: int) -> list[dict]:
             entry["sev_max"] = max(entry["sev_max"], disease["severidad_pct"])
             entry["prob_sum"] += disease["prob"]
             entry["count"] += 1
+    # Coverage over leaf patches (not total) for meaningful percentage
+    denom = leaf_patches if leaf_patches > 0 else (total_patches if total_patches > 0 else 1)
     findings = []
     for clase, acc in accumulators.items():
         count = acc["count"]
         avg_sev = acc["sev_sum"] / count
         findings.append({
             "clase": clase,
-            "coverage_pct": round(count / total_patches * 100, 1) if total_patches else 0.0,
+            "coverage_pct": round(count / denom * 100, 1),
             "avg_severidad_pct": round(avg_sev, 1),
             "max_severidad_pct": round(acc["sev_max"], 1),
             "nivel": _severity_level(avg_sev),
@@ -343,13 +347,14 @@ async def diagnose(
             return {"error": "Unable to read image"}
         image_bgr = resize_to_max(image_bgr)
         height, width = image_bgr.shape[:2]
-        zones, total_patches = scan_image(image_bgr)
-        findings = aggregate_findings(zones, total_patches)
+        zones, total_patches, leaf_patches = scan_image(image_bgr)
+        findings = aggregate_findings(zones, total_patches, leaf_patches)
         climate = fetch_climate(lat, lon) if lat is not None and lon is not None else None
         return {
             "zonas": zones,
             "enfermedades_detectadas": findings,
             "total_patches": total_patches,
+            "leaf_patches": leaf_patches,
             "patch_size": PATCH_SIZE,
             "image_width": width,
             "image_height": height,

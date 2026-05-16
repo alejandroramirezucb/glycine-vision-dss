@@ -64,8 +64,8 @@ class LocalDiagnoser implements Diagnoser {
     if (decoded == null) throw Exception('Imagen inválida');
 
     final resized = _resizeIfNeeded(decoded);
-    final scan = _scanImage(resized);
-    final findings = _aggregateFindings(scan.zones, scan.totalPatches);
+    final scan = await _scanImage(resized);
+    final findings = _aggregateFindings(scan.zones, scan.totalPatches, scan.leafPatches);
     final climate = await _fetchClimate(lat, lon);
     final onset = _estimateOnset(findings, climate);
     final plan = _treatments.buildComposite(findings: findings, climate: climate);
@@ -77,6 +77,7 @@ class LocalDiagnoser implements Diagnoser {
       imageHeight: resized.height,
       patchSize: patchSize,
       totalPatches: scan.totalPatches,
+      leafPatches: scan.leafPatches,
       climate: climate,
       onset: onset,
       treatmentPlan: plan,
@@ -94,7 +95,7 @@ class LocalDiagnoser implements Diagnoser {
     );
   }
 
-  _ScanResult _scanImage(img.Image image) {
+  Future<_ScanResult> _scanImage(img.Image image) async {
     final candidates = <({int x, int y})>[];
     var totalPatches = 0;
 
@@ -105,7 +106,11 @@ class LocalDiagnoser implements Diagnoser {
         candidates.add((x: x, y: y));
       }
     }
-    if (candidates.isEmpty) return _ScanResult(const [], totalPatches);
+    final leafPatches = candidates.length;
+    if (candidates.isEmpty) return _ScanResult(const [], totalPatches, 0);
+
+    // Yield to event loop so UI stays responsive during heavy inference
+    await Future.delayed(Duration.zero);
 
     // Health check: batch inference directly from source — no copyCrop/copyResize
     final healthScores =
@@ -116,7 +121,11 @@ class LocalDiagnoser implements Diagnoser {
         diseasedIndexes.add(i);
       }
     }
-    if (diseasedIndexes.isEmpty) return _ScanResult(const [], totalPatches);
+    if (diseasedIndexes.isEmpty) {
+      return _ScanResult(const [], totalPatches, leafPatches);
+    }
+
+    await Future.delayed(Duration.zero);
 
     final diseasedCandidates = [
       for (final i in diseasedIndexes) candidates[i]
@@ -147,28 +156,32 @@ class LocalDiagnoser implements Diagnoser {
         activeDiseases: actives,
       ));
     }
-    return _ScanResult(zones, totalPatches);
+    return _ScanResult(zones, totalPatches, leafPatches);
   }
 
-  // Checks green pixel ratio directly in source image — no intermediate copy
+  // Checks leaf pixel ratio directly in source image — no intermediate copy.
+  // Uses stricter yellow condition to exclude brown/orange soil.
   bool _isLikelyLeafInRegion(img.Image image, int startX, int startY) {
-    var greenCount = 0;
+    var leafCount = 0;
     var sampleCount = 0;
     final endY = (startY + patchSize).clamp(0, image.height);
     final endX = (startX + patchSize).clamp(0, image.width);
     for (var y = startY; y < endY; y += 4) {
       for (var x = startX; x < endX; x += 4) {
         final p = image.getPixel(x, y);
-        final g = p.g.toInt();
-        final r = p.r.toInt();
-        final b = p.b.toInt();
-        // Green leaf tissue OR yellow diseased tissue (R≈G, B low)
-        if ((g > 40 && g > r * 1.05 && g > b * 1.05) ||
-            (g > 60 && r > 60 && b < 80)) greenCount++;
+        final r = p.r.toInt() & 0xFF;
+        final g = p.g.toInt() & 0xFF;
+        final b = p.b.toInt() & 0xFF;
+        // Green leaf tissue: G clearly dominates
+        final isGreen = g > 45 && g > r * 1.05 && g > b * 1.1;
+        // Yellow diseased tissue (rust/chlorosis): R≈G high, B significantly lower.
+        // Key: g must be > 2× b to exclude brown/orange soil where G/B ratio is ~1.2–1.7
+        final isYellow = g > 70 && b < 80 && g > b * 2 && (r - g).abs() < 65;
+        if (isGreen || isYellow) leafCount++;
         sampleCount++;
       }
     }
-    return sampleCount > 0 && greenCount / sampleCount > _leafGreenRatio;
+    return sampleCount > 0 && leafCount / sampleCount > _leafGreenRatio;
   }
 
   double _probabilityDiseased(List<double> scores) {
@@ -216,7 +229,8 @@ class LocalDiagnoser implements Diagnoser {
         .toList();
   }
 
-  List<DiseaseFinding> _aggregateFindings(List<Zone> zones, int totalPatches) {
+  List<DiseaseFinding> _aggregateFindings(
+      List<Zone> zones, int totalPatches, int leafPatches) {
     final byClass = <String, _ClassAccumulator>{};
     for (final zone in zones) {
       for (final disease in zone.activeDiseases) {
@@ -227,10 +241,11 @@ class LocalDiagnoser implements Diagnoser {
         acc.add(disease.severityPct, disease.probability);
       }
     }
+    // Coverage is disease zones / leaf patches (not total) for meaningful %
+    final denom = leafPatches > 0 ? leafPatches : (totalPatches > 0 ? totalPatches : 1);
     final findings = byClass.entries.map((entry) {
       final acc = entry.value;
-      final coverage =
-          totalPatches == 0 ? 0.0 : acc.count / totalPatches * 100;
+      final coverage = acc.count / denom * 100;
       return DiseaseFinding(
         pathogenClass: entry.key,
         coveragePct: coverage,
@@ -284,7 +299,8 @@ class LocalDiagnoser implements Diagnoser {
 class _ScanResult {
   final List<Zone> zones;
   final int totalPatches;
-  const _ScanResult(this.zones, this.totalPatches);
+  final int leafPatches;
+  const _ScanResult(this.zones, this.totalPatches, this.leafPatches);
 }
 
 class _LabelScore {

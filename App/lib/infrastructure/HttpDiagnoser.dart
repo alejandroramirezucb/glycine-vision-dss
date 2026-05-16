@@ -59,6 +59,7 @@ class HttpDiagnoser implements Diagnoser {
     final climate = climateRaw == null ? null : ClimateData.fromJson(climateRaw);
     final patchSize = (json['patch_size'] as num?)?.toInt() ?? 150;
     final totalPatches = (json['total_patches'] as num?)?.toInt() ?? 0;
+    final leafPatches = (json['leaf_patches'] as num?)?.toInt() ?? totalPatches;
     final onset = _resolveOnset(findings, climate);
     final plan = treatments.buildComposite(findings: findings, climate: climate);
 
@@ -69,6 +70,7 @@ class HttpDiagnoser implements Diagnoser {
       imageHeight: height,
       patchSize: patchSize,
       totalPatches: totalPatches,
+      leafPatches: leafPatches,
       climate: climate,
       onset: onset,
       treatmentPlan: plan,
