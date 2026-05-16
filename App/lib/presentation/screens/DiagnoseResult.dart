@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/DiagnoseResult.dart' as domain;
+import '../../domain/DiseaseFinding.dart';
+import '../LabelNames.dart';
+import '../PathogenColors.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';
 import '../widgets/CompositeTreatmentCard.dart';
@@ -43,7 +46,11 @@ class _Layout extends StatelessWidget {
         _ImageSection(image: image, result: result),
         const SizedBox(height: 12),
         if (result.isHealthy) const _HealthyBanner() else const SizedBox.shrink(),
-        if (!result.isHealthy) _ZoneCounter(result: result),
+        if (!result.isHealthy) ...[
+          _ZoneCounter(result: result),
+          const SizedBox(height: 10),
+          _DiseaseSummaryBanner(findings: result.findings),
+        ],
         const SizedBox(height: 12),
         for (final finding in result.findings) ...[
           DiseaseFindingCard(finding: finding),
@@ -164,6 +171,95 @@ class _ZoneCounter extends StatelessWidget {
                 color: AppTheme.textPrimary,
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DiseaseSummaryBanner extends StatelessWidget {
+  final List<DiseaseFinding> findings;
+
+  const _DiseaseSummaryBanner({required this.findings});
+
+  @override
+  Widget build(BuildContext context) {
+    if (findings.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 8,
+        children: findings.map((f) => _DiseaseChip(finding: f)).toList(),
+      ),
+    );
+  }
+}
+
+class _DiseaseChip extends StatelessWidget {
+  final DiseaseFinding finding;
+
+  const _DiseaseChip({required this.finding});
+
+  static Color _levelColor(String level) {
+    switch (level.toLowerCase()) {
+      case 'critica':
+        return const Color(0xFFB71C1C);
+      case 'severa':
+        return const Color(0xFFE53935);
+      case 'moderada':
+        return const Color(0xFFFB8C00);
+      case 'leve':
+        return const Color(0xFFFDD835);
+      default:
+        return const Color(0xFF43A047);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = pathogenColor(finding.pathogenClass);
+    final levelColor = _levelColor(finding.severityLevel);
+    final shortName = labelToEs(finding.pathogenClass)
+        .split(' ')
+        .first
+        .toLowerCase()
+        .substring(0, 3);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: accent.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: levelColor, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: 5),
+          Text(
+            '$shortName=${finding.avgSeverityPct.toStringAsFixed(1)}%',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: accent,
+            ),
+          ),
+          const SizedBox(width: 4),
+          Text(
+            severityToEs(finding.severityLevel),
+            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
           ),
         ],
       ),
