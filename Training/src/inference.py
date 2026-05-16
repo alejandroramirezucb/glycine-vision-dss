@@ -7,6 +7,47 @@ from typing import Optional
 
 import tensorflow as tf
 
+
+class AsymmetricLoss(tf.keras.losses.Loss):
+    def __init__(self, gamma_neg=4.0, gamma_pos=0.0, clip=0.05, label_smoothing=0.05,
+                 name="asymmetric_loss", **kwargs):
+        super().__init__(name=name, **kwargs)
+        self.gamma_neg = gamma_neg
+        self.gamma_pos = gamma_pos
+        self.clip = clip
+        self.label_smoothing = label_smoothing
+        self.eps = 1e-8
+
+    def call(self, y_true, y_pred):
+        y_true = tf.cast(y_true, tf.float32)
+        y_pred = tf.cast(y_pred, tf.float32)
+        num_classes = tf.cast(tf.shape(y_true)[-1], tf.float32)
+        y_true_s = y_true * (1.0 - self.label_smoothing) + self.label_smoothing / num_classes
+        xs_pos = y_pred
+        xs_neg = 1.0 - y_pred
+        if self.clip > 0:
+            xs_neg = tf.clip_by_value(xs_neg + self.clip, 0.0, 1.0)
+        log_pos = tf.math.log(tf.clip_by_value(xs_pos, self.eps, 1.0))
+        log_neg = tf.math.log(tf.clip_by_value(xs_neg, self.eps, 1.0))
+        loss_pos = y_true_s * log_pos
+        loss_neg = (1.0 - y_true_s) * log_neg
+        if self.gamma_pos > 0:
+            loss_pos = loss_pos * tf.pow(1.0 - xs_pos, self.gamma_pos)
+        if self.gamma_neg > 0:
+            loss_neg = loss_neg * tf.pow(1.0 - xs_neg, self.gamma_neg)
+        return -tf.reduce_sum(loss_pos + loss_neg, axis=-1)
+
+    def get_config(self):
+        cfg = super().get_config()
+        cfg.update({
+            "gamma_neg": self.gamma_neg, "gamma_pos": self.gamma_pos,
+            "clip": self.clip, "label_smoothing": self.label_smoothing,
+        })
+        return cfg
+
+
+_CUSTOM_OBJECTS = {"AsymmetricLoss": AsymmetricLoss}
+
 from .severity import calcular_severidad
 from .treatments_matrix import obtener_tratamiento
 from .climate import fetch_climate, riesgo_por_clima
@@ -30,7 +71,7 @@ GROSOR_POR_NIVEL = {
 class GlycineVisionInferencia:
     def __init__(self, ruta_modelo1: str, ruta_modelo2: str, ruta_clases_json: str):
         self.model1 = tf.keras.models.load_model(ruta_modelo1)
-        self.model2 = tf.keras.models.load_model(ruta_modelo2)
+        self.model2 = tf.keras.models.load_model(ruta_modelo2, custom_objects=_CUSTOM_OBJECTS)
         with open(ruta_clases_json) as f:
             indices = json.load(f)
         self.idx_a_clase = {v: k for k, v in indices.items()}

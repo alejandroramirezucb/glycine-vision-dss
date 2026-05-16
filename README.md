@@ -84,9 +84,11 @@ cd Scripts
 
 py -3.12 -m venv .venv
 .\.venv\Scripts\Activate.ps1
-
 pip install -r requirements.txt
-python inference_server.py
+
+
+cd ..
+Scripts\.venv\Scripts\python.exe Scripts\inference_server.py
 ```
 
 Terminal 2:
