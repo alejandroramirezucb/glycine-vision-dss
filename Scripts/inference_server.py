@@ -262,7 +262,7 @@ def scan_image(image_bgr: np.ndarray) -> tuple[list[dict], int, int]:
         if probability_diseased(health_scores[i], health_labels) >= HEALTH_GATE
     ]
     if not diseased_idx:
-        return [], total_patches
+        return [], total_patches, leaf_patches
 
     diseased_patches = patches_rgb[diseased_idx]
     disease_scores = batch_run(disease_interp, diseased_patches)

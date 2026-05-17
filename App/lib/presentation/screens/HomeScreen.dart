@@ -20,9 +20,9 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _pickFromSource(ImageSource source) async {
     final file = await _picker.pickImage(
       source: source,
-      maxWidth: 800,
-      maxHeight: 800,
-      imageQuality: 85,
+      maxWidth: 400,
+      maxHeight: 400,
+      imageQuality: 88,
     );
     if (file != null && mounted) {
       context.read<AppState>().selectImage(file);

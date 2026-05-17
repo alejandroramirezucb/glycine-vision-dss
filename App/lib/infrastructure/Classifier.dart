@@ -117,11 +117,11 @@ class TfliteClassifier {
         _fillUint8FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
             xScale, yScale, inputFlat, i * pixelsPerImage);
       }
-      final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
-      _interpreter.run(inputFlat, output);
-      return output
-          .map((row) => _expandBinary(row.map((v) => v / 255.0).toList()))
-          .toList();
+      final outputFlat = Uint8List(n * outSize);
+      _interpreter.run(inputFlat, outputFlat);
+      return List.generate(n, (i) => _expandBinary(
+        List.generate(outSize, (j) => outputFlat[i * outSize + j] / 255.0),
+      ));
     }
 
     final inputFlat = Float32List(n * pixelsPerImage);
@@ -129,9 +129,11 @@ class TfliteClassifier {
       _fillFloat32FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
           xScale, yScale, inputFlat, i * pixelsPerImage);
     }
-    final output = List.generate(n, (_) => List<double>.filled(outSize, 0.0));
-    _interpreter.run(inputFlat, output);
-    return output.map(_expandBinary).toList();
+    final outputFlat = Float32List(n * outSize);
+    _interpreter.run(inputFlat, outputFlat);
+    return List.generate(n, (i) => _expandBinary(
+      List.generate(outSize, (j) => outputFlat[i * outSize + j]),
+    ));
   }
 
   List<List<double>> runBatch(List<img.Image> images) {
@@ -160,11 +162,11 @@ class TfliteClassifier {
         final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
         inputFlat.setRange(i * pixelsPerImage, (i + 1) * pixelsPerImage, bytes);
       }
-      final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
-      _interpreter.run(inputFlat, output);
-      return output
-          .map((row) => _expandBinary(row.map((v) => v / 255.0).toList()))
-          .toList();
+      final outputFlat = Uint8List(n * outSize);
+      _interpreter.run(inputFlat, outputFlat);
+      return List.generate(n, (i) => _expandBinary(
+        List.generate(outSize, (j) => outputFlat[i * outSize + j] / 255.0),
+      ));
     }
 
     final inputFlat = Float32List(n * pixelsPerImage);
@@ -176,9 +178,11 @@ class TfliteClassifier {
         inputFlat[off++] = b.toDouble();
       }
     }
-    final output = List.generate(n, (_) => List<double>.filled(outSize, 0.0));
-    _interpreter.run(inputFlat, output);
-    return output.map(_expandBinary).toList();
+    final outputFlat = Float32List(n * outSize);
+    _interpreter.run(inputFlat, outputFlat);
+    return List.generate(n, (i) => _expandBinary(
+      List.generate(outSize, (j) => outputFlat[i * outSize + j]),
+    ));
   }
 
   void _fillFloat32FromBytes(

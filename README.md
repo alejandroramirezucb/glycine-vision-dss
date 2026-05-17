@@ -113,8 +113,10 @@ flutter run -d chrome
 ### Servidor Python (para diagnóstico vía HTTP)
 
 ```bash
+.\.venv\Scripts\Activate.ps1
+
 cd Scripts
-pip install fastapi uvicorn opencv-python tensorflow numpy requests
+pip install -r requeriments.txt
 python inference_server.py
 # Servidor en http://localhost:8001
 ```
