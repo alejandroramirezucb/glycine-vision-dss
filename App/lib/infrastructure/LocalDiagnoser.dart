@@ -18,7 +18,7 @@ class LocalDiagnoser implements Diagnoser {
   static const int _defaultMaxSide = 400;
   static const double _defaultDiseaseGate = 0.35;
   static const double _defaultActiveThreshold = 0.4;
-  static const double _leafRatioThreshold = 0.12;
+  static const double _leafRatioThreshold = 0.07;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
