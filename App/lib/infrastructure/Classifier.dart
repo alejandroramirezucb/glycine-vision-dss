@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
@@ -30,7 +30,9 @@ class TfliteClassifier {
     String? thresholdsAsset,
     int inputSize = _defaultInputSize,
   }) async {
-    final interpreter = await Interpreter.fromAsset(modelAsset);
+    final options = InterpreterOptions();
+    if (!kIsWeb) options.threads = 4;
+    final interpreter = await Interpreter.fromAsset(modelAsset, options: options);
     final labels = await _loadLabels(labelsAsset);
     final thresholds = thresholdsAsset == null
         ? <String, double>{}
@@ -80,8 +82,6 @@ class TfliteClassifier {
 
   List<double> run(img.Image image) => runBatch([image]).first;
 
-  /// Batch inference sampling pixel regions directly from [source] image.
-  /// Gets raw bytes once and fills tensors via direct array indexing — fast.
   List<List<double>> runBatchFromSource(
     img.Image source,
     List<({int x, int y})> regions,
@@ -105,7 +105,6 @@ class TfliteClassifier {
         .reduce((a, b) => a * b);
     final pixelsPerImage = _inputSize * _inputSize * 3;
 
-    // Obtain raw RGB bytes ONCE for all patches — avoids per-pixel getPixel overhead
     final srcBytes = source.getBytes(order: img.ChannelOrder.rgb);
     final srcW = source.width;
     final srcH = source.height;
@@ -157,11 +156,9 @@ class TfliteClassifier {
     if (isQuantized) {
       final inputFlat = Uint8List(n * pixelsPerImage);
       for (var i = 0; i < n; i++) {
-        _fillUint8Buffer(
-          img.copyResize(images[i], width: _inputSize, height: _inputSize),
-          inputFlat,
-          i * pixelsPerImage,
-        );
+        final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
+        final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
+        inputFlat.setRange(i * pixelsPerImage, (i + 1) * pixelsPerImage, bytes);
       }
       final output = List.generate(n, (_) => List<int>.filled(outSize, 0));
       _interpreter.run(inputFlat, output);
@@ -172,19 +169,18 @@ class TfliteClassifier {
 
     final inputFlat = Float32List(n * pixelsPerImage);
     for (var i = 0; i < n; i++) {
-      _fillFloat32Buffer(
-        img.copyResize(images[i], width: _inputSize, height: _inputSize),
-        inputFlat,
-        i * pixelsPerImage,
-      );
+      final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
+      final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
+      var off = i * pixelsPerImage;
+      for (final b in bytes) {
+        inputFlat[off++] = b.toDouble();
+      }
     }
-    final output =
-        List.generate(n, (_) => List<double>.filled(outSize, 0.0));
+    final output = List.generate(n, (_) => List<double>.filled(outSize, 0.0));
     _interpreter.run(inputFlat, output);
     return output.map(_expandBinary).toList();
   }
 
-  // Direct byte-array fill — no getPixel overhead, ~5-8× faster
   void _fillFloat32FromBytes(
     Uint8List srcBytes,
     int srcW,
@@ -229,28 +225,6 @@ class TfliteClassifier {
         buffer[offset++] = srcBytes[px];
         buffer[offset++] = srcBytes[px + 1];
         buffer[offset++] = srcBytes[px + 2];
-      }
-    }
-  }
-
-  void _fillFloat32Buffer(img.Image image, Float32List buffer, int offset) {
-    for (var y = 0; y < _inputSize; y++) {
-      for (var x = 0; x < _inputSize; x++) {
-        final p = image.getPixelSafe(x, y);
-        buffer[offset++] = (p.r.toInt() & 0xFF).toDouble();
-        buffer[offset++] = (p.g.toInt() & 0xFF).toDouble();
-        buffer[offset++] = (p.b.toInt() & 0xFF).toDouble();
-      }
-    }
-  }
-
-  void _fillUint8Buffer(img.Image image, Uint8List buffer, int offset) {
-    for (var y = 0; y < _inputSize; y++) {
-      for (var x = 0; x < _inputSize; x++) {
-        final p = image.getPixelSafe(x, y);
-        buffer[offset++] = p.r.toInt() & 0xFF;
-        buffer[offset++] = p.g.toInt() & 0xFF;
-        buffer[offset++] = p.b.toInt() & 0xFF;
       }
     }
   }
