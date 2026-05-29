@@ -10,6 +10,7 @@ import '../widgets/CompositeTreatmentCard.dart';
 import '../widgets/DiseaseFindingCard.dart';
 import '../widgets/ImagePreview.dart';
 import '../widgets/OnsetBadge.dart';
+import '../widgets/SegmentationOverlay.dart';
 import '../widgets/ZoneOverlay.dart';
 
 class DiagnoseResult extends StatelessWidget {
@@ -45,6 +46,10 @@ class _Layout extends StatelessWidget {
         const SizedBox(height: 10),
         _ImageSection(image: image, result: result),
         const SizedBox(height: 12),
+        if (result.hasSegmentation) ...[
+          _GlobalSeverityPanel(result: result),
+          const SizedBox(height: 10),
+        ],
         if (result.isHealthy) const _HealthyBanner() else const SizedBox.shrink(),
         if (!result.isHealthy) ...[
           _ZoneCounter(result: result),
@@ -89,28 +94,210 @@ class _Title extends StatelessWidget {
   }
 }
 
-class _ImageSection extends StatelessWidget {
+class _ImageSection extends StatefulWidget {
   final dynamic image;
   final domain.DiagnoseResult result;
 
   const _ImageSection({required this.image, required this.result});
 
   @override
-  Widget build(BuildContext context) {
-    final preview = ImagePreview(imageFile: image, height: null);
-    if (result.isHealthy) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(AppTheme.radiusImg),
-        child: preview,
+  State<_ImageSection> createState() => _ImageSectionState();
+}
+
+class _ImageSectionState extends State<_ImageSection> {
+  bool _showSeg = true;
+
+  Widget _buildOverlay(domain.DiagnoseResult result) {
+    final preview = ImagePreview(imageFile: widget.image, height: null);
+    final aspect = result.imageHeight > 0
+        ? result.imageWidth / result.imageHeight
+        : 1.0;
+
+    if (result.hasSegmentation && _showSeg) {
+      return SegmentationOverlay(
+        mask256: result.segMask256!,
+        imageChild: preview,
+        aspectRatio: aspect,
       );
     }
+    if (!result.isHealthy) {
+      return ZoneOverlay(result: result, imageChild: preview);
+    }
+    return preview;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final result = widget.result;
+    final overlay = _buildOverlay(result);
+
     return ClipRRect(
       borderRadius: BorderRadius.circular(AppTheme.radiusImg),
-      child: InteractiveViewer(
-        minScale: 1.0,
-        maxScale: 6.0,
-        child: ZoneOverlay(result: result, imageChild: preview),
+      child: Stack(
+        children: [
+          InteractiveViewer(
+            minScale: 1.0,
+            maxScale: 6.0,
+            child: overlay,
+          ),
+          if (result.hasSegmentation)
+            Positioned(
+              top: 8,
+              right: 8,
+              child: _SegToggleChip(
+                active: _showSeg,
+                onToggle: () => setState(() => _showSeg = !_showSeg),
+              ),
+            ),
+        ],
       ),
+    );
+  }
+}
+
+class _SegToggleChip extends StatelessWidget {
+  final bool active;
+  final VoidCallback onToggle;
+
+  const _SegToggleChip({required this.active, required this.onToggle});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onToggle,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: Colors.black54,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              active ? Icons.layers_rounded : Icons.layers_clear_rounded,
+              color: Colors.white,
+              size: 14,
+            ),
+            const SizedBox(width: 4),
+            Text(
+              active ? 'SEG' : 'ZONAS',
+              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _GlobalSeverityPanel extends StatelessWidget {
+  final domain.DiagnoseResult result;
+
+  const _GlobalSeverityPanel({required this.result});
+
+  static Color _severityColor(double pct) {
+    if (pct < 5) return Colors.green;
+    if (pct < 15) return Colors.lightGreen;
+    if (pct < 35) return const Color(0xFFFB8C00);
+    if (pct < 60) return const Color(0xFFE53935);
+    return const Color(0xFFB71C1C);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sev = result.globalSeverityPct;
+    final clo = result.chlorosisPct;
+    final nec = result.necrosisPct;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text(
+                'Severidad foliar',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${sev.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                  color: _severityColor(sev),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: (sev / 100).clamp(0.0, 1.0),
+              backgroundColor: AppTheme.border,
+              valueColor: AlwaysStoppedAnimation<Color>(_severityColor(sev)),
+              minHeight: 7,
+            ),
+          ),
+          if (clo > 0 || nec > 0) ...[
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                if (clo > 0) _SymptomTag(
+                  label: 'Clorosis',
+                  pct: clo,
+                  color: const Color(0xFFFDD835),
+                ),
+                if (clo > 0 && nec > 0) const SizedBox(width: 12),
+                if (nec > 0) _SymptomTag(
+                  label: 'Necrosis',
+                  pct: nec,
+                  color: const Color(0xFF795548),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _SymptomTag extends StatelessWidget {
+  final String label;
+  final double pct;
+  final Color color;
+
+  const _SymptomTag({required this.label, required this.pct, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 4),
+        Text(
+          '$label: ${pct.toStringAsFixed(1)}%',
+          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+        ),
+      ],
     );
   }
 }
@@ -209,18 +396,13 @@ class _DiseaseChip extends StatelessWidget {
   const _DiseaseChip({required this.finding});
 
   static Color _levelColor(String level) {
-    switch (level.toLowerCase()) {
-      case 'critica':
-        return const Color(0xFFB71C1C);
-      case 'severa':
-        return const Color(0xFFE53935);
-      case 'moderada':
-        return const Color(0xFFFB8C00);
-      case 'leve':
-        return const Color(0xFFFDD835);
-      default:
-        return const Color(0xFF43A047);
-    }
+    return switch (level.toLowerCase()) {
+      'critica' => const Color(0xFFB71C1C),
+      'severa' => const Color(0xFFE53935),
+      'moderada' => const Color(0xFFFB8C00),
+      'leve' => const Color(0xFFFDD835),
+      _ => const Color(0xFF43A047),
+    };
   }
 
   @override

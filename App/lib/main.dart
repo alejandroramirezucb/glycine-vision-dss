@@ -9,6 +9,8 @@ import 'infrastructure/Classifier.dart'
 import 'infrastructure/HttpDiagnoser.dart';
 import 'infrastructure/LocalDiagnoser.dart'
     if (dart.library.js_interop) 'infrastructure/LocalDiagnoserWebStub.dart';
+import 'infrastructure/TfliteSegmenter.dart'
+    if (dart.library.js_interop) 'infrastructure/TfliteSegmenterWebStub.dart';
 import 'infrastructure/OnsetEstimatorImpl.dart';
 import 'infrastructure/OpenMeteoClient.dart';
 import 'infrastructure/TreatmentRepo.dart';
@@ -76,9 +78,16 @@ Future<Diagnoser> _buildDiagnoser({
     labelsAsset: 'assets/models/pd/labels.txt',
     thresholdsAsset: 'assets/models/pd/thresholds.json',
   );
+  TfliteSegmenter? segmenter;
+  try {
+    segmenter = await TfliteSegmenter.load(
+      modelAsset: 'assets/models/seg/model_seg.tflite',
+    );
+  } catch (_) {}
   return LocalDiagnoser(
     healthModel: healthModel,
     diseaseModel: diseaseModel,
+    segmenter: segmenter,
     treatments: treatmentRepo,
     climateRepo: climateRepo,
     onsetEstimator: onsetEstimator,

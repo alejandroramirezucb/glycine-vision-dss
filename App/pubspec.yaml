@@ -26,4 +26,5 @@ flutter:
     - logo.png
     - assets/models/hs/
     - assets/models/pd/
+    - assets/models/seg/
     - assets/data/

@@ -9,8 +9,10 @@ import '../domain/DiseaseFinding.dart';
 import '../domain/OnsetEstimate.dart';
 import '../domain/Protocols.dart';
 import '../domain/Zone.dart';
+import 'ChromaticNormalizer.dart';
 import 'Classifier.dart';
 import 'SeverityCalculator.dart';
+import 'TfliteSegmenter.dart';
 
 class LocalDiagnoser implements Diagnoser {
   static const int _defaultPatchSize = 150;
@@ -19,6 +21,7 @@ class LocalDiagnoser implements Diagnoser {
   static const double _defaultDiseaseGate = 0.35;
   static const double _defaultActiveThreshold = 0.4;
   static const double _leafRatioThreshold = 0.07;
+  static const double _minSegSeverityForInference = 2.0;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -29,6 +32,8 @@ class LocalDiagnoser implements Diagnoser {
 
   final TfliteClassifier _healthModel;
   final TfliteClassifier _diseaseModel;
+  final TfliteSegmenter? _segmenter;
+  final ChromaticNormalizer _normalizer;
   final SeverityCalculator _severity;
   final TreatmentRepository _treatments;
   final ClimateRepository _climateRepo;
@@ -45,6 +50,8 @@ class LocalDiagnoser implements Diagnoser {
     required TreatmentRepository treatments,
     required ClimateRepository climateRepo,
     required OnsetEstimator onsetEstimator,
+    TfliteSegmenter? segmenter,
+    ChromaticNormalizer normalizer = const ChromaticNormalizer(),
     SeverityCalculator severity = const SeverityCalculator(),
     this.patchSize = _defaultPatchSize,
     this.stride = _defaultStride,
@@ -53,10 +60,12 @@ class LocalDiagnoser implements Diagnoser {
     this.activeThreshold = _defaultActiveThreshold,
   })  : _healthModel = healthModel,
         _diseaseModel = diseaseModel,
+        _segmenter = segmenter,
+        _normalizer = normalizer,
+        _severity = severity,
         _treatments = treatments,
         _climateRepo = climateRepo,
-        _onsetEstimator = onsetEstimator,
-        _severity = severity;
+        _onsetEstimator = onsetEstimator;
 
   @override
   Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon}) async {
@@ -65,14 +74,37 @@ class LocalDiagnoser implements Diagnoser {
     if (decoded == null) throw Exception('Imagen inválida');
 
     final resized = _resizeIfNeeded(decoded);
-    final scan = await _scanImage(resized);
-    final findings = _aggregateFindings(scan.zones, scan.totalPatches, scan.leafPatches);
+    final normalized = _normalizer.normalize(resized);
+
+    Uint8List? segMask;
+    img.Image inferenceImage = normalized;
+    double globalSeverityPct = 0.0;
+    double chlorosisPct = 0.0;
+    double necrosisPct = 0.0;
+
+    final seg = _segmenter;
+    if (seg != null) {
+      segMask = seg.segment(normalized);
+      globalSeverityPct = seg.severityPct(segMask);
+      inferenceImage = seg.applyMask(normalized, segMask);
+      final decomp = seg.decompose(normalized, segMask);
+      chlorosisPct = decomp.chlorosis;
+      necrosisPct = decomp.necrosis;
+    }
+
+    final scan = await _scanImage(inferenceImage);
+
+    final effectiveZones = (segMask != null && globalSeverityPct < _minSegSeverityForInference)
+        ? <Zone>[]
+        : scan.zones;
+
+    final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
     final climate = await _fetchClimate(lat, lon);
     final onset = _estimateOnset(findings, climate);
     final plan = _treatments.buildComposite(findings: findings, climate: climate);
 
     return DiagnoseResult(
-      zones: scan.zones,
+      zones: effectiveZones,
       findings: findings,
       imageWidth: resized.width,
       imageHeight: resized.height,
@@ -82,6 +114,10 @@ class LocalDiagnoser implements Diagnoser {
       climate: climate,
       onset: onset,
       treatmentPlan: plan,
+      segMask256: segMask,
+      globalSeverityPct: globalSeverityPct,
+      chlorosisPct: chlorosisPct,
+      necrosisPct: necrosisPct,
     );
   }
 
@@ -118,8 +154,7 @@ class LocalDiagnoser implements Diagnoser {
 
     await Future.delayed(Duration.zero);
 
-    final healthScores =
-        _healthModel.runBatchFromSource(image, candidates, patchSize);
+    final healthScores = _healthModel.runBatchFromSource(image, candidates, patchSize);
     final diseasedIndexes = [
       for (var i = 0; i < candidates.length; i++)
         if (_probabilityDiseased(healthScores[i]) >= healthGate) i,

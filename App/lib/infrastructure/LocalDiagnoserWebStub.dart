@@ -9,6 +9,7 @@ class LocalDiagnoser implements Diagnoser {
     required Object treatments,
     required Object climateRepo,
     required Object onsetEstimator,
+    Object? segmenter,
   });
 
   @override

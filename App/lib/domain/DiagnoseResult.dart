@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'ClimateData.dart';
 import 'DiseaseFinding.dart';
 import 'OnsetEstimate.dart';
@@ -15,6 +17,10 @@ class DiagnoseResult {
   final ClimateData? climate;
   final OnsetEstimate? onset;
   final TreatmentPlan treatmentPlan;
+  final Uint8List? segMask256;
+  final double globalSeverityPct;
+  final double chlorosisPct;
+  final double necrosisPct;
 
   const DiagnoseResult({
     required this.zones,
@@ -27,8 +33,13 @@ class DiagnoseResult {
     required this.climate,
     required this.onset,
     required this.treatmentPlan,
+    this.segMask256,
+    this.globalSeverityPct = 0.0,
+    this.chlorosisPct = 0.0,
+    this.necrosisPct = 0.0,
   });
 
   bool get isHealthy => zones.isEmpty;
+  bool get hasSegmentation => segMask256 != null;
   bool get hasMultipleDiseases => findings.length > 1;
 }
