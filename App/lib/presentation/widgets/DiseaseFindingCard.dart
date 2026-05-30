@@ -15,7 +15,7 @@ class DiseaseFindingCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: AppTheme.cardDecoration(),
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -24,9 +24,9 @@ class DiseaseFindingCard extends StatelessWidget {
             accent: accent,
             severityLevel: finding.severityLevel,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           _MetricsRow(finding: finding),
         ],
       ),
@@ -45,30 +45,15 @@ class _Header extends StatelessWidget {
     required this.severityLevel,
   });
 
-  static Color _levelBg(String level) {
-    switch (level.toLowerCase()) {
-      case 'critica':
-        return const Color(0xFFB71C1C);
-      case 'severa':
-        return const Color(0xFFE53935);
-      case 'moderada':
-        return const Color(0xFFFB8C00);
-      case 'leve':
-        return const Color(0xFFFDD835);
-      default:
-        return const Color(0xFF43A047);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final badgeColor = _levelBg(severityLevel);
-    final isDark = badgeColor == const Color(0xFFFDD835);
+    final badgeColor = AppTheme.severityLevelColor(severityLevel);
+    final isLightBadge = severityLevel.toLowerCase() == 'leve';
     return Row(
       children: [
         Container(
-          width: 10,
-          height: 24,
+          width: 4,
+          height: 22,
           decoration: BoxDecoration(
             color: accent,
             borderRadius: BorderRadius.circular(2),
@@ -82,22 +67,23 @@ class _Header extends StatelessWidget {
               fontSize: 15,
               fontWeight: FontWeight.bold,
               color: AppTheme.accentDark,
+              letterSpacing: -0.2,
             ),
           ),
         ),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
           decoration: BoxDecoration(
             color: badgeColor,
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(AppTheme.radiusBadge),
           ),
           child: Text(
             severityToEs(severityLevel).toUpperCase(),
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
-              color: isDark ? Colors.black87 : Colors.white,
-              letterSpacing: 0.4,
+              color: isLightBadge ? Colors.black87 : Colors.white,
+              letterSpacing: 0.5,
             ),
           ),
         ),
@@ -114,7 +100,7 @@ class _SeverityBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final clamped = percent.clamp(0, 100).toDouble();
+    final clamped = percent.clamp(0.0, 100.0);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -135,15 +121,26 @@ class _SeverityBar extends StatelessWidget {
             ),
           ],
         ),
-        const SizedBox(height: 4),
+        const SizedBox(height: 5),
         ClipRRect(
           borderRadius: BorderRadius.circular(4),
-          child: SizedBox(
+          child: Container(
             height: 8,
-            child: LinearProgressIndicator(
-              value: clamped / 100,
-              backgroundColor: AppTheme.border,
-              valueColor: AlwaysStoppedAnimation(accent),
+            decoration: BoxDecoration(
+              color: AppTheme.border,
+              borderRadius: BorderRadius.circular(4),
+            ),
+            child: FractionallySizedBox(
+              widthFactor: clamped / 100,
+              alignment: Alignment.centerLeft,
+              child: Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [AppTheme.accentLight, accent],
+                  ),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+              ),
             ),
           ),
         ),
@@ -161,23 +158,28 @@ class _MetricsRow extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _Metric(
-          label: 'Cobertura',
-          value: '${finding.coveragePct.toStringAsFixed(0)}%',
-        ),
-        _Metric(
-          label: 'Nivel',
-          value: severityToEs(finding.severityLevel),
-        ),
-        _Metric(
-          label: 'Zonas',
-          value: '${finding.zoneCount}',
-        ),
-        _Metric(
-          label: 'Sev. máx',
-          value: '${finding.maxSeverityPct.toStringAsFixed(0)}%',
-        ),
+        _Metric(label: 'Cobertura', value: '${finding.coveragePct.toStringAsFixed(0)}%'),
+        _Divider(),
+        _Metric(label: 'Nivel', value: severityToEs(finding.severityLevel)),
+        _Divider(),
+        _Metric(label: 'Zonas', value: '${finding.zoneCount}'),
+        _Divider(),
+        _Metric(label: 'Sev. máx', value: '${finding.maxSeverityPct.toStringAsFixed(0)}%'),
       ],
+    );
+  }
+}
+
+class _Divider extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    return const SizedBox(
+      height: 28,
+      child: VerticalDivider(
+        width: 1,
+        thickness: 1,
+        color: AppTheme.border,
+      ),
     );
   }
 }
@@ -192,17 +194,17 @@ class _Metric extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             value,
             textAlign: TextAlign.center,
             style: const TextStyle(
-              fontSize: 13,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
               color: AppTheme.accentDark,
             ),
           ),
+          const SizedBox(height: 2),
           Text(
             label,
             textAlign: TextAlign.center,

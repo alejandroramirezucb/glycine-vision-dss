@@ -212,19 +212,11 @@ class LocalDiagnoser implements Diagnoser {
 
   double _probabilityDiseased(List<double> scores) {
     if (scores.isEmpty) return 0.0;
-    if (_healthModel.labels.length == 2) return scores[0];
     final labels = _healthModel.labels;
+    if (labels.length <= 2) return scores[0];
     for (var i = 0; i < labels.length && i < scores.length; i++) {
       final l = labels[i].toLowerCase();
-      if (l.contains('enferm') || l.contains('diseased') || l.contains('sick')) {
-        return scores[i];
-      }
-    }
-    for (var i = 0; i < labels.length && i < scores.length; i++) {
-      final l = labels[i].toLowerCase();
-      if (l.contains('sana') || l.contains('health') || l.contains('normal')) {
-        return 1.0 - scores[i];
-      }
+      if (l.contains('enferm') || l.contains('soya_enferma')) return scores[i];
     }
     return scores[0];
   }

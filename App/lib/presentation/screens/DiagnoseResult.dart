@@ -196,19 +196,12 @@ class _GlobalSeverityPanel extends StatelessWidget {
 
   const _GlobalSeverityPanel({required this.result});
 
-  static Color _severityColor(double pct) {
-    if (pct < 5) return Colors.green;
-    if (pct < 15) return Colors.lightGreen;
-    if (pct < 35) return const Color(0xFFFB8C00);
-    if (pct < 60) return const Color(0xFFE53935);
-    return const Color(0xFFB71C1C);
-  }
-
   @override
   Widget build(BuildContext context) {
     final sev = result.globalSeverityPct;
     final clo = result.chlorosisPct;
     final nec = result.necrosisPct;
+    final sevColor = AppTheme.severityPctColor(sev);
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -236,7 +229,7 @@ class _GlobalSeverityPanel extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 13,
                   fontWeight: FontWeight.bold,
-                  color: _severityColor(sev),
+                  color: sevColor,
                 ),
               ),
             ],
@@ -247,7 +240,7 @@ class _GlobalSeverityPanel extends StatelessWidget {
             child: LinearProgressIndicator(
               value: (sev / 100).clamp(0.0, 1.0),
               backgroundColor: AppTheme.border,
-              valueColor: AlwaysStoppedAnimation<Color>(_severityColor(sev)),
+              valueColor: AlwaysStoppedAnimation<Color>(sevColor),
               minHeight: 7,
             ),
           ),
@@ -395,20 +388,10 @@ class _DiseaseChip extends StatelessWidget {
 
   const _DiseaseChip({required this.finding});
 
-  static Color _levelColor(String level) {
-    return switch (level.toLowerCase()) {
-      'critica' => const Color(0xFFB71C1C),
-      'severa' => const Color(0xFFE53935),
-      'moderada' => const Color(0xFFFB8C00),
-      'leve' => const Color(0xFFFDD835),
-      _ => const Color(0xFF43A047),
-    };
-  }
-
   @override
   Widget build(BuildContext context) {
     final accent = pathogenColor(finding.pathogenClass);
-    final levelColor = _levelColor(finding.severityLevel);
+    final levelColor = AppTheme.severityLevelColor(finding.severityLevel);
     final shortName = labelToEs(finding.pathogenClass)
         .split(' ')
         .first

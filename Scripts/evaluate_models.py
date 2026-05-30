@@ -48,7 +48,7 @@ def load_images_from_folder(folder_path, target_size=(224, 224)):
                 img = Image.open(img_file).convert("RGB")
                 img = img.resize(target_size)
                 images.append(np.array(img) / 255.0)
-            except:
+            except (OSError, ValueError):
                 pass
     return np.array(images)
 

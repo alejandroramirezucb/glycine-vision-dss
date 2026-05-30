@@ -1,13 +1,15 @@
 import os
 from pathlib import Path
 
-test_folder = Path(r"D:\Datasets\Test")
-train_folder = Path(r"D:\Datasets\Train")
-source_dataset_folder = Path(r"D:\Datasets\Dataset")
-results_folder = Path(r"D:\Results")
+_PROJECT_ROOT = Path(__file__).parent.parent
 
-model_m1_path = Path(r"D:\Models\glycine-vision-hs")
-model_m2_path = Path(r"D:\Models\glycine-vision-pd")
+test_folder = _PROJECT_ROOT / "Training" / "splits" / "test"
+train_folder = _PROJECT_ROOT / "Training" / "splits" / "train"
+source_dataset_folder = _PROJECT_ROOT / "Training" / "splits"
+results_folder = _PROJECT_ROOT / "Training" / "outputs"
+
+model_m1_path = _PROJECT_ROOT / "Models" / "model1.tflite"
+model_m2_path = _PROJECT_ROOT / "Models" / "model2.tflite"
 
 archivo_excel_salida_m1 = results_folder / "m1_results.xlsx"
 archivo_excel_salida_m2 = results_folder / "m2_results.xlsx"
@@ -35,6 +37,7 @@ disease_mapping = {
 results_folder.mkdir(parents=True, exist_ok=True)
 test_folder.mkdir(parents=True, exist_ok=True)
 train_folder.mkdir(parents=True, exist_ok=True)
+
 
 def validate_paths():
     if not source_dataset_folder.exists():

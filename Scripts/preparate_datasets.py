@@ -24,7 +24,7 @@ def validate_image(image_path):
         return (img.width >= image_min_resolution and
                 img.height >= image_min_resolution and
                 img.mode == "RGB")
-    except:
+    except (OSError, Exception):
         return False
 
 def load_source_images():

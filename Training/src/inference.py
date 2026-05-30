@@ -1,7 +1,6 @@
 import cv2
 import json
 import numpy as np
-from collections import Counter
 from pathlib import Path
 from typing import Optional
 
