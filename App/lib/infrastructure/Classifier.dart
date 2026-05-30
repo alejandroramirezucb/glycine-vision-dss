@@ -174,8 +174,10 @@ class TfliteClassifier {
       final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
       final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
       var off = i * pixelsPerImage;
-      for (final b in bytes) {
-        inputFlat[off++] = b.toDouble();
+      for (var p = 0; p < bytes.length; p += 3) {
+        inputFlat[off++] = (bytes[p] / 255.0 - _rMean) / _rStd;
+        inputFlat[off++] = (bytes[p + 1] / 255.0 - _gMean) / _gStd;
+        inputFlat[off++] = (bytes[p + 2] / 255.0 - _bMean) / _bStd;
       }
     }
     final outputFlat = Float32List(n * outSize);
@@ -184,6 +186,13 @@ class TfliteClassifier {
       List.generate(outSize, (j) => outputFlat[i * outSize + j]),
     ));
   }
+
+  static const double _rMean = 0.485;
+  static const double _gMean = 0.456;
+  static const double _bMean = 0.406;
+  static const double _rStd = 0.229;
+  static const double _gStd = 0.224;
+  static const double _bStd = 0.225;
 
   void _fillFloat32FromBytes(
     Uint8List srcBytes,
@@ -202,9 +211,9 @@ class TfliteClassifier {
       for (var dx = 0; dx < _inputSize; dx++) {
         final sx = (srcX + dx * xScale).round().clamp(0, srcW - 1);
         final px = rowBase + sx * 3;
-        buffer[offset++] = srcBytes[px].toDouble();
-        buffer[offset++] = srcBytes[px + 1].toDouble();
-        buffer[offset++] = srcBytes[px + 2].toDouble();
+        buffer[offset++] = (srcBytes[px] / 255.0 - _rMean) / _rStd;
+        buffer[offset++] = (srcBytes[px + 1] / 255.0 - _gMean) / _gStd;
+        buffer[offset++] = (srcBytes[px + 2] / 255.0 - _bMean) / _bStd;
       }
     }
   }
