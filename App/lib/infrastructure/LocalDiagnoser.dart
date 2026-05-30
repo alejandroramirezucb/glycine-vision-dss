@@ -21,7 +21,7 @@ class LocalDiagnoser implements Diagnoser {
   static const double _defaultDiseaseGate = 0.35;
   static const double _defaultActiveThreshold = 0.4;
   static const double _leafRatioThreshold = 0.07;
-  static const double _minSegSeverityForInference = 2.0;
+  static const double _minSegSeverityForInference = 0.5;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -92,7 +92,7 @@ class LocalDiagnoser implements Diagnoser {
       necrosisPct = decomp.necrosis;
     }
 
-    final scan = await _scanImage(inferenceImage);
+    final scan = await _scanImage(normalized, inferenceImage);
 
     final effectiveZones = (segMask != null && globalSeverityPct < _minSegSeverityForInference)
         ? <Zone>[]
@@ -132,10 +132,13 @@ class LocalDiagnoser implements Diagnoser {
     );
   }
 
-  Future<_ScanResult> _scanImage(img.Image image) async {
-    final srcBytes = image.getBytes(order: img.ChannelOrder.rgb);
-    final srcW = image.width;
-    final srcH = image.height;
+  Future<_ScanResult> _scanImage(
+    img.Image leafDetectionImage,
+    img.Image inferenceImage,
+  ) async {
+    final detectionBytes = leafDetectionImage.getBytes(order: img.ChannelOrder.rgb);
+    final srcW = leafDetectionImage.width;
+    final srcH = leafDetectionImage.height;
 
     final candidates = <({int x, int y})>[];
     var totalPatches = 0;
@@ -143,7 +146,7 @@ class LocalDiagnoser implements Diagnoser {
     for (var y = 0; y + patchSize <= srcH; y += stride) {
       for (var x = 0; x + patchSize <= srcW; x += stride) {
         totalPatches++;
-        if (_leafRatio(srcBytes, srcW, x, y) >= _leafRatioThreshold) {
+        if (_leafRatio(detectionBytes, srcW, x, y) >= _leafRatioThreshold) {
           candidates.add((x: x, y: y));
         }
       }
@@ -154,7 +157,7 @@ class LocalDiagnoser implements Diagnoser {
 
     await Future.delayed(Duration.zero);
 
-    final healthScores = _healthModel.runBatchFromSource(image, candidates, patchSize);
+    final healthScores = _healthModel.runBatchFromSource(inferenceImage, candidates, patchSize);
     final diseasedIndexes = [
       for (var i = 0; i < candidates.length; i++)
         if (_probabilityDiseased(healthScores[i]) >= healthGate) i,
@@ -167,13 +170,13 @@ class LocalDiagnoser implements Diagnoser {
 
     final diseasedCandidates = [for (final i in diseasedIndexes) candidates[i]];
     final diseaseScores =
-        _diseaseModel.runBatchFromSource(image, diseasedCandidates, patchSize);
+        _diseaseModel.runBatchFromSource(inferenceImage, diseasedCandidates, patchSize);
 
     final zones = <Zone>[];
     for (var j = 0; j < diseasedIndexes.length; j++) {
       final pos = candidates[diseasedIndexes[j]];
       final patch =
-          img.copyCrop(image, x: pos.x, y: pos.y, width: patchSize, height: patchSize);
+          img.copyCrop(inferenceImage, x: pos.x, y: pos.y, width: patchSize, height: patchSize);
       final severity = _severity.calculate(patch);
       if (severity.percent < 2.0) continue;
       final actives = _activeDiseases(diseaseScores[j], severity.percent);
