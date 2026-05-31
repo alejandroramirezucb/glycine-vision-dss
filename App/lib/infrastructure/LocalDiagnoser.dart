@@ -21,8 +21,7 @@ class LocalDiagnoser implements Diagnoser {
   static const double _defaultDiseaseGate = 0.35;
   static const double _defaultActiveThreshold = 0.4;
   static const double _leafRatioThreshold = 0.07;
-  static const double _minSegSeverityForInference = 0.5;
-  static const List<String> _severityOrder = [
+static const List<String> _severityOrder = [
     'minima',
     'leve',
     'moderada',
@@ -94,9 +93,7 @@ class LocalDiagnoser implements Diagnoser {
 
     final scan = await _scanImage(normalized, inferenceImage);
 
-    final effectiveZones = (segMask != null && globalSeverityPct < _minSegSeverityForInference)
-        ? <Zone>[]
-        : scan.zones;
+    final effectiveZones = scan.zones;
 
     final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
     final climate = await _fetchClimate(lat, lon);
@@ -178,7 +175,6 @@ class LocalDiagnoser implements Diagnoser {
       final patch =
           img.copyCrop(inferenceImage, x: pos.x, y: pos.y, width: patchSize, height: patchSize);
       final severity = _severity.calculate(patch);
-      if (severity.percent < 2.0) continue;
       final actives = _activeDiseases(diseaseScores[j], severity.percent);
       if (actives.isEmpty) continue;
       zones.add(Zone(
