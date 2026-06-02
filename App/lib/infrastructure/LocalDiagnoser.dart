@@ -1,5 +1,5 @@
-import 'dart:typed_data';
 import 'dart:ui';
+import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import '../domain/ClimateData.dart';
@@ -14,13 +14,10 @@ import 'SeverityCalculator.dart';
 import 'TfliteSegmenter.dart';
 
 class LocalDiagnoser implements Diagnoser {
-  static const int _defaultPatchSize = 150;
-  static const int _defaultStride = 100;
   static const int _defaultMaxSide = 400;
-  static const double _defaultDiseaseGate = 0.35;
-  static const double _defaultActiveThreshold = 0.25;
-  static const double _leafRatioThreshold = 0.0;
-static const List<String> _severityOrder = [
+  static const double _defaultDiseaseGate = 0.10;
+  static const double _defaultActiveThreshold = 0.10;
+  static const List<String> _severityOrder = [
     'minima',
     'leve',
     'moderada',
@@ -35,8 +32,6 @@ static const List<String> _severityOrder = [
   final TreatmentRepository _treatments;
   final ClimateRepository _climateRepo;
   final OnsetEstimator _onsetEstimator;
-  final int patchSize;
-  final int stride;
   final int maxImageSide;
   final double healthGate;
   final double activeThreshold;
@@ -49,8 +44,6 @@ static const List<String> _severityOrder = [
     required OnsetEstimator onsetEstimator,
     TfliteSegmenter? segmenter,
     SeverityCalculator severity = const SeverityCalculator(),
-    this.patchSize = _defaultPatchSize,
-    this.stride = _defaultStride,
     this.maxImageSide = _defaultMaxSide,
     this.healthGate = _defaultDiseaseGate,
     this.activeThreshold = _defaultActiveThreshold,
@@ -122,68 +115,16 @@ static const List<String> _severityOrder = [
     );
   }
 
-  Future<_ScanResult> _scanImage(
-    img.Image leafDetectionImage,
-    img.Image inferenceImage,
-  ) async {
-    final detectionBytes = leafDetectionImage.getBytes(order: img.ChannelOrder.rgb);
-    final srcW = leafDetectionImage.width;
-    final srcH = leafDetectionImage.height;
-
-    final candidates = <({int x, int y})>[];
-    var totalPatches = 0;
-
-    for (var y = 0; y + patchSize <= srcH; y += stride) {
-      for (var x = 0; x + patchSize <= srcW; x += stride) {
-        totalPatches++;
-        if (_leafRatio(detectionBytes, srcW, x, y) >= _leafRatioThreshold) {
-          candidates.add((x: x, y: y));
-        }
-      }
-    }
-
-    final leafPatches = candidates.length;
-    if (candidates.isEmpty) return _ScanResult(const [], totalPatches, 0);
-
-    await Future.delayed(Duration.zero);
-
-    final healthScores = _healthModel.runBatchFromSource(inferenceImage, candidates, patchSize);
-    final diseasedIndexes = [
-      for (var i = 0; i < candidates.length; i++)
-        if (_probabilityDiseased(healthScores[i]) >= healthGate) i,
-    ];
-    if (diseasedIndexes.isEmpty) {
-      return _ScanResult(const [], totalPatches, leafPatches);
-    }
-
-    await Future.delayed(Duration.zero);
-
-    final diseasedCandidates = [for (final i in diseasedIndexes) candidates[i]];
-    final diseaseScores =
-        _diseaseModel.runBatchFromSource(inferenceImage, diseasedCandidates, patchSize);
-
-    final zones = <Zone>[];
-    for (var j = 0; j < diseasedIndexes.length; j++) {
-      final pos = candidates[diseasedIndexes[j]];
-      final patch =
-          img.copyCrop(inferenceImage, x: pos.x, y: pos.y, width: patchSize, height: patchSize);
-      final severity = _severity.calculate(patch);
-      final actives = _activeDiseases(diseaseScores[j], severity.percent);
-      if (actives.isEmpty) continue;
-      zones.add(Zone(
-        bbox: Rect.fromLTWH(
-            pos.x.toDouble(), pos.y.toDouble(), patchSize.toDouble(), patchSize.toDouble()),
-        severityPct: severity.percent,
-        severityLevel: severity.level,
-        activeDiseases: actives,
-      ));
-    }
-    return _ScanResult(zones, totalPatches, leafPatches);
-  }
-
   Future<_ScanResult> _scanWholeImage(img.Image image) async {
+    final b = image.getBytes(order: img.ChannelOrder.rgb);
+    final mid = b.length ~/ 2;
+    debugPrint('[M1-DEBUG] image=${image.width}x${image.height} bytes=${b.length} '
+        'px0=[${b[0]},${b[1]},${b[2]}] px_mid=[${b[mid]},${b[mid+1]},${b[mid+2]}]');
+
     final healthScore = _healthModel.run(image);
     final pDiseased = _probabilityDiseased(healthScore);
+
+    debugPrint('[M1-DEBUG] healthScore=$healthScore pDiseased=$pDiseased healthGate=$healthGate');
 
     if (pDiseased < healthGate) {
       return _ScanResult(const [], 1, 1);
@@ -204,31 +145,6 @@ static const List<String> _severityOrder = [
       activeDiseases: actives,
     );
     return _ScanResult([zone], 1, 1);
-  }
-
-  double _leafRatio(Uint8List srcBytes, int srcW, int startX, int startY) {
-    var leafCount = 0;
-    var sampleCount = 0;
-    final endY = (startY + patchSize).clamp(0, srcBytes.length ~/ (srcW * 3));
-    final endX = (startX + patchSize).clamp(0, srcW);
-    for (var y = startY; y < endY; y += 4) {
-      final rowBase = y * srcW * 3;
-      for (var x = startX; x < endX; x += 4) {
-        final px = rowBase + x * 3;
-        final r = srcBytes[px];
-        final g = srcBytes[px + 1];
-        final b = srcBytes[px + 2];
-        final isGreen = g > 45 && g > r * 1.05 && g > b * 1.1;
-        final isYellow = g > 70 && b < 80 && g > b * 2.5 && (r - g).abs() < 65;
-        final brightness = r + g + b;
-        final isLeafTissue = brightness > 60 &&
-            brightness < 660 &&
-            !(r > 210 && g > 210 && b > 210);
-        if (isGreen || isYellow || isLeafTissue) leafCount++;
-        sampleCount++;
-      }
-    }
-    return sampleCount == 0 ? 0.0 : leafCount / sampleCount;
   }
 
   double _probabilityDiseased(List<double> scores) {
