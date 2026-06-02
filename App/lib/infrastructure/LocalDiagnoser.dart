@@ -9,7 +9,6 @@ import '../domain/DiseaseFinding.dart';
 import '../domain/OnsetEstimate.dart';
 import '../domain/Protocols.dart';
 import '../domain/Zone.dart';
-import 'ChromaticNormalizer.dart';
 import 'Classifier.dart';
 import 'SeverityCalculator.dart';
 import 'TfliteSegmenter.dart';
@@ -19,8 +18,8 @@ class LocalDiagnoser implements Diagnoser {
   static const int _defaultStride = 100;
   static const int _defaultMaxSide = 400;
   static const double _defaultDiseaseGate = 0.35;
-  static const double _defaultActiveThreshold = 0.4;
-  static const double _leafRatioThreshold = 0.07;
+  static const double _defaultActiveThreshold = 0.25;
+  static const double _leafRatioThreshold = 0.0;
 static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -32,7 +31,6 @@ static const List<String> _severityOrder = [
   final TfliteClassifier _healthModel;
   final TfliteClassifier _diseaseModel;
   final TfliteSegmenter? _segmenter;
-  final ChromaticNormalizer _normalizer;
   final SeverityCalculator _severity;
   final TreatmentRepository _treatments;
   final ClimateRepository _climateRepo;
@@ -50,7 +48,6 @@ static const List<String> _severityOrder = [
     required ClimateRepository climateRepo,
     required OnsetEstimator onsetEstimator,
     TfliteSegmenter? segmenter,
-    ChromaticNormalizer normalizer = const ChromaticNormalizer(),
     SeverityCalculator severity = const SeverityCalculator(),
     this.patchSize = _defaultPatchSize,
     this.stride = _defaultStride,
@@ -60,7 +57,6 @@ static const List<String> _severityOrder = [
   })  : _healthModel = healthModel,
         _diseaseModel = diseaseModel,
         _segmenter = segmenter,
-        _normalizer = normalizer,
         _severity = severity,
         _treatments = treatments,
         _climateRepo = climateRepo,
@@ -73,25 +69,22 @@ static const List<String> _severityOrder = [
     if (decoded == null) throw Exception('Imagen inválida');
 
     final resized = _resizeIfNeeded(decoded);
-    final normalized = _normalizer.normalize(resized);
 
     Uint8List? segMask;
-    img.Image inferenceImage = normalized;
     double globalSeverityPct = 0.0;
     double chlorosisPct = 0.0;
     double necrosisPct = 0.0;
 
     final seg = _segmenter;
     if (seg != null) {
-      segMask = seg.segment(normalized);
+      segMask = seg.segment(resized);
       globalSeverityPct = seg.severityPct(segMask);
-      inferenceImage = seg.applyMask(normalized, segMask);
-      final decomp = seg.decompose(normalized, segMask);
+      final decomp = seg.decompose(resized, segMask);
       chlorosisPct = decomp.chlorosis;
       necrosisPct = decomp.necrosis;
     }
 
-    final scan = await _scanImage(normalized, inferenceImage);
+    final scan = await _scanImage(resized, resized);
 
     final effectiveZones = scan.zones;
 
@@ -202,7 +195,11 @@ static const List<String> _severityOrder = [
         final b = srcBytes[px + 2];
         final isGreen = g > 45 && g > r * 1.05 && g > b * 1.1;
         final isYellow = g > 70 && b < 80 && g > b * 2.5 && (r - g).abs() < 65;
-        if (isGreen || isYellow) leafCount++;
+        final brightness = r + g + b;
+        final isLeafTissue = brightness > 60 &&
+            brightness < 660 &&
+            !(r > 210 && g > 210 && b > 210);
+        if (isGreen || isYellow || isLeafTissue) leafCount++;
         sampleCount++;
       }
     }

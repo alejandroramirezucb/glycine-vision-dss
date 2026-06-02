@@ -92,10 +92,11 @@ class TfliteClassifier {
 
     final isQuantized =
         _interpreter.getInputTensor(0).type == TensorType.uint8;
-    if (_lastBatchSize != n) {
-      _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
+
+    if (_lastBatchSize != 1) {
+      _interpreter.resizeInputTensor(0, [1, _inputSize, _inputSize, 3]);
       _interpreter.allocateTensors();
-      _lastBatchSize = n;
+      _lastBatchSize = 1;
     }
 
     final outSize = _interpreter
@@ -111,29 +112,31 @@ class TfliteClassifier {
     final xScale = patchSize / _inputSize;
     final yScale = patchSize / _inputSize;
 
-    if (isQuantized) {
-      final inputFlat = Uint8List(n * pixelsPerImage);
-      for (var i = 0; i < n; i++) {
+    final results = <List<double>>[];
+
+    for (var i = 0; i < n; i++) {
+      if (isQuantized) {
+        final inputFlat = Uint8List(pixelsPerImage);
         _fillUint8FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
-            xScale, yScale, inputFlat, i * pixelsPerImage);
+            xScale, yScale, inputFlat, 0);
+        final outputFlat = Uint8List(outSize);
+        _interpreter.run(inputFlat, outputFlat);
+        results.add(_expandBinary(
+          List.generate(outSize, (j) => outputFlat[j] / 255.0),
+        ));
+      } else {
+        final inputFlat = Float32List(pixelsPerImage);
+        _fillFloat32FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
+            xScale, yScale, inputFlat, 0);
+        final outputFlat = Float32List(outSize);
+        _interpreter.run(inputFlat, outputFlat);
+        results.add(_expandBinary(
+          List.generate(outSize, (j) => outputFlat[j]),
+        ));
       }
-      final outputFlat = Uint8List(n * outSize);
-      _interpreter.run(inputFlat, outputFlat);
-      return List.generate(n, (i) => _expandBinary(
-        List.generate(outSize, (j) => outputFlat[i * outSize + j] / 255.0),
-      ));
     }
 
-    final inputFlat = Float32List(n * pixelsPerImage);
-    for (var i = 0; i < n; i++) {
-      _fillFloat32FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
-          xScale, yScale, inputFlat, i * pixelsPerImage);
-    }
-    final outputFlat = Float32List(n * outSize);
-    _interpreter.run(inputFlat, outputFlat);
-    return List.generate(n, (i) => _expandBinary(
-      List.generate(outSize, (j) => outputFlat[i * outSize + j]),
-    ));
+    return results;
   }
 
   List<List<double>> runBatch(List<img.Image> images) {
@@ -174,10 +177,8 @@ class TfliteClassifier {
       final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
       final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
       var off = i * pixelsPerImage;
-      for (var p = 0; p < bytes.length; p += 3) {
-        inputFlat[off++] = (bytes[p] / 255.0 - _rMean) / _rStd;
-        inputFlat[off++] = (bytes[p + 1] / 255.0 - _gMean) / _gStd;
-        inputFlat[off++] = (bytes[p + 2] / 255.0 - _bMean) / _bStd;
+      for (final b in bytes) {
+        inputFlat[off++] = b.toDouble();
       }
     }
     final outputFlat = Float32List(n * outSize);
@@ -186,13 +187,6 @@ class TfliteClassifier {
       List.generate(outSize, (j) => outputFlat[i * outSize + j]),
     ));
   }
-
-  static const double _rMean = 0.485;
-  static const double _gMean = 0.456;
-  static const double _bMean = 0.406;
-  static const double _rStd = 0.229;
-  static const double _gStd = 0.224;
-  static const double _bStd = 0.225;
 
   void _fillFloat32FromBytes(
     Uint8List srcBytes,
@@ -211,9 +205,9 @@ class TfliteClassifier {
       for (var dx = 0; dx < _inputSize; dx++) {
         final sx = (srcX + dx * xScale).round().clamp(0, srcW - 1);
         final px = rowBase + sx * 3;
-        buffer[offset++] = (srcBytes[px] / 255.0 - _rMean) / _rStd;
-        buffer[offset++] = (srcBytes[px + 1] / 255.0 - _gMean) / _gStd;
-        buffer[offset++] = (srcBytes[px + 2] / 255.0 - _bMean) / _bStd;
+        buffer[offset++] = srcBytes[px].toDouble();
+        buffer[offset++] = srcBytes[px + 1].toDouble();
+        buffer[offset++] = srcBytes[px + 2].toDouble();
       }
     }
   }

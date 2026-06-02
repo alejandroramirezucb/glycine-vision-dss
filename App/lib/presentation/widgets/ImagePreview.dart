@@ -1,7 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
+
 import '../Theme.dart';
 
 class ImagePreview extends StatelessWidget {
@@ -20,8 +22,10 @@ class ImagePreview extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       height: height,
+      width: double.infinity,
       clipBehavior: Clip.hardEdge,
       decoration: BoxDecoration(
+        color: AppTheme.bgCard,
         borderRadius: BorderRadius.circular(AppTheme.radiusImg),
       ),
       child: imageFile != null ? _buildImage() : _buildPlaceholder(),
@@ -29,10 +33,18 @@ class ImagePreview extends StatelessWidget {
   }
 
   Widget _buildImage() {
-    if (kIsWeb) {
-      return Image.network(imageFile!.path, fit: fit);
-    }
-    return Image.file(File(imageFile!.path), fit: fit);
+    final imageWidget = kIsWeb
+        ? Image.network(
+            imageFile!.path,
+            fit: fit,
+            width: double.infinity,
+          )
+        : Image.file(
+            File(imageFile!.path),
+            fit: fit,
+            width: double.infinity,
+          );
+    return Center(child: imageWidget);
   }
 
   Widget _buildPlaceholder() => Container(

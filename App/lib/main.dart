@@ -98,7 +98,7 @@ Future<Diagnoser> _buildDiagnoser({
   );
 }
 
-Future<double> _loadHealthGate({double fallback = 0.35}) async {
+Future<double> _loadHealthGate({double fallback = 0.10}) async {
   try {
     final raw = await rootBundle.loadString('assets/models/hs/threshold.json');
     final gate = (jsonDecode(raw) as Map<String, dynamic>)['diseased_gate'];
