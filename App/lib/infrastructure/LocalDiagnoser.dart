@@ -66,16 +66,11 @@ class LocalDiagnoser implements Diagnoser {
 
     Uint8List? segMask;
     double globalSeverityPct = 0.0;
-    double chlorosisPct = 0.0;
-    double necrosisPct = 0.0;
 
     final seg = _segmenter;
     if (seg != null) {
       segMask = seg.segment(resized);
       globalSeverityPct = seg.severityPct(segMask);
-      final decomp = seg.decompose(resized, segMask);
-      chlorosisPct = decomp.chlorosis;
-      necrosisPct = decomp.necrosis;
     }
 
     final scan = await _scanWholeImage(resized);
@@ -85,8 +80,7 @@ class LocalDiagnoser implements Diagnoser {
     Uint8List? diseaseColoredMask;
     if (segMask != null && effectiveZones.isNotEmpty) {
       final actives = effectiveZones.expand((z) => z.activeDiseases).toList();
-      final source256 = img.copyResize(resized, width: 256, height: 256);
-      diseaseColoredMask = DiseaseColorizer.build(segMask, source256, actives);
+      diseaseColoredMask = DiseaseColorizer.build(segMask, actives);
     }
 
     final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
@@ -105,11 +99,8 @@ class LocalDiagnoser implements Diagnoser {
       climate: climate,
       onset: onset,
       treatmentPlan: plan,
-      segMask256: segMask,
       diseaseColoredMask: diseaseColoredMask,
       globalSeverityPct: globalSeverityPct,
-      chlorosisPct: chlorosisPct,
-      necrosisPct: necrosisPct,
     );
   }
 

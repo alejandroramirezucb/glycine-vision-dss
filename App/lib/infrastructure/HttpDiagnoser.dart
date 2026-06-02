@@ -72,7 +72,7 @@ class HttpDiagnoser implements Diagnoser {
                 severityPct: f.avgSeverityPct,
               ))
           .toList();
-      diseaseColoredMask = DiseaseColorizer.buildFromMaskOnly(mask256, actives);
+      diseaseColoredMask = DiseaseColorizer.build(mask256, actives);
     }
 
     final onset = _resolveOnset(findings, climate);

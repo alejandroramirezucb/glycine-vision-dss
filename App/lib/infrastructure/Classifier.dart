@@ -82,69 +82,6 @@ class TfliteClassifier {
 
   List<double> run(img.Image image) => runBatch([image]).first;
 
-  List<List<double>> runBatchFromSource(
-    img.Image source,
-    List<({int x, int y})> regions,
-    int patchSize,
-  ) {
-    final n = regions.length;
-    if (n == 0) return const [];
-
-    final isQuantized =
-        _interpreter.getInputTensor(0).type == TensorType.uint8;
-
-    if (_lastBatchSize != 1) {
-      _interpreter.resizeInputTensor(0, [1, _inputSize, _inputSize, 3]);
-      _interpreter.allocateTensors();
-      _lastBatchSize = 1;
-    }
-
-    final outSize = _interpreter
-        .getOutputTensor(0)
-        .shape
-        .skip(1)
-        .reduce((a, b) => a * b);
-    final pixelsPerImage = _inputSize * _inputSize * 3;
-
-    final srcBytes = source.getBytes(order: img.ChannelOrder.rgb);
-    final srcW = source.width;
-    final srcH = source.height;
-    final xScale = patchSize / _inputSize;
-    final yScale = patchSize / _inputSize;
-
-    final results = <List<double>>[];
-
-    for (var i = 0; i < n; i++) {
-      if (isQuantized) {
-        final inputFlat = Uint8List(pixelsPerImage);
-        _fillUint8FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
-            xScale, yScale, inputFlat, 0);
-        _interpreter.getInputTensor(0).data.buffer
-            .asUint8List()
-            .setAll(0, inputFlat);
-        _interpreter.invoke();
-        final outBuffer = _interpreter.getOutputTensor(0).data.buffer.asUint8List();
-        results.add(_expandBinary(
-          List.generate(outSize, (j) => outBuffer[j] / 255.0),
-        ));
-      } else {
-        final inputFlat = Float32List(pixelsPerImage);
-        _fillFloat32FromBytes(srcBytes, srcW, srcH, regions[i].x, regions[i].y,
-            xScale, yScale, inputFlat, 0);
-        _interpreter.getInputTensor(0).data.buffer
-            .asFloat32List()
-            .setAll(0, inputFlat);
-        _interpreter.invoke();
-        final outBuffer = _interpreter.getOutputTensor(0).data.buffer.asFloat32List();
-        results.add(_expandBinary(
-          List.generate(outSize, (j) => outBuffer[j]),
-        ));
-      }
-    }
-
-    return results;
-  }
-
   List<List<double>> runBatch(List<img.Image> images) {
     final n = images.length;
     if (n == 0) return const [];
@@ -198,54 +135,6 @@ class TfliteClassifier {
     return List.generate(n, (i) => _expandBinary(
       List.generate(outSize, (j) => outBuffer[i * outSize + j]),
     ));
-  }
-
-  void _fillFloat32FromBytes(
-    Uint8List srcBytes,
-    int srcW,
-    int srcH,
-    int srcX,
-    int srcY,
-    double xScale,
-    double yScale,
-    Float32List buffer,
-    int offset,
-  ) {
-    for (var dy = 0; dy < _inputSize; dy++) {
-      final sy = (srcY + dy * yScale).round().clamp(0, srcH - 1);
-      final rowBase = sy * srcW * 3;
-      for (var dx = 0; dx < _inputSize; dx++) {
-        final sx = (srcX + dx * xScale).round().clamp(0, srcW - 1);
-        final px = rowBase + sx * 3;
-        buffer[offset++] = srcBytes[px].toDouble();
-        buffer[offset++] = srcBytes[px + 1].toDouble();
-        buffer[offset++] = srcBytes[px + 2].toDouble();
-      }
-    }
-  }
-
-  void _fillUint8FromBytes(
-    Uint8List srcBytes,
-    int srcW,
-    int srcH,
-    int srcX,
-    int srcY,
-    double xScale,
-    double yScale,
-    Uint8List buffer,
-    int offset,
-  ) {
-    for (var dy = 0; dy < _inputSize; dy++) {
-      final sy = (srcY + dy * yScale).round().clamp(0, srcH - 1);
-      final rowBase = sy * srcW * 3;
-      for (var dx = 0; dx < _inputSize; dx++) {
-        final sx = (srcX + dx * xScale).round().clamp(0, srcW - 1);
-        final px = rowBase + sx * 3;
-        buffer[offset++] = srcBytes[px];
-        buffer[offset++] = srcBytes[px + 1];
-        buffer[offset++] = srcBytes[px + 2];
-      }
-    }
   }
 
   List<double> _expandBinary(List<double> scores) {

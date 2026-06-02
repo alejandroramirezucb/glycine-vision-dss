@@ -11,7 +11,6 @@ import '../widgets/DiseaseFindingCard.dart';
 import '../widgets/ImagePreview.dart';
 import '../widgets/OnsetBadge.dart';
 import '../widgets/SegmentationOverlay.dart';
-import '../widgets/ZoneOverlay.dart';
 
 class DiagnoseResult extends StatelessWidget {
   const DiagnoseResult({super.key});
@@ -51,11 +50,7 @@ class _Layout extends StatelessWidget {
           const SizedBox(height: 10),
         ],
         if (result.isHealthy) const _HealthyBanner() else const SizedBox.shrink(),
-        if (!result.isHealthy) ...[
-          _ZoneCounter(result: result),
-          const SizedBox(height: 10),
-          _DiseaseSummaryBanner(findings: result.findings),
-        ],
+        if (!result.isHealthy) _DiseaseSummaryBanner(findings: result.findings),
         const SizedBox(height: 12),
         for (final finding in result.findings) ...[
           DiseaseFindingCard(finding: finding),
@@ -107,29 +102,24 @@ class _ImageSection extends StatefulWidget {
 class _ImageSectionState extends State<_ImageSection> {
   bool _showSeg = true;
 
-  Widget _buildOverlay(domain.DiagnoseResult result) {
+  @override
+  Widget build(BuildContext context) {
+    final result = widget.result;
     final preview = ImagePreview(imageFile: widget.image, height: null);
-    final aspect = result.imageHeight > 0
-        ? result.imageWidth / result.imageHeight
-        : 1.0;
 
+    Widget overlay;
     if (result.hasSegmentation && _showSeg) {
-      return SegmentationOverlay(
+      final aspect = result.imageHeight > 0
+          ? result.imageWidth / result.imageHeight
+          : 1.0;
+      overlay = SegmentationOverlay(
         rgbaMask: result.diseaseColoredMask!,
         imageChild: preview,
         aspectRatio: aspect,
       );
+    } else {
+      overlay = preview;
     }
-    if (!result.isHealthy) {
-      return ZoneOverlay(result: result, imageChild: preview);
-    }
-    return preview;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final result = widget.result;
-    final overlay = _buildOverlay(result);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -147,7 +137,7 @@ class _ImageSectionState extends State<_ImageSection> {
                 Positioned(
                   top: 8,
                   right: 8,
-                  child: _SegToggleChip(
+                  child: _SegToggle(
                     active: _showSeg,
                     onToggle: () => setState(() => _showSeg = !_showSeg),
                   ),
@@ -164,20 +154,20 @@ class _ImageSectionState extends State<_ImageSection> {
   }
 }
 
-class _SegToggleChip extends StatelessWidget {
+class _SegToggle extends StatelessWidget {
   final bool active;
   final VoidCallback onToggle;
 
-  const _SegToggleChip({required this.active, required this.onToggle});
+  const _SegToggle({required this.active, required this.onToggle});
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onToggle,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.black54,
+          color: active ? AppTheme.accentDark.withValues(alpha: 0.85) : Colors.black54,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -189,13 +179,74 @@ class _SegToggleChip extends StatelessWidget {
               size: 14,
             ),
             const SizedBox(width: 4),
-            Text(
-              active ? 'SEG' : 'ZONAS',
-              style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w600),
+            const Text(
+              'SEG',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _DiseaseLegend extends StatelessWidget {
+  final List<DiseaseFinding> findings;
+  const _DiseaseLegend({required this.findings});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 6,
+        children: [
+          _LegendDot(label: 'Sana', color: const Color(0xFF22C55E)),
+          ...findings.map((f) => _LegendDot(
+                label: labelToEs(f.pathogenClass),
+                color: pathogenColor(f.pathogenClass),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _LegendDot({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -208,8 +259,6 @@ class _GlobalSeverityPanel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sev = result.globalSeverityPct;
-    final clo = result.chlorosisPct;
-    final nec = result.necrosisPct;
     final sevColor = AppTheme.severityPctColor(sev);
     return Container(
       width: double.infinity,
@@ -253,53 +302,8 @@ class _GlobalSeverityPanel extends StatelessWidget {
               minHeight: 7,
             ),
           ),
-          if (clo > 0 || nec > 0) ...[
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                if (clo > 0) _SymptomTag(
-                  label: 'Clorosis',
-                  pct: clo,
-                  color: const Color(0xFFFDD835),
-                ),
-                if (clo > 0 && nec > 0) const SizedBox(width: 12),
-                if (nec > 0) _SymptomTag(
-                  label: 'Necrosis',
-                  pct: nec,
-                  color: const Color(0xFF795548),
-                ),
-              ],
-            ),
-          ],
         ],
       ),
-    );
-  }
-}
-
-class _SymptomTag extends StatelessWidget {
-  final String label;
-  final double pct;
-  final Color color;
-
-  const _SymptomTag({required this.label, required this.pct, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 8,
-          height: 8,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 4),
-        Text(
-          '$label: ${pct.toStringAsFixed(1)}%',
-          style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-        ),
-      ],
     );
   }
 }
@@ -330,43 +334,6 @@ class _HealthyBanner extends StatelessWidget {
   }
 }
 
-class _ZoneCounter extends StatelessWidget {
-  final domain.DiagnoseResult result;
-
-  const _ZoneCounter({required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    final diseased = result.zones.length;
-    final leaf = result.leafPatches;
-    final pct = leaf == 0 ? 0.0 : diseased / leaf * 100;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard,
-        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.crop_free_rounded, size: 18, color: AppTheme.accent),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              '$diseased zonas enfermas de $leaf zonas de follaje (${pct.toStringAsFixed(0)}% del follaje)',
-              style: const TextStyle(
-                fontSize: 12,
-                color: AppTheme.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 class _DiseaseSummaryBanner extends StatelessWidget {
   final List<DiseaseFinding> findings;
 
@@ -388,63 +355,6 @@ class _DiseaseSummaryBanner extends StatelessWidget {
         runSpacing: 8,
         children: findings.map((f) => _DiseaseChip(finding: f)).toList(),
       ),
-    );
-  }
-}
-
-class _DiseaseLegend extends StatelessWidget {
-  final List<DiseaseFinding> findings;
-  const _DiseaseLegend({required this.findings});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.bgCard.withValues(alpha: 0.92),
-        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
-        border: Border.all(color: AppTheme.border),
-      ),
-      child: Wrap(
-        spacing: 14,
-        runSpacing: 6,
-        children: [
-          _LegendItem(label: 'Sana', color: const Color(0xFF22C55E)),
-          ...findings.map((f) => _LegendItem(
-                label: labelToEs(f.pathogenClass),
-                color: pathogenColor(f.pathogenClass),
-              )),
-        ],
-      ),
-    );
-  }
-}
-
-class _LegendItem extends StatelessWidget {
-  final String label;
-  final Color color;
-  const _LegendItem({required this.label, required this.color});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-        ),
-        const SizedBox(width: 5),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: AppTheme.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }

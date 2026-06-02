@@ -17,11 +17,8 @@ class DiagnoseResult {
   final ClimateData? climate;
   final OnsetEstimate? onset;
   final TreatmentPlan treatmentPlan;
-  final Uint8List? segMask256;
   final Uint8List? diseaseColoredMask;
   final double globalSeverityPct;
-  final double chlorosisPct;
-  final double necrosisPct;
 
   const DiagnoseResult({
     required this.zones,
@@ -34,11 +31,8 @@ class DiagnoseResult {
     required this.climate,
     required this.onset,
     required this.treatmentPlan,
-    this.segMask256,
     this.diseaseColoredMask,
     this.globalSeverityPct = 0.0,
-    this.chlorosisPct = 0.0,
-    this.necrosisPct = 0.0,
   });
 
   bool get isHealthy => zones.isEmpty;

@@ -162,7 +162,7 @@ class _MetricsRow extends StatelessWidget {
         _Divider(),
         _Metric(label: 'Nivel', value: severityToEs(finding.severityLevel)),
         _Divider(),
-        _Metric(label: 'Zonas', value: '${finding.zoneCount}'),
+        _Metric(label: 'Probabilidad', value: '${(finding.avgProbability * 100).toStringAsFixed(0)}%'),
         _Divider(),
         _Metric(label: 'Sev. máx', value: '${finding.maxSeverityPct.toStringAsFixed(0)}%'),
       ],
