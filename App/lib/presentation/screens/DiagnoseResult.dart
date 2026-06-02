@@ -115,7 +115,7 @@ class _ImageSectionState extends State<_ImageSection> {
 
     if (result.hasSegmentation && _showSeg) {
       return SegmentationOverlay(
-        mask256: result.segMask256!,
+        rgbaMask: result.diseaseColoredMask!,
         imageChild: preview,
         aspectRatio: aspect,
       );
@@ -131,26 +131,35 @@ class _ImageSectionState extends State<_ImageSection> {
     final result = widget.result;
     final overlay = _buildOverlay(result);
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppTheme.radiusImg),
-      child: Stack(
-        children: [
-          InteractiveViewer(
-            minScale: 1.0,
-            maxScale: 6.0,
-            child: overlay,
-          ),
-          if (result.hasSegmentation)
-            Positioned(
-              top: 8,
-              right: 8,
-              child: _SegToggleChip(
-                active: _showSeg,
-                onToggle: () => setState(() => _showSeg = !_showSeg),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(AppTheme.radiusImg),
+          child: Stack(
+            children: [
+              InteractiveViewer(
+                minScale: 1.0,
+                maxScale: 6.0,
+                child: overlay,
               ),
-            ),
+              if (result.hasSegmentation)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: _SegToggleChip(
+                    active: _showSeg,
+                    onToggle: () => setState(() => _showSeg = !_showSeg),
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (result.hasSegmentation && _showSeg && result.findings.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _DiseaseLegend(findings: result.findings),
         ],
-      ),
+      ],
     );
   }
 }
@@ -383,6 +392,63 @@ class _DiseaseSummaryBanner extends StatelessWidget {
   }
 }
 
+class _DiseaseLegend extends StatelessWidget {
+  final List<DiseaseFinding> findings;
+  const _DiseaseLegend({required this.findings});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: AppTheme.bgCard.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+        border: Border.all(color: AppTheme.border),
+      ),
+      child: Wrap(
+        spacing: 14,
+        runSpacing: 6,
+        children: [
+          _LegendItem(label: 'Sana', color: const Color(0xFF22C55E)),
+          ...findings.map((f) => _LegendItem(
+                label: labelToEs(f.pathogenClass),
+                color: pathogenColor(f.pathogenClass),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendItem extends StatelessWidget {
+  final String label;
+  final Color color;
+  const _LegendItem({required this.label, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 5),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class _DiseaseChip extends StatelessWidget {
   final DiseaseFinding finding;
 
@@ -392,11 +458,7 @@ class _DiseaseChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final accent = pathogenColor(finding.pathogenClass);
     final levelColor = AppTheme.severityLevelColor(finding.severityLevel);
-    final shortName = labelToEs(finding.pathogenClass)
-        .split(' ')
-        .first
-        .toLowerCase()
-        .substring(0, 3);
+    final fullName = labelToEs(finding.pathogenClass);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -414,7 +476,7 @@ class _DiseaseChip extends StatelessWidget {
           ),
           const SizedBox(width: 5),
           Text(
-            '$shortName=${finding.avgSeverityPct.toStringAsFixed(1)}%',
+            '$fullName · ${finding.avgSeverityPct.toStringAsFixed(1)}%',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,

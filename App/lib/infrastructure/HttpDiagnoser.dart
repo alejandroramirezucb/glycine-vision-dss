@@ -10,6 +10,7 @@ import '../domain/DiseaseFinding.dart';
 import '../domain/OnsetEstimate.dart';
 import '../domain/Protocols.dart';
 import '../domain/Zone.dart';
+import 'DiseaseColorizer.dart';
 
 class HttpDiagnoser implements Diagnoser {
   static const int _maxSide = 400;
@@ -60,6 +61,20 @@ class HttpDiagnoser implements Diagnoser {
     final patchSize = (json['patch_size'] as num?)?.toInt() ?? 150;
     final totalPatches = (json['total_patches'] as num?)?.toInt() ?? 0;
     final leafPatches = (json['leaf_patches'] as num?)?.toInt() ?? totalPatches;
+    final segB64 = json['seg_mask'] as String?;
+    Uint8List? diseaseColoredMask;
+    if (segB64 != null && findings.isNotEmpty) {
+      final mask256 = base64Decode(segB64);
+      final actives = findings
+          .map((f) => ActiveDisease(
+                pathogenClass: f.pathogenClass,
+                probability: f.avgProbability,
+                severityPct: f.avgSeverityPct,
+              ))
+          .toList();
+      diseaseColoredMask = DiseaseColorizer.buildFromMaskOnly(mask256, actives);
+    }
+
     final onset = _resolveOnset(findings, climate);
     final plan = treatments.buildComposite(findings: findings, climate: climate);
 
@@ -74,6 +89,7 @@ class HttpDiagnoser implements Diagnoser {
       climate: climate,
       onset: onset,
       treatmentPlan: plan,
+      diseaseColoredMask: diseaseColoredMask,
     );
   }
 

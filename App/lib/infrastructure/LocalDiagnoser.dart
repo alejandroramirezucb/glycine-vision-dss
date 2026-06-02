@@ -1,5 +1,5 @@
+import 'dart:typed_data';
 import 'dart:ui';
-import 'package:flutter/foundation.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
 import '../domain/ClimateData.dart';
@@ -10,6 +10,7 @@ import '../domain/OnsetEstimate.dart';
 import '../domain/Protocols.dart';
 import '../domain/Zone.dart';
 import 'Classifier.dart';
+import 'DiseaseColorizer.dart';
 import 'SeverityCalculator.dart';
 import 'TfliteSegmenter.dart';
 
@@ -81,6 +82,13 @@ class LocalDiagnoser implements Diagnoser {
 
     final effectiveZones = scan.zones;
 
+    Uint8List? diseaseColoredMask;
+    if (segMask != null && effectiveZones.isNotEmpty) {
+      final actives = effectiveZones.expand((z) => z.activeDiseases).toList();
+      final source256 = img.copyResize(resized, width: 256, height: 256);
+      diseaseColoredMask = DiseaseColorizer.build(segMask, source256, actives);
+    }
+
     final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
     final climate = await _fetchClimate(lat, lon);
     final onset = _estimateOnset(findings, climate);
@@ -98,6 +106,7 @@ class LocalDiagnoser implements Diagnoser {
       onset: onset,
       treatmentPlan: plan,
       segMask256: segMask,
+      diseaseColoredMask: diseaseColoredMask,
       globalSeverityPct: globalSeverityPct,
       chlorosisPct: chlorosisPct,
       necrosisPct: necrosisPct,
@@ -116,15 +125,8 @@ class LocalDiagnoser implements Diagnoser {
   }
 
   Future<_ScanResult> _scanWholeImage(img.Image image) async {
-    final b = image.getBytes(order: img.ChannelOrder.rgb);
-    final mid = b.length ~/ 2;
-    debugPrint('[M1-DEBUG] image=${image.width}x${image.height} bytes=${b.length} '
-        'px0=[${b[0]},${b[1]},${b[2]}] px_mid=[${b[mid]},${b[mid+1]},${b[mid+2]}]');
-
     final healthScore = _healthModel.run(image);
     final pDiseased = _probabilityDiseased(healthScore);
-
-    debugPrint('[M1-DEBUG] healthScore=$healthScore pDiseased=$pDiseased healthGate=$healthGate');
 
     if (pDiseased < healthGate) {
       return _ScanResult(const [], 1, 1);

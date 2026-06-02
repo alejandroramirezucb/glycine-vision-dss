@@ -4,13 +4,13 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 class SegmentationOverlay extends StatefulWidget {
-  final Uint8List mask256;
+  final Uint8List rgbaMask;
   final Widget imageChild;
   final double aspectRatio;
 
   const SegmentationOverlay({
     super.key,
-    required this.mask256,
+    required this.rgbaMask,
     required this.imageChild,
     this.aspectRatio = 1.0,
   });
@@ -21,8 +21,6 @@ class SegmentationOverlay extends StatefulWidget {
 
 class _SegmentationOverlayState extends State<SegmentationOverlay> {
   static const int _maskSize = 256;
-  static const _healthyColor = (r: 34, g: 197, b: 94, a: 80);
-  static const _diseasedColor = (r: 249, g: 115, b: 22, a: 153);
 
   ui.Image? _maskImage;
   Uint8List? _lastMask;
@@ -30,14 +28,14 @@ class _SegmentationOverlayState extends State<SegmentationOverlay> {
   @override
   void initState() {
     super.initState();
-    _buildMaskImage(widget.mask256);
+    _buildMaskImage(widget.rgbaMask);
   }
 
   @override
   void didUpdateWidget(SegmentationOverlay old) {
     super.didUpdateWidget(old);
-    if (!identical(widget.mask256, _lastMask)) {
-      _buildMaskImage(widget.mask256);
+    if (!identical(widget.rgbaMask, _lastMask)) {
+      _buildMaskImage(widget.rgbaMask);
     }
   }
 
@@ -47,19 +45,8 @@ class _SegmentationOverlayState extends State<SegmentationOverlay> {
     super.dispose();
   }
 
-  void _buildMaskImage(Uint8List mask) {
-    _lastMask = mask;
-    final rgba = Uint8List(_maskSize * _maskSize * 4);
-    for (var i = 0; i < _maskSize * _maskSize; i++) {
-      final c = mask[i];
-      if (c == 0) continue;
-      final px = i * 4;
-      final col = c == 1 ? _healthyColor : _diseasedColor;
-      rgba[px] = col.r;
-      rgba[px + 1] = col.g;
-      rgba[px + 2] = col.b;
-      rgba[px + 3] = col.a;
-    }
+  void _buildMaskImage(Uint8List rgba) {
+    _lastMask = rgba;
     ui.decodeImageFromPixels(
       rgba,
       _maskSize,
@@ -110,7 +97,8 @@ class _MaskPainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final src = Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+    final src = Rect.fromLTWH(
+        0, 0, image.width.toDouble(), image.height.toDouble());
     final dst = Rect.fromLTWH(0, 0, size.width, size.height);
     canvas.drawImageRect(
       image,

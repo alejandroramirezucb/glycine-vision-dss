@@ -18,6 +18,7 @@ class DiagnoseResult {
   final OnsetEstimate? onset;
   final TreatmentPlan treatmentPlan;
   final Uint8List? segMask256;
+  final Uint8List? diseaseColoredMask;
   final double globalSeverityPct;
   final double chlorosisPct;
   final double necrosisPct;
@@ -34,12 +35,13 @@ class DiagnoseResult {
     required this.onset,
     required this.treatmentPlan,
     this.segMask256,
+    this.diseaseColoredMask,
     this.globalSeverityPct = 0.0,
     this.chlorosisPct = 0.0,
     this.necrosisPct = 0.0,
   });
 
   bool get isHealthy => zones.isEmpty;
-  bool get hasSegmentation => segMask256 != null;
+  bool get hasSegmentation => diseaseColoredMask != null;
   bool get hasMultipleDiseases => findings.length > 1;
 }

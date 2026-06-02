@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import base64
 import json
 import os
 import tempfile
@@ -222,6 +223,24 @@ def resize_to_max(image_bgr: np.ndarray) -> np.ndarray:
     return cv2.resize(image_bgr, (int(width * scale), int(height * scale)))
 
 
+def run_segmentation(image_bgr: np.ndarray) -> Optional[str]:
+    if seg_interp is None:
+        return None
+    image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    raw = _run_single(seg_interp, image_rgb)
+    if raw.ndim == 1:
+        arr = raw.reshape(256, 256, -1)
+    elif raw.ndim == 2:
+        arr = raw
+    else:
+        arr = raw
+    if arr.ndim == 3:
+        mask = np.argmax(arr, axis=-1).astype(np.uint8)
+    else:
+        mask = arr.astype(np.uint8)
+    return base64.b64encode(mask.flatten().tobytes()).decode("ascii")
+
+
 def fetch_climate(lat: float, lon: float) -> Optional[dict]:
     try:
         response = requests.get(
@@ -268,6 +287,13 @@ except Exception as exc:
     disease_thresholds = {}
     print(f"[err] Disease model load failed: {exc}")
 
+try:
+    seg_interp = load_tflite(_MODELS_DIR / "model_seg.tflite")
+    print("[ok] Seg model loaded")
+except Exception as exc:
+    seg_interp = None
+    print(f"[err] Seg model load failed: {exc}")
+
 
 @app.post("/api/diagnose")
 async def diagnose(
@@ -290,6 +316,7 @@ async def diagnose(
         height, width = image_bgr.shape[:2]
         zones, total_patches, leaf_patches = scan_image(image_bgr)
         findings = aggregate_findings(zones, total_patches, leaf_patches)
+        seg_mask_b64 = run_segmentation(image_bgr) if zones else None
         climate = fetch_climate(lat, lon) if lat is not None and lon is not None else None
         return {
             "zonas": zones,
@@ -299,6 +326,7 @@ async def diagnose(
             "patch_size": MAX_SIDE,
             "image_width": width,
             "image_height": height,
+            "seg_mask": seg_mask_b64,
             "climate": climate,
         }
     finally:

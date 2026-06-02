@@ -117,11 +117,6 @@ class GlycineVisionApp extends StatelessWidget {
 class MainScreen extends StatelessWidget {
   const MainScreen({super.key});
 
-  Widget _renderScreen(Screen screen) => switch (screen) {
-        Screen.home => const HomeScreen(),
-        Screen.diagnoseResult => const DiagnoseResult(),
-      };
-
   @override
   Widget build(BuildContext context) {
     return Consumer<AppState>(
@@ -154,15 +149,26 @@ class MainScreen extends StatelessWidget {
                   ),
                 ),
                 Expanded(
-                  child: SingleChildScrollView(
-                    child: Center(
-                      child: Container(
-                        width: width,
-                        padding: const EdgeInsets.all(10),
-                        child: _renderScreen(state.currentScreen),
+                  child: switch (state.currentScreen) {
+                    Screen.home => Center(
+                        child: SizedBox(
+                          width: width,
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 10),
+                            child: const HomeScreen(),
+                          ),
+                        ),
                       ),
-                    ),
-                  ),
+                    Screen.diagnoseResult => SingleChildScrollView(
+                        child: Center(
+                          child: Container(
+                            width: width,
+                            padding: const EdgeInsets.all(10),
+                            child: const DiagnoseResult(),
+                          ),
+                        ),
+                      ),
+                  },
                 ),
               ],
             ),
