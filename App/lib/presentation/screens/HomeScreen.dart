@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
@@ -169,6 +170,12 @@ class _HomeScreenState extends State<HomeScreen> {
             label: state.isLoading ? 'Analizando...' : 'Diagnosticar',
             color: AppTheme.accentDark,
             loading: state.isLoading,
+          ),
+          SizedBox(
+            height: math.max(
+              24.0,
+              MediaQuery.of(context).padding.bottom + 8,
+            ),
           ),
         ],
       ),

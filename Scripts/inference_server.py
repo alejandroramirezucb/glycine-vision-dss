@@ -223,22 +223,23 @@ def resize_to_max(image_bgr: np.ndarray) -> np.ndarray:
     return cv2.resize(image_bgr, (int(width * scale), int(height * scale)))
 
 
-def run_segmentation(image_bgr: np.ndarray) -> Optional[str]:
+def _compute_severity(mask: np.ndarray) -> float:
+    leaf = int(np.sum(mask > 0))
+    diseased = int(np.sum(mask == 2))
+    return round(diseased / leaf * 100, 1) if leaf > 0 else 0.0
+
+
+def run_segmentation(image_bgr: np.ndarray) -> Optional[dict]:
     if seg_interp is None:
         return None
     image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
     raw = _run_single(seg_interp, image_rgb)
-    if raw.ndim == 1:
-        arr = raw.reshape(256, 256, -1)
-    elif raw.ndim == 2:
-        arr = raw
-    else:
-        arr = raw
-    if arr.ndim == 3:
-        mask = np.argmax(arr, axis=-1).astype(np.uint8)
-    else:
-        mask = arr.astype(np.uint8)
-    return base64.b64encode(mask.flatten().tobytes()).decode("ascii")
+    arr = raw.reshape(256, 256, -1) if raw.ndim == 1 else raw
+    mask = np.argmax(arr, axis=-1).astype(np.uint8) if arr.ndim == 3 else arr.astype(np.uint8)
+    return {
+        "b64": base64.b64encode(mask.flatten().tobytes()).decode("ascii"),
+        "severity": _compute_severity(mask),
+    }
 
 
 def fetch_climate(lat: float, lon: float) -> Optional[dict]:
@@ -316,7 +317,7 @@ async def diagnose(
         height, width = image_bgr.shape[:2]
         zones, total_patches, leaf_patches = scan_image(image_bgr)
         findings = aggregate_findings(zones, total_patches, leaf_patches)
-        seg_mask_b64 = run_segmentation(image_bgr) if zones else None
+        seg_result = run_segmentation(image_bgr) if zones else None
         climate = fetch_climate(lat, lon) if lat is not None and lon is not None else None
         return {
             "zonas": zones,
@@ -326,7 +327,8 @@ async def diagnose(
             "patch_size": MAX_SIDE,
             "image_width": width,
             "image_height": height,
-            "seg_mask": seg_mask_b64,
+            "seg_mask": seg_result["b64"] if seg_result else None,
+            "global_severity_pct": seg_result["severity"] if seg_result else 0.0,
             "climate": climate,
         }
     finally:

@@ -62,6 +62,8 @@ class HttpDiagnoser implements Diagnoser {
     final totalPatches = (json['total_patches'] as num?)?.toInt() ?? 0;
     final leafPatches = (json['leaf_patches'] as num?)?.toInt() ?? totalPatches;
     final segB64 = json['seg_mask'] as String?;
+    final globalSeverityPct =
+        (json['global_severity_pct'] as num?)?.toDouble() ?? 0.0;
     Uint8List? diseaseColoredMask;
     if (segB64 != null && findings.isNotEmpty) {
       final mask256 = base64Decode(segB64);
@@ -90,6 +92,7 @@ class HttpDiagnoser implements Diagnoser {
       onset: onset,
       treatmentPlan: plan,
       diseaseColoredMask: diseaseColoredMask,
+      globalSeverityPct: globalSeverityPct,
     );
   }
 

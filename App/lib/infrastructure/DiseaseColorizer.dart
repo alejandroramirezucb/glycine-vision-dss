@@ -15,8 +15,11 @@ class DiseaseColorizer {
 
     for (var i = 0; i < mask256.length; i++) {
       final cls = mask256[i];
-      if (cls == 0) continue;
       final px = i * 4;
+      if (cls == 0) {
+        rgba[px + 3] = 220;
+        continue;
+      }
       if (cls == 1) {
         rgba[px] = _healthyRgb.r;
         rgba[px + 1] = _healthyRgb.g;
