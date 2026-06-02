@@ -84,7 +84,7 @@ static const List<String> _severityOrder = [
       necrosisPct = decomp.necrosis;
     }
 
-    final scan = await _scanImage(resized, resized);
+    final scan = await _scanWholeImage(resized);
 
     final effectiveZones = scan.zones;
 
@@ -98,7 +98,7 @@ static const List<String> _severityOrder = [
       findings: findings,
       imageWidth: resized.width,
       imageHeight: resized.height,
-      patchSize: patchSize,
+      patchSize: resized.width,
       totalPatches: scan.totalPatches,
       leafPatches: scan.leafPatches,
       climate: climate,
@@ -179,6 +179,31 @@ static const List<String> _severityOrder = [
       ));
     }
     return _ScanResult(zones, totalPatches, leafPatches);
+  }
+
+  Future<_ScanResult> _scanWholeImage(img.Image image) async {
+    final healthScore = _healthModel.run(image);
+    final pDiseased = _probabilityDiseased(healthScore);
+
+    if (pDiseased < healthGate) {
+      return _ScanResult(const [], 1, 1);
+    }
+
+    await Future.delayed(Duration.zero);
+
+    final diseaseScore = _diseaseModel.run(image);
+    final severity = _severity.calculate(image);
+    final actives = _activeDiseases(diseaseScore, severity.percent);
+
+    if (actives.isEmpty) return _ScanResult(const [], 1, 1);
+
+    final zone = Zone(
+      bbox: Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
+      severityPct: severity.percent,
+      severityLevel: severity.level,
+      activeDiseases: actives,
+    );
+    return _ScanResult([zone], 1, 1);
   }
 
   double _leafRatio(Uint8List srcBytes, int srcW, int startX, int startY) {
