@@ -27,7 +27,7 @@ class HttpDiagnoser implements Diagnoser {
   });
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon}) async {
+  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0}) async {
     final compressed = await _compress(image);
 
     final request = http.MultipartRequest('POST', Uri.parse(endpoint))

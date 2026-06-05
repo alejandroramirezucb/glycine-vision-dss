@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../application/DiagnoseUseCase.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';
+import '../widgets/ErrorBanner.dart';
 import '../widgets/ImagePreview.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -19,6 +20,7 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
+  double _fieldAreaHa = 1.0;
 
   Future<void> _pickGallery() async {
     final file = await _picker.pickImage(
@@ -27,9 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
       maxHeight: 1920,
       imageQuality: 90,
     );
-    if (file != null && mounted) {
+    if (file != null && mounted)
       context.read<AppState>().selectImage(file);
-    }
   }
 
   Future<void> _pickCamera() async {
@@ -41,9 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (file == null) return;
     final result = kIsWeb ? file : await _crop(file.path);
-    if (result != null && mounted) {
+    if (result != null && mounted)
       context.read<AppState>().selectImage(result);
-    }
   }
 
   Future<XFile?> _crop(String sourcePath) async {
@@ -66,20 +66,27 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _diagnose() async {
     final state = context.read<AppState>();
     if (state.currentImage == null) {
-      state.setError('Primero selecciona o captura una imagen.');
+      state.setError('Selecciona o captura una imagen primero.');
       return;
     }
     state.setError(null);
     state.setLoading(true);
+    state.setDiagnosisStep(DiagnosisStep.analyzing);
     try {
       final coords = await _resolveCoords();
+      if (!mounted || state.isCancelled) return;
+
+      state.setDiagnosisStep(DiagnosisStep.classifying);
       final useCase = context.read<DiagnoseUseCase>();
       final result = await useCase.execute(
         state.currentImage!,
         lat: coords?.$1,
         lon: coords?.$2,
+        fieldAreaHa: _fieldAreaHa,
       );
-      if (!mounted) return;
+      if (!mounted || state.isCancelled) return;
+
+      state.setDiagnosisStep(DiagnosisStep.done);
       state.setDiagnoseResult(result);
       state.push(Screen.diagnoseResult);
     } catch (e) {
@@ -93,9 +100,7 @@ class _HomeScreenState extends State<HomeScreen> {
     try {
       final permission = await Geolocator.requestPermission();
       if (permission != LocationPermission.always &&
-          permission != LocationPermission.whileInUse) {
-        return null;
-      }
+          permission != LocationPermission.whileInUse) return null;
       final position = await Geolocator.getCurrentPosition(
         locationSettings: const LocationSettings(timeLimit: Duration(seconds: 6)),
       );
@@ -113,31 +118,41 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const SizedBox(height: 16),
           _AnimatedSubtitle(hasImage: state.currentImage != null),
-          const SizedBox(height: 14),
+          const SizedBox(height: 12),
+          _FieldAreaRow(
+            value: _fieldAreaHa,
+            onChanged: (v) => setState(() => _fieldAreaHa = v),
+          ),
+          const SizedBox(height: 12),
           Expanded(
             child: AnimatedSwitcher(
-              duration: const Duration(milliseconds: 280),
-              switchInCurve: Curves.easeOut,
+              duration: AppTheme.animNormal,
+              switchInCurve: AppTheme.easeOutCurve,
               switchOutCurve: Curves.easeIn,
-              transitionBuilder: (child, animation) => FadeTransition(
-                opacity: animation,
+              transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
                 child: ScaleTransition(
-                  scale: Tween(begin: 0.96, end: 1.0).animate(animation),
+                  scale: Tween(begin: 0.96, end: 1.0).animate(anim),
                   child: child,
                 ),
               ),
               child: _UploadArea(
                 key: ValueKey(state.isLoading
-                    ? 'loading'
+                    ? 'loading:${state.diagnosisStep.name}'
                     : state.currentImage?.path ?? 'empty'),
                 imageFile: state.currentImage,
                 isLoading: state.isLoading,
+                step: state.diagnosisStep,
+                onCancel: state.isLoading ? state.cancelDiagnosis : null,
               ),
             ),
           ),
           if (state.error != null) ...[
             const SizedBox(height: 10),
-            _ErrorBanner(message: state.error!),
+            ErrorBanner(
+              message: state.error!,
+              onRetry: state.currentImage != null ? _diagnose : null,
+            ),
           ],
           const SizedBox(height: 14),
           Row(
@@ -172,10 +187,7 @@ class _HomeScreenState extends State<HomeScreen> {
             loading: state.isLoading,
           ),
           SizedBox(
-            height: math.max(
-              24.0,
-              MediaQuery.of(context).padding.bottom + 8,
-            ),
+            height: math.max(24.0, MediaQuery.of(context).padding.bottom + 8),
           ),
         ],
       ),
@@ -190,7 +202,7 @@ class _AnimatedSubtitle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 250),
+      duration: AppTheme.animNormal,
       child: Text(
         key: ValueKey(hasImage),
         hasImage
@@ -204,6 +216,208 @@ class _AnimatedSubtitle extends StatelessWidget {
           letterSpacing: -0.2,
         ),
       ),
+    );
+  }
+}
+
+class _FieldAreaRow extends StatelessWidget {
+  final double value;
+  final ValueChanged<double> onChanged;
+
+  const _FieldAreaRow({required this.value, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(Icons.grass_outlined, size: 16, color: AppTheme.textMuted),
+        const SizedBox(width: 6),
+        const Text(
+          'Área del cultivo',
+          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
+        ),
+        const Spacer(),
+        _AreaButton(
+          label: '0.5 ha',
+          selected: value == 0.5,
+          onTap: () => onChanged(0.5),
+        ),
+        const SizedBox(width: 6),
+        _AreaButton(
+          label: '1 ha',
+          selected: value == 1.0,
+          onTap: () => onChanged(1.0),
+        ),
+        const SizedBox(width: 6),
+        _AreaButton(
+          label: '2 ha',
+          selected: value == 2.0,
+          onTap: () => onChanged(2.0),
+        ),
+        const SizedBox(width: 6),
+        _AreaButton(
+          label: '5 ha',
+          selected: value == 5.0,
+          onTap: () => onChanged(5.0),
+        ),
+      ],
+    );
+  }
+}
+
+class _AreaButton extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+
+  const _AreaButton({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: AppTheme.animFast,
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+        decoration: BoxDecoration(
+          color: selected ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(8),
+          border: Border.all(
+            color: selected ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.25),
+          ),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: selected ? Colors.white : AppTheme.accent,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _UploadArea extends StatelessWidget {
+  final dynamic imageFile;
+  final bool isLoading;
+  final DiagnosisStep step;
+  final VoidCallback? onCancel;
+
+  const _UploadArea({
+    super.key,
+    required this.imageFile,
+    required this.isLoading,
+    required this.step,
+    this.onCancel,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (isLoading)
+      return _LoadingFrame(step: step, onCancel: onCancel);
+
+    if (imageFile == null)
+      return _PlaceholderFrame(
+        child: const Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.add_photo_alternate_outlined,
+                size: 40, color: AppTheme.accent),
+            SizedBox(height: 10),
+            Text(
+              'Selecciona una imagen\npara comenzar',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: AppTheme.textMuted,
+                fontSize: 13,
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      );
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppTheme.radiusImg),
+      child: ImagePreview(imageFile: imageFile, height: null),
+    );
+  }
+}
+
+class _LoadingFrame extends StatelessWidget {
+  final DiagnosisStep step;
+  final VoidCallback? onCancel;
+
+  const _LoadingFrame({required this.step, this.onCancel});
+
+  String get _label => switch (step) {
+        DiagnosisStep.analyzing => 'Analizando imagen...',
+        DiagnosisStep.classifying => 'Clasificando enfermedades...',
+        DiagnosisStep.fetching => 'Obteniendo datos climáticos...',
+        _ => 'Procesando...',
+      };
+
+  @override
+  Widget build(BuildContext context) {
+    return _PlaceholderFrame(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
+          const SizedBox(height: 14),
+          AnimatedSwitcher(
+            duration: AppTheme.animNormal,
+            child: Text(
+              key: ValueKey(step),
+              _label,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: AppTheme.textMuted,
+                fontSize: 13,
+                letterSpacing: -0.1,
+              ),
+            ),
+          ),
+          if (onCancel != null) ...[
+            const SizedBox(height: 14),
+            TextButton(
+              onPressed: onCancel,
+              child: const Text(
+                'Cancelar',
+                style: TextStyle(
+                  color: AppTheme.textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _PlaceholderFrame extends StatelessWidget {
+  final Widget child;
+  const _PlaceholderFrame({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppTheme.radiusImg),
+        border: Border.all(
+          color: AppTheme.accent.withValues(alpha: 0.35),
+          width: 1.5,
+          strokeAlign: BorderSide.strokeAlignInside,
+        ),
+        color: AppTheme.accent.withValues(alpha: 0.04),
+      ),
+      child: Center(child: child),
     );
   }
 }
@@ -244,14 +458,12 @@ class _ActionButtonState extends State<_ActionButton> {
       onTapCancel: () => setState(() => _pressed = false),
       child: AnimatedScale(
         scale: _pressed ? 0.97 : 1.0,
-        duration: const Duration(milliseconds: 120),
-        curve: Curves.easeOut,
+        duration: AppTheme.animFast,
+        curve: AppTheme.easeOutCurve,
         child: Container(
           height: AppTheme.btnHeight,
           decoration: BoxDecoration(
-            color: enabled
-                ? widget.color
-                : widget.color.withValues(alpha: 0.4),
+            color: enabled ? widget.color : widget.color.withValues(alpha: 0.4),
             borderRadius: BorderRadius.circular(AppTheme.radiusBtn),
           ),
           child: Row(
@@ -278,116 +490,6 @@ class _ActionButtonState extends State<_ActionButton> {
             ],
           ),
         ),
-      ),
-    );
-  }
-}
-
-class _UploadArea extends StatelessWidget {
-  final dynamic imageFile;
-  final bool isLoading;
-
-  const _UploadArea({super.key, required this.imageFile, required this.isLoading});
-
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return _PlaceholderFrame(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
-            SizedBox(height: 12),
-            Text(
-              'Analizando imagen...',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.textMuted,
-                fontSize: 13,
-                letterSpacing: -0.1,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    if (imageFile == null) {
-      return _PlaceholderFrame(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: const [
-            Icon(Icons.add_photo_alternate_outlined,
-                size: 40, color: AppTheme.accent),
-            SizedBox(height: 10),
-            Text(
-              'Selecciona una imagen\npara comenzar',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: AppTheme.textMuted,
-                fontSize: 13,
-                height: 1.5,
-                letterSpacing: -0.1,
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppTheme.radiusImg),
-      child: ImagePreview(imageFile: imageFile, height: null),
-    );
-  }
-}
-
-class _PlaceholderFrame extends StatelessWidget {
-  final Widget child;
-  const _PlaceholderFrame({required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: double.infinity,
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(AppTheme.radiusImg),
-        border: Border.all(
-          color: AppTheme.accent.withValues(alpha: 0.35),
-          width: 1.5,
-          strokeAlign: BorderSide.strokeAlignInside,
-        ),
-        color: AppTheme.accent.withValues(alpha: 0.04),
-      ),
-      child: Center(child: child),
-    );
-  }
-}
-
-class _ErrorBanner extends StatelessWidget {
-  final String message;
-  const _ErrorBanner({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.red.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
-        border: Border.all(color: Colors.red.withValues(alpha: 0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: Colors.red, size: 16),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              message,
-              style: const TextStyle(color: Colors.red, fontSize: 12),
-            ),
-          ),
-        ],
       ),
     );
   }

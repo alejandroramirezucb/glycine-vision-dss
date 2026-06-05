@@ -1,5 +1,4 @@
 import 'dart:typed_data';
-
 import 'ClimateData.dart';
 import 'DiseaseFinding.dart';
 import 'OnsetEstimate.dart';

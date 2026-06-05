@@ -34,10 +34,10 @@ class CompositeTreatmentCard extends StatelessWidget {
               color: AppTheme.accentDark,
             ),
           ),
-          if (plan.ventanaAplicacion != null) ...[
+          if (plan.applicationWindow != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Ventana: ${plan.ventanaAplicacion}',
+              'Window: ${plan.applicationWindow}',
               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
@@ -46,9 +46,9 @@ class CompositeTreatmentCard extends StatelessWidget {
             _PriorityBlock(priority: plan.priorities[i], index: i),
             if (i < plan.priorities.length - 1) const SizedBox(height: 12),
           ],
-          if (plan.ajusteClimatico != null) ...[
+          if (plan.climateGuidance != null) ...[
             const Divider(height: 24, color: AppTheme.border),
-            _ClimateBlock(text: plan.ajusteClimatico!),
+            _ClimateBlock(text: plan.climateGuidance!),
           ],
           if (plan.warnings.isNotEmpty) ...[
             const Divider(height: 24, color: AppTheme.border),
@@ -121,10 +121,10 @@ class _PriorityBlock extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
           ),
           const SizedBox(height: 8),
-          _ActionSection(title: 'Químico', text: priority.actions.quimico),
+          _ActionSection(title: 'Chemical', text: priority.actions.chemical),
           _ActionSection(title: 'Cultural', text: priority.actions.cultural),
-          _ActionSection(title: 'Biológico', text: priority.actions.biologico),
-          _ActionSection(title: 'Preventivo', text: priority.actions.preventivo),
+          _ActionSection(title: 'Biological', text: priority.actions.biological),
+          _ActionSection(title: 'Preventive', text: priority.actions.preventive),
         ],
       ),
     );
@@ -286,7 +286,7 @@ class _SourcesBlock extends StatelessWidget {
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 2),
                 child: Text(
-                  '• ${source.texto}',
+                  '• ${source.text}',
                   style: const TextStyle(
                     fontSize: 10,
                     color: AppTheme.accent,
@@ -300,11 +300,11 @@ class _SourcesBlock extends StatelessWidget {
     );
   }
 
-  List<Fuente> _uniqueSources(List<TreatmentPriority> items) {
+  List<Reference> _uniqueSources(List<TreatmentPriority> items) {
     final seen = <String>{};
-    final out = <Fuente>[];
+    final out = <Reference>[];
     for (final p in items) {
-      for (final f in p.actions.fuentes) {
+      for (final f in p.actions.references) {
         if (seen.add(f.url)) out.add(f);
       }
     }

@@ -7,6 +7,7 @@ abstract class TreatmentRepository {
   TreatmentPlan buildComposite({
     required List<DiseaseFinding> findings,
     ClimateData? climate,
+    double fieldAreaHa = 1.0,
   });
 }
 

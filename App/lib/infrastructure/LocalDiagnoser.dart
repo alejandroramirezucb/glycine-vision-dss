@@ -57,7 +57,7 @@ class LocalDiagnoser implements Diagnoser {
         _onsetEstimator = onsetEstimator;
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon}) async {
+  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0}) async {
     final bytes = await image.readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw Exception('Imagen inválida');
@@ -86,7 +86,7 @@ class LocalDiagnoser implements Diagnoser {
     final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
     final climate = await _fetchClimate(lat, lon);
     final onset = _estimateOnset(findings, climate);
-    final plan = _treatments.buildComposite(findings: findings, climate: climate);
+    final plan = _treatments.buildComposite(findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
 
     return DiagnoseResult(
       zones: effectiveZones,

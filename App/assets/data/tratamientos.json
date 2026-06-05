@@ -1,29 +1,30 @@
 {
+  "schema_version": "2.0",
   "_meta": {
     "incompatibilities": [
       {
-        "productos": ["cobre", "aceite mineral"],
-        "razon": "Mezcla fitotóxica que puede causar quemaduras foliares severas en soya"
+        "products": ["cobre", "aceite mineral"],
+        "reason": "Phytotoxic mixture causing severe leaf burns in soybean"
       },
       {
-        "productos": ["streptomicina", "cobre"],
-        "razon": "Antagonismo: el cobre puede reducir la efectividad bactericida de la streptomicina si se mezclan en el mismo tanque"
+        "products": ["streptomicina", "cobre"],
+        "reason": "Antagonism: copper reduces bactericidal efficacy of streptomycin when mixed in the same tank"
       },
       {
-        "productos": ["azufre", "aceite"],
-        "razon": "Reacción exotérmica con riesgo de fitotoxicidad cuando temperatura supera 28°C"
+        "products": ["azufre", "aceite"],
+        "reason": "Exothermic reaction with phytotoxicity risk when temperature exceeds 28°C"
       },
       {
-        "productos": ["mancozeb", "cobre"],
-        "razon": "Sinergia química con riesgo de precipitación si el agua tiene pH alcalino; aplicar por separado"
+        "products": ["mancozeb", "cobre"],
+        "reason": "Chemical synergy with precipitation risk in alkaline water (pH >7); apply separately"
       }
     ],
-    "ventanas_aplicacion": {
-      "minima": "monitoreo cada 7 días sin tratamiento inmediato",
-      "leve": "aplicar en los próximos 7 días",
-      "moderada": "aplicar en las próximas 48-72 horas",
-      "severa": "aplicar en las próximas 24 horas",
-      "critica": "aplicación inmediata; consultar agrónomo"
+    "application_windows": {
+      "minima": "monitor every 7 days, no immediate treatment",
+      "leve": "apply within 7 days",
+      "moderada": "apply within 48-72 hours",
+      "severa": "apply within 24 hours",
+      "critica": "immediate application; consult agronomist"
     }
   },
   "bacterianas": {
@@ -68,10 +69,10 @@
         "urgencia": "critica"
       }
     },
-    "fuentes": [
-      {"texto": "CABI Plantwise - Bacterial blight of soybean", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.44963"},
-      {"texto": "PlantVillage - Soybean Bacterial Blight", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
-      {"texto": "ANAPO - Guía de manejo fitosanitario de soya", "url": "https://anapobolivia.org/"}
+    "references": [
+      {"text": "CABI Plantwise - Bacterial blight of soybean", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.44963"},
+      {"text": "PlantVillage - Soybean Bacterial Blight", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"text": "ANAPO - Guía de manejo fitosanitario de soya", "url": "https://anapobolivia.org/"}
     ]
   },
   "fungicas": {
@@ -116,10 +117,10 @@
         "urgencia": "critica"
       }
     },
-    "fuentes": [
-      {"texto": "CABI Digital Library - Soybean fungal diseases", "url": "https://www.cabidigitallibrary.org/"},
-      {"texto": "PlantVillage - Soybean diseases", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
-      {"texto": "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press", "url": "https://apsjournals.apsnet.org/doi/book/10.1094/9780890544754"}
+    "references": [
+      {"text": "CABI Digital Library - Soybean fungal diseases", "url": "https://www.cabidigitallibrary.org/"},
+      {"text": "PlantVillage - Soybean diseases", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"text": "Hartman et al. (2015) Compendium of Soybean Diseases, APS Press", "url": "https://apsjournals.apsnet.org/doi/book/10.1094/9780890544754"}
     ]
   },
   "roya": {
@@ -164,11 +165,11 @@
         "urgencia": "critica"
       }
     },
-    "fuentes": [
-      {"texto": "CABI Plantwise - Phakopsora pachyrhizi (Roya asiática)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.40019"},
-      {"texto": "SENASAG - Servicio Nacional de Sanidad Agropecuaria (Bolivia)", "url": "https://www.senasag.gob.bo/"},
-      {"texto": "Yorinori et al. (2005) Epidemics of soybean rust in Brazil. Plant Disease 89(6)", "url": "https://doi.org/10.1094/PD-89-0675"},
-      {"texto": "Miles et al. (2011) Soybean Rust Management. Plant Health Progress", "url": "https://apsjournals.apsnet.org/loi/php"}
+    "references": [
+      {"text": "CABI Plantwise - Phakopsora pachyrhizi (Roya asiática)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.40019"},
+      {"text": "SENASAG - Servicio Nacional de Sanidad Agropecuaria (Bolivia)", "url": "https://www.senasag.gob.bo/"},
+      {"text": "Yorinori et al. (2005) Epidemics of soybean rust in Brazil. Plant Disease 89(6)", "url": "https://doi.org/10.1094/PD-89-0675"},
+      {"text": "Miles et al. (2011) Soybean Rust Management. Plant Health Progress", "url": "https://apsjournals.apsnet.org/loi/php"}
     ]
   },
   "virales": {
@@ -213,10 +214,10 @@
         "urgencia": "critica"
       }
     },
-    "fuentes": [
-      {"texto": "CABI Plantwise - Soybean Mosaic Virus (SMV)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.48750"},
-      {"texto": "PlantVillage - Soybean Mosaic", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
-      {"texto": "Gunduz et al. (2004) Genetic analysis of resistance to SMV. Phytopathology 94(10)", "url": "https://doi.org/10.1094/PHYTO.2004.94.10.1094"}
+    "references": [
+      {"text": "CABI Plantwise - Soybean Mosaic Virus (SMV)", "url": "https://www.cabidigitallibrary.org/doi/abs/10.1079/cabicompendium.48750"},
+      {"text": "PlantVillage - Soybean Mosaic", "url": "https://plantvillage.psu.edu/topics/soybean/infos"},
+      {"text": "Gunduz et al. (2004) Genetic analysis of resistance to SMV. Phytopathology 94(10)", "url": "https://doi.org/10.1094/PHYTO.2004.94.10.1094"}
     ]
   },
   "plagas_insectos": {
@@ -261,10 +262,10 @@
         "urgencia": "critica"
       }
     },
-    "fuentes": [
-      {"texto": "CABI Plantwise - Soybean defoliating caterpillars", "url": "https://www.cabidigitallibrary.org/doi/10.1079/cabicompendium.13245"},
-      {"texto": "ANAPO - Manejo integrado de plagas en soya", "url": "https://anapobolivia.org/"},
-      {"texto": "Bueno et al. (2011) Integrated pest management of soybean in Brazil. Crop Protection", "url": "https://doi.org/10.1016/j.cropro.2011.01.002"}
+    "references": [
+      {"text": "CABI Plantwise - Soybean defoliating caterpillars", "url": "https://www.cabidigitallibrary.org/doi/10.1079/cabicompendium.13245"},
+      {"text": "ANAPO - Manejo integrado de plagas en soya", "url": "https://anapobolivia.org/"},
+      {"text": "Bueno et al. (2011) Integrated pest management of soybean in Brazil. Crop Protection", "url": "https://doi.org/10.1016/j.cropro.2011.01.002"}
     ]
   }
 }

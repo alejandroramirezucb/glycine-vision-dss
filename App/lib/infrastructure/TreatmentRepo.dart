@@ -2,28 +2,20 @@ import 'dart:convert';
 import 'package:flutter/services.dart';
 import '../domain/ClimateData.dart';
 import '../domain/DiseaseFinding.dart';
+import '../domain/Incompatibility.dart';
 import '../domain/Protocols.dart';
 import '../domain/StringNormalizer.dart';
 import '../domain/Treatment.dart';
 import '../domain/TreatmentPlan.dart';
+import 'ClimateSeverityAdjuster.dart';
+import 'IncompatibilityChecker.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
   static const double _minCoveragePct = 5.0;
   static const Map<String, int> _severityRank = {
-    'minima': 0,
-    'leve': 1,
-    'moderada': 2,
-    'severa': 3,
-    'critica': 4,
+    'minima': 0, 'leve': 1, 'moderada': 2, 'severa': 3, 'critica': 4,
   };
-  static const List<String> _severityOrder = [
-    'minima',
-    'leve',
-    'moderada',
-    'severa',
-    'critica',
-  ];
-  static const Map<String, String> _labelMap = {
+  static const Map<String, String> _keyAliases = {
     'bacterial_diseases': 'bacterianas',
     'fungal_diseases': 'fungicas',
     'rust_disease': 'roya',
@@ -32,34 +24,44 @@ class JsonTreatmentRepository implements TreatmentRepository {
   };
 
   final Map<String, Map<String, dynamic>> _diseaseData;
-  final List<_Incompatibility> _incompatibilities;
-  final Map<String, String> _ventanas;
+  final IncompatibilityChecker _checker;
+  final Map<String, String> _applicationWindows;
+  final ClimateSeverityAdjuster _adjuster;
 
-  JsonTreatmentRepository._(this._diseaseData, this._incompatibilities, this._ventanas);
+  JsonTreatmentRepository._(
+    this._diseaseData,
+    this._checker,
+    this._applicationWindows,
+    this._adjuster,
+  );
 
   static Future<JsonTreatmentRepository> load() async {
-    final jsonText = await rootBundle.loadString('assets/data/tratamientos.json');
-    final root = jsonDecode(jsonText) as Map<String, dynamic>;
+    final root = jsonDecode(
+      await rootBundle.loadString('assets/data/tratamientos.json'),
+    ) as Map<String, dynamic>;
     final meta = root['_meta'] as Map<String, dynamic>? ?? {};
     final incompatibilities = _parseIncompatibilities(meta);
-    final ventanas = _parseVentanas(meta);
+    final windows = _parseWindows(meta);
     final diseases = <String, Map<String, dynamic>>{};
     for (final entry in root.entries) {
       if (entry.key == '_meta') continue;
       diseases[entry.key] = entry.value as Map<String, dynamic>;
     }
-    return JsonTreatmentRepository._(diseases, incompatibilities, ventanas);
+    return JsonTreatmentRepository._(
+      diseases,
+      IncompatibilityChecker(incompatibilities),
+      windows,
+      ClimateSeverityAdjuster(),
+    );
   }
 
-  static List<_Incompatibility> _parseIncompatibilities(Map<String, dynamic> meta) {
+  static List<Incompatibility> _parseIncompatibilities(Map<String, dynamic> meta) {
     final raw = meta['incompatibilities'] as List? ?? [];
-    return raw
-        .map((e) => _Incompatibility.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return raw.map((e) => Incompatibility.fromJson(e as Map<String, dynamic>)).toList();
   }
 
-  static Map<String, String> _parseVentanas(Map<String, dynamic> meta) {
-    final raw = meta['ventanas_aplicacion'] as Map<String, dynamic>? ?? {};
+  static Map<String, String> _parseWindows(Map<String, dynamic> meta) {
+    final raw = meta['application_windows'] as Map<String, dynamic>? ?? {};
     return raw.map((k, v) => MapEntry(k, v.toString()));
   }
 
@@ -67,35 +69,23 @@ class JsonTreatmentRepository implements TreatmentRepository {
   TreatmentPlan buildComposite({
     required List<DiseaseFinding> findings,
     ClimateData? climate,
+    double fieldAreaHa = 1.0,
   }) {
     final relevant = findings.where((f) => f.coveragePct >= _minCoveragePct).toList();
-    if (relevant.isEmpty) {
-      return const TreatmentPlan(
-        priorities: [],
-        warnings: [],
-        ventanaAplicacion: null,
-        ajusteClimatico: null,
-      );
-    }
+    if (relevant.isEmpty)
+      return const TreatmentPlan(priorities: [], warnings: []);
 
     final priorities = relevant
         .map((f) => _buildPriority(f, climate))
-        .where((p) => p != null)
-        .cast<TreatmentPriority>()
-        .toList();
-
-    priorities.sort((a, b) =>
-        _rankSeverity(b.severityLevel).compareTo(_rankSeverity(a.severityLevel)));
-
-    final warnings = _findWarnings(priorities);
-    final ventana = _shortestVentana(priorities);
-    final ajuste = climate == null ? null : _climateGuidance(climate);
+        .whereType<TreatmentPriority>()
+        .toList()
+      ..sort((a, b) => _rank(b.severityLevel).compareTo(_rank(a.severityLevel)));
 
     return TreatmentPlan(
       priorities: priorities,
-      warnings: warnings,
-      ventanaAplicacion: ventana,
-      ajusteClimatico: ajuste,
+      warnings: _checker.findWarnings(priorities),
+      applicationWindow: _worstWindow(priorities),
+      climateGuidance: climate == null ? null : _climateGuidance(climate),
     );
   }
 
@@ -103,135 +93,86 @@ class JsonTreatmentRepository implements TreatmentRepository {
     final key = _resolveKey(finding.pathogenClass);
     final body = _diseaseData[key];
     if (body == null) return null;
-    final adjustedLevel = _applyClimateModifier(finding, climate);
-    final actions = _readActions(key, body, adjustedLevel);
+    final level = _adjuster.adjust(finding.severityLevel, key, climate);
+    final actions = _readActions(body, level);
     if (actions == null) return null;
     return TreatmentPriority(
       pathogenClass: key,
-      severityLevel: adjustedLevel,
-      urgencia: actions.$2,
-      rationale: _rationaleFor(finding, adjustedLevel, climate),
-      actions: actions.$1,
+      severityLevel: level,
+      rationale: _rationale(finding, level, climate),
+      actions: actions,
     );
   }
 
   String _resolveKey(String label) {
     final norm = normalizeKey(label);
-    return _labelMap[norm] ?? _labelMap[label] ?? norm;
+    return _keyAliases[norm] ?? _keyAliases[label] ?? norm;
   }
 
-  (TreatmentActions, String)? _readActions(
-    String key,
-    Map<String, dynamic> body,
-    String severity,
-  ) {
-    final porSev = body['por_severidad'] as Map<String, dynamic>?;
-    if (porSev == null) return null;
-    final entry = porSev[severity] as Map<String, dynamic>? ??
-        porSev['moderada'] as Map<String, dynamic>? ??
-        porSev.values.first as Map<String, dynamic>;
-    final fuentes = ((body['fuentes'] as List?) ?? [])
-        .map((f) => Fuente.fromJson(f as Map<String, dynamic>))
-        .toList();
-    final actions = TreatmentActions(
-      quimico: entry['quimico'] as String? ?? '',
+  TreatmentActions? _readActions(Map<String, dynamic> body, String severity) {
+    final bySeverity = body['by_severity'] as Map<String, dynamic>?
+        ?? body['por_severidad'] as Map<String, dynamic>?;
+    if (bySeverity == null) return null;
+    final entry = bySeverity[severity] as Map<String, dynamic>?
+        ?? bySeverity['moderada'] as Map<String, dynamic>?
+        ?? bySeverity.values.first as Map<String, dynamic>;
+    final rawRefs = ((body['references'] as List?) ?? (body['fuentes'] as List?) ?? []);
+    final refs = rawRefs.map((f) => Reference.fromJson(f as Map<String, dynamic>)).toList();
+    return TreatmentActions(
+      chemical: _resolveChemical(entry),
       cultural: entry['cultural'] as String? ?? '',
-      biologico: entry['biologico'] as String? ?? '',
-      preventivo: entry['preventivo'] as String? ?? '',
-      fuentes: fuentes,
+      biological: _resolveBiological(entry),
+      preventive: entry['preventive'] as String? ?? entry['preventivo'] as String? ?? '',
+      references: refs,
     );
-    return (actions, entry['urgencia'] as String? ?? 'media');
   }
 
-  String _applyClimateModifier(DiseaseFinding finding, ClimateData? climate) {
-    if (climate == null) return finding.severityLevel;
-    final shift = _climateShift(finding.pathogenClass, climate);
-    final base = _rankSeverity(finding.severityLevel);
-    final shifted = (base + shift).clamp(0, _severityOrder.length - 1);
-    return _severityOrder[shifted];
-  }
-
-  int _climateShift(String pathogenClass, ClimateData c) {
-    final cls = _resolveKey(pathogenClass);
-    final t = c.tempC;
-    final h = c.humidity;
-    final p = c.precipMm;
-    return switch (cls) {
-      'roya' when h > 80 && t >= 20 && t <= 28 => 1,
-      'roya' when h < 50 => -1,
-      'fungicas' when h > 75 => 1,
-      'bacterianas' when p > 3 => 1,
-      'virales' when t > 28 => 1,
-      'plagas_insectos' when t >= 24 && t <= 32 => 1,
-      _ => 0,
-    };
-  }
-
-  String _rationaleFor(
-    DiseaseFinding finding,
-    String adjustedLevel,
-    ClimateData? climate,
-  ) {
-    final coverage = finding.coveragePct.toStringAsFixed(0);
-    final base =
-        '${coverage}% del área foliar afectada · severidad promedio ${finding.avgSeverityPct.toStringAsFixed(1)}%';
-    if (climate != null && adjustedLevel != finding.severityLevel) {
-      return '$base · urgencia escalada por clima favorable';
+  String _resolveChemical(Map<String, dynamic> entry) {
+    final chem = entry['chemical'];
+    if (chem is Map<String, dynamic>) {
+      final product = chem['product'] as String? ?? '';
+      final dose = chem['dose_g_per_100L'];
+      return dose != null ? '$product — ${dose}g/100 L' : product;
     }
-    return base;
+    return entry['quimico'] as String? ?? '';
   }
 
-  List<String> _findWarnings(List<TreatmentPriority> priorities) {
-    if (priorities.length < 2) return const [];
-    final lowered = priorities
-        .map((p) => '${p.actions.quimico} ${p.actions.cultural}'.toLowerCase())
-        .toList();
-    final hits = <String>[];
-    for (final inc in _incompatibilities) {
-      final present = inc.productos.where((prod) {
-        return lowered.any((text) => text.contains(prod.toLowerCase()));
-      }).toList();
-      if (present.length >= 2) {
-        hits.add('Evitar combinar ${inc.productos.join(" + ")}: ${inc.razon}');
-      }
+  String _resolveBiological(Map<String, dynamic> entry) {
+    final bio = entry['biological'];
+    if (bio is Map<String, dynamic>) {
+      final agent = bio['agent'] as String? ?? '';
+      final dose = bio['dose_mL_per_100L'];
+      return dose != null ? '$agent — ${dose}mL/100 L' : agent;
     }
-    return hits;
+    return entry['biologico'] as String? ?? '';
   }
 
-  String? _shortestVentana(List<TreatmentPriority> priorities) {
+  String _rationale(DiseaseFinding f, String level, ClimateData? climate) {
+    final coverage = f.coveragePct.toStringAsFixed(0);
+    final base = '${coverage}% leaf area · avg severity ${f.avgSeverityPct.toStringAsFixed(1)}%';
+    return (climate != null && level != f.severityLevel)
+        ? '$base · urgency escalated by climate'
+        : base;
+  }
+
+  String? _worstWindow(List<TreatmentPriority> priorities) {
     if (priorities.isEmpty) return null;
     final worst = priorities
         .map((p) => p.severityLevel)
-        .reduce((a, b) => _rankSeverity(a) >= _rankSeverity(b) ? a : b);
-    return _ventanas[worst];
+        .reduce((a, b) => _rank(a) >= _rank(b) ? a : b);
+    return _applicationWindows[worst];
   }
 
-  int _rankSeverity(String level) => _severityRank[normalizeKey(level)] ?? 2;
+  int _rank(String level) => _severityRank[normalizeKey(level)] ?? 2;
 
   String? _climateGuidance(ClimateData c) {
     final parts = <String>[];
-    if (c.humidity > 80) {
-      parts.add('Humedad ${c.humidity.toStringAsFixed(0)}% — aplicar al amanecer para evitar dispersión por rocío nocturno');
-    }
-    if (c.tempC > 32) {
-      parts.add('Temperatura ${c.tempC.toStringAsFixed(1)}°C — evitar mediodía; aplicar antes de las 9h o después de las 17h');
-    }
-    if (c.precipMm > 3) {
-      parts.add('Lluvia reciente ${c.precipMm.toStringAsFixed(1)} mm — adelantar aplicación 24h para anticipar siguiente lluvia');
-    }
-    if (parts.isEmpty) return null;
-    return parts.join(' · ');
+    if (c.humidity > 80)
+      parts.add('Humidity ${c.humidity.toStringAsFixed(0)}% — apply at dawn to prevent dew spread');
+    if (c.tempC > 32)
+      parts.add('Temperature ${c.tempC.toStringAsFixed(1)}°C — avoid midday; apply before 9h or after 17h');
+    if (c.precipMm > 3)
+      parts.add('Recent rain ${c.precipMm.toStringAsFixed(1)} mm — advance application by 24h');
+    return parts.isEmpty ? null : parts.join(' · ');
   }
-}
-
-class _Incompatibility {
-  final List<String> productos;
-  final String razon;
-
-  const _Incompatibility({required this.productos, required this.razon});
-
-  factory _Incompatibility.fromJson(Map<String, dynamic> json) => _Incompatibility(
-        productos: (json['productos'] as List).map((e) => e.toString()).toList(),
-        razon: json['razon'] as String,
-      );
 }

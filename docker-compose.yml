@@ -1,0 +1,10 @@
+services:
+  inference:
+    build: ./Backend
+    ports:
+      - "8001:8001"
+    volumes:
+      - ./Models:/app/Models:ro
+    environment:
+      - MODELS_DIR=/app/Models
+    restart: unless-stopped

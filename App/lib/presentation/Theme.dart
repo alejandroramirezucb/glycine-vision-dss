@@ -22,6 +22,13 @@ class AppTheme {
   static const double btnHeight = 46.0;
   static const double phoneWidth = 390.0;
 
+  static const Duration animFast = Duration(milliseconds: 120);
+  static const Duration animNormal = Duration(milliseconds: 280);
+  static const Duration animSlow = Duration(milliseconds: 450);
+  static const Duration staggerDelay = Duration(milliseconds: 80);
+  static const Curve easeOutCurve = Curves.easeOut;
+  static const Curve springCurve = Curves.elasticOut;
+
   static const Map<String, Color> _severityLevelColors = {
     'critica':  Color(0xFFB71C1C),
     'severa':   Color(0xFFE53935),
