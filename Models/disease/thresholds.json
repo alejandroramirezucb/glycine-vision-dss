@@ -1,7 +1,7 @@
 {
-  "bacterianas": 0.751,
-  "fungicas": 0.679,
-  "plagas_insectos": 0.665,
-  "roya": 0.742,
-  "virales": 0.739
+  "bacterianas": 0.4,
+  "fungicas": 0.4,
+  "plagas_insectos": 0.4,
+  "roya": 0.4,
+  "virales": 0.4
 }
