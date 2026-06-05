@@ -44,7 +44,7 @@ class JsonTreatmentRepository implements TreatmentRepository {
     final windows = _parseWindows(meta);
     final diseases = <String, Map<String, dynamic>>{};
     for (final entry in root.entries) {
-      if (entry.key == '_meta') continue;
+      if (entry.key == '_meta' || entry.key == 'schema_version') continue;
       diseases[entry.key] = entry.value as Map<String, dynamic>;
     }
     return JsonTreatmentRepository._(

@@ -23,18 +23,37 @@ class TfliteSegmenter {
     final n = _maskSize * _maskSize;
 
     if (_isQuantized) {
-      final outFlat = Uint8List(n * 3);
-      _interp.run(src, outFlat);
-      return _argmaxUint8(outFlat, n);
+      _interp.getInputTensor(0).data.buffer.asUint8List().setAll(0, src);
+      _interp.invoke();
+      final outBuffer = _interp.getOutputTensor(0).data.buffer.asUint8List();
+      return _argmaxUint8(outBuffer, n);
     }
 
     final inputFlat = Float32List(n * 3);
-    for (var i = 0; i < src.length; i++) {
-      inputFlat[i] = src[i].toDouble();
+    for (var i = 0; i < src.length; i++) inputFlat[i] = src[i].toDouble();
+    _interp.getInputTensor(0).data.buffer.asFloat32List().setAll(0, inputFlat);
+    _interp.invoke();
+    final outBuffer = _interp.getOutputTensor(0).data.buffer.asFloat32List();
+    return _argmax(outBuffer, n);
+  }
+
+  img.Image applyMask(img.Image source, Uint8List mask256) {
+    final w = source.width;
+    final h = source.height;
+    final out = img.Image(width: w, height: h);
+    final scaleX = _maskSize / w;
+    final scaleY = _maskSize / h;
+    for (var y = 0; y < h; y++) {
+      for (var x = 0; x < w; x++) {
+        final mx = (x * scaleX).round().clamp(0, _maskSize - 1);
+        final my = (y * scaleY).round().clamp(0, _maskSize - 1);
+        if (mask256[my * _maskSize + mx] == 0)
+          out.setPixelRgba(x, y, 0, 0, 0, 255);
+        else
+          out.setPixel(x, y, source.getPixel(x, y));
+      }
     }
-    final outFlat = Float32List(n * 3);
-    _interp.run(inputFlat, outFlat);
-    return _argmax(outFlat, n);
+    return out;
   }
 
   double severityPct(Uint8List mask256) {
@@ -53,11 +72,10 @@ class TfliteSegmenter {
       final c0 = flat[i * 3];
       final c1 = flat[i * 3 + 1];
       final c2 = flat[i * 3 + 2];
-      if (c1 >= c0 && c1 >= c2) {
+      if (c1 >= c0 && c1 >= c2)
         mask[i] = 1;
-      } else if (c2 > c0) {
+      else if (c2 > c0)
         mask[i] = 2;
-      }
     }
     return mask;
   }
@@ -68,11 +86,10 @@ class TfliteSegmenter {
       final c0 = flat[i * 3];
       final c1 = flat[i * 3 + 1];
       final c2 = flat[i * 3 + 2];
-      if (c1 >= c0 && c1 >= c2) {
+      if (c1 >= c0 && c1 >= c2)
         mask[i] = 1;
-      } else if (c2 > c0) {
+      else if (c2 > c0)
         mask[i] = 2;
-      }
     }
     return mask;
   }

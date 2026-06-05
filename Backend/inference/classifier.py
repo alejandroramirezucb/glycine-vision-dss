@@ -29,21 +29,18 @@ def probability_diseased(scores: np.ndarray, labels: list[str]) -> float:
     return float(expanded[0])
 
 
-def active_diseases(
+def top_disease(
     scores: np.ndarray,
     labels: list[str],
-    thresholds: dict[str, float],
-    severity_pct: float,
-    active_threshold: float,
-) -> list[dict]:
-    hits = [(label, float(scores[i])) for i, label in enumerate(labels)
-            if scores[i] >= min(thresholds.get(label, 0.5), active_threshold)]
-    if not hits:
-        return []
-    total = sum(p for _, p in hits)
-    return [{"clase": label, "prob": round(prob, 3),
-             "severidad_pct": round(severity_pct * prob / total, 1)}
-            for label, prob in hits]
+    min_confidence: float,
+) -> tuple[str, float] | None:
+    if len(scores) == 0:
+        return None
+    index = int(np.argmax(scores))
+    confidence = float(scores[index])
+    if confidence < min_confidence or index >= len(labels):
+        return None
+    return labels[index], confidence
 
 
 def run_health(interp: tf.lite.Interpreter, image_rgb: np.ndarray) -> np.ndarray:

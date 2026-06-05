@@ -1,25 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../domain/DiagnoseResult.dart' as domain;
+import '../../domain/DiseaseFinding.dart';
+import '../LabelNames.dart';
+import '../PathogenColors.dart';
 import '../Theme.dart';
 import '../state/AppState.dart';
-import '../widgets/CompositeTreatmentCard.dart';
 import '../widgets/DiagnosisImageSection.dart';
 import '../widgets/DiseaseFindingCard.dart';
 import '../widgets/DiseaseSummaryBanner.dart';
 import '../widgets/HealthyBanner.dart';
-import '../widgets/OnsetBadge.dart';
-import '../widgets/SeverityPanel.dart';
 
-class DiagnoseResult extends StatefulWidget {
+class DiagnoseResult extends StatelessWidget {
   const DiagnoseResult({super.key});
-
-  @override
-  State<DiagnoseResult> createState() => _DiagnoseResultState();
-}
-
-class _DiagnoseResultState extends State<DiagnoseResult> {
-  int _tabIndex = 0;
 
   @override
   Widget build(BuildContext context) {
@@ -28,58 +21,53 @@ class _DiagnoseResultState extends State<DiagnoseResult> {
         final result = state.diagnoseResult;
         if (result == null)
           return const Center(child: Text('Sin resultado de diagnóstico'));
-        return _ResultLayout(
-          image: state.currentImage,
-          result: result,
-          tabIndex: _tabIndex,
-          onTabChanged: (i) => setState(() => _tabIndex = i),
-        );
+        return _ResultPage(image: state.currentImage, result: result);
       },
     );
   }
 }
 
-class _ResultLayout extends StatelessWidget {
+class _ResultPage extends StatefulWidget {
   final dynamic image;
   final domain.DiagnoseResult result;
-  final int tabIndex;
-  final ValueChanged<int> onTabChanged;
 
-  const _ResultLayout({
-    required this.image,
-    required this.result,
-    required this.tabIndex,
-    required this.onTabChanged,
-  });
+  const _ResultPage({required this.image, required this.result});
 
   @override
+  State<_ResultPage> createState() => _ResultPageState();
+}
+
+class _ResultPageState extends State<_ResultPage> {
+  @override
   Widget build(BuildContext context) {
+    final result = widget.result;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const SizedBox(height: 12),
         const _Title(),
         const SizedBox(height: 10),
-        DiagnosisImageSection(image: image, result: result),
+        DiagnosisImageSection(image: widget.image, result: result),
         const SizedBox(height: 12),
-        _TabSelector(index: tabIndex, onChanged: onTabChanged),
-        const SizedBox(height: 12),
-        AnimatedSwitcher(
-          duration: AppTheme.animNormal,
-          switchInCurve: AppTheme.easeOutCurve,
-          switchOutCurve: Curves.easeIn,
-          transitionBuilder: (child, anim) => FadeTransition(
-            opacity: anim,
-            child: ScaleTransition(
-              scale: Tween(begin: 0.97, end: 1.0).animate(anim),
-              child: child,
+        if (result.isHealthy)
+          const HealthyBanner()
+        else ...[
+          _CombinedSeverityPanel(result: result),
+          const SizedBox(height: 10),
+          DiseaseSummaryBanner(findings: result.findings),
+          const SizedBox(height: 12),
+          for (var i = 0; i < result.findings.length; i++) ...[
+            _StaggeredCard(
+              index: i,
+              child: DiseaseFindingCard(finding: result.findings[i]),
             ),
+            const SizedBox(height: 10),
+          ],
+          _TreatmentNavButton(
+            onTap: () => context.read<AppState>().push(Screen.treatment),
           ),
-          child: tabIndex == 0
-              ? _DiagnosisTab(key: const ValueKey('diag'), result: result)
-              : _TreatmentTab(key: const ValueKey('treat'), result: result),
-        ),
-        const SizedBox(height: 16),
+          const SizedBox(height: 12),
+        ],
       ],
     );
   }
@@ -102,129 +90,193 @@ class _Title extends StatelessWidget {
   }
 }
 
-class _TabSelector extends StatelessWidget {
-  final int index;
-  final ValueChanged<int> onChanged;
+class _CombinedSeverityPanel extends StatelessWidget {
+  final domain.DiagnoseResult result;
 
-  const _TabSelector({required this.index, required this.onChanged});
+  const _CombinedSeverityPanel({required this.result});
 
   @override
   Widget build(BuildContext context) {
+    final sev = result.globalSeverityPct;
+    final sevColor = AppTheme.severityPctColor(sev);
     return Container(
-      height: 38,
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
-        color: AppTheme.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppTheme.radiusBtn),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.18)),
+        color: AppTheme.bgCard,
+        borderRadius: BorderRadius.circular(AppTheme.radiusCard),
+        border: Border.all(color: AppTheme.border),
+        boxShadow: const [
+          BoxShadow(color: Color(0x06000000), blurRadius: 8, offset: Offset(0, 2)),
+        ],
       ),
-      child: Stack(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AnimatedPositioned(
-            duration: AppTheme.animNormal,
-            curve: AppTheme.easeOutCurve,
-            left: index == 0 ? 2 : null,
-            right: index == 1 ? 2 : null,
-            top: 2,
-            bottom: 2,
-            width: MediaQuery.of(context).size.width / 2 - 16,
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.accent,
-                borderRadius: BorderRadius.circular(AppTheme.radiusBtn - 2),
-              ),
-            ),
-          ),
           Row(
             children: [
-              Expanded(child: _Tab(label: '🔬 Diagnóstico', active: index == 0, onTap: () => onChanged(0))),
-              Expanded(child: _Tab(label: '💊 Tratamiento', active: index == 1, onTap: () => onChanged(1))),
+              const Text(
+                'Severidad foliar',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '${sev.toStringAsFixed(1)}%',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: sevColor,
+                ),
+              ),
             ],
           ),
+          const SizedBox(height: 6),
+          _SeverityBar(pct: sev, color: sevColor),
+          if (result.findings.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            const Divider(height: 1, color: AppTheme.border),
+            const SizedBox(height: 10),
+            for (final finding in result.findings) ...[
+              _DiseaseSeverityRow(finding: finding, totalSev: sev),
+              const SizedBox(height: 8),
+            ],
+          ],
         ],
       ),
     );
   }
 }
 
-class _Tab extends StatelessWidget {
-  final String label;
-  final bool active;
+class _SeverityBar extends StatelessWidget {
+  final double pct;
+  final Color color;
+
+  const _SeverityBar({required this.pct, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(4),
+      child: LinearProgressIndicator(
+        value: (pct / 100).clamp(0.0, 1.0),
+        backgroundColor: AppTheme.border,
+        valueColor: AlwaysStoppedAnimation<Color>(color),
+        minHeight: 8,
+      ),
+    );
+  }
+}
+
+class _DiseaseSeverityRow extends StatelessWidget {
+  final DiseaseFinding finding;
+  final double totalSev;
+
+  const _DiseaseSeverityRow({required this.finding, required this.totalSev});
+
+  @override
+  Widget build(BuildContext context) {
+    final color = pathogenColor(finding.pathogenClass);
+    final pct = finding.avgSeverityPct;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                labelToEs(finding.pathogenClass),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textPrimary,
+                ),
+              ),
+            ),
+            Text(
+              '${pct.toStringAsFixed(1)}%',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: color,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(3),
+          child: LinearProgressIndicator(
+            value: (pct / 100).clamp(0.0, 1.0),
+            backgroundColor: color.withValues(alpha: 0.12),
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+            minHeight: 5,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TreatmentNavButton extends StatefulWidget {
   final VoidCallback onTap;
 
-  const _Tab({required this.label, required this.active, required this.onTap});
+  const _TreatmentNavButton({required this.onTap});
+
+  @override
+  State<_TreatmentNavButton> createState() => _TreatmentNavButtonState();
+}
+
+class _TreatmentNavButtonState extends State<_TreatmentNavButton> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 12,
-            fontWeight: FontWeight.w700,
-            color: active ? Colors.white : AppTheme.accent,
-            letterSpacing: -0.1,
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: AppTheme.animFast,
+        child: Container(
+          height: AppTheme.btnHeight,
+          decoration: BoxDecoration(
+            color: AppTheme.accentDark,
+            borderRadius: BorderRadius.circular(AppTheme.radiusBtn),
+          ),
+          child: const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.medical_services_outlined, size: 18, color: Colors.white),
+              SizedBox(width: 8),
+              Text(
+                'Ver tratamiento',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.1,
+                ),
+              ),
+              SizedBox(width: 6),
+              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+            ],
           ),
         ),
       ),
-    );
-  }
-}
-
-class _DiagnosisTab extends StatelessWidget {
-  final domain.DiagnoseResult result;
-
-  const _DiagnosisTab({super.key, required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (result.hasSegmentation) ...[
-          SeverityPanel(result: result),
-          const SizedBox(height: 10),
-        ],
-        if (result.isHealthy)
-          const HealthyBanner()
-        else
-          DiseaseSummaryBanner(findings: result.findings),
-      ],
-    );
-  }
-}
-
-class _TreatmentTab extends StatelessWidget {
-  final domain.DiagnoseResult result;
-
-  const _TreatmentTab({super.key, required this.result});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        for (var i = 0; i < result.findings.length; i++) ...[
-          _StaggeredCard(index: i, child: DiseaseFindingCard(finding: result.findings[i])),
-          const SizedBox(height: 10),
-        ],
-        if (result.onset != null) ...[
-          _StaggeredCard(
-            index: result.findings.length,
-            child: OnsetBadge(onset: result.onset!),
-          ),
-          const SizedBox(height: 12),
-        ],
-        if (!result.treatmentPlan.isEmpty)
-          _StaggeredCard(
-            index: result.findings.length + 1,
-            child: CompositeTreatmentCard(
-              plan: result.treatmentPlan,
-              climateAvailable: result.climate != null,
-            ),
-          ),
-      ],
     );
   }
 }
@@ -269,10 +321,7 @@ class _StaggeredCardState extends State<_StaggeredCard>
       animation: _ctrl,
       builder: (_, child) => Opacity(
         opacity: _opacity.value,
-        child: Transform.translate(
-          offset: Offset(0, _slide.value),
-          child: child,
-        ),
+        child: Transform.translate(offset: Offset(0, _slide.value), child: child),
       ),
       child: widget.child,
     );

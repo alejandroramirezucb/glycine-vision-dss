@@ -17,7 +17,7 @@ import 'TfliteSegmenter.dart';
 class LocalDiagnoser implements Diagnoser {
   static const int _defaultMaxSide = 400;
   static const double _defaultDiseaseGate = 0.10;
-  static const double _defaultActiveThreshold = 0.10;
+  static const double _diseaseConfidence = 0.50;
   static const List<String> _severityOrder = [
     'minima',
     'leve',
@@ -35,7 +35,6 @@ class LocalDiagnoser implements Diagnoser {
   final OnsetEstimator _onsetEstimator;
   final int maxImageSide;
   final double healthGate;
-  final double activeThreshold;
 
   LocalDiagnoser({
     required TfliteClassifier healthModel,
@@ -47,7 +46,6 @@ class LocalDiagnoser implements Diagnoser {
     SeverityCalculator severity = const SeverityCalculator(),
     this.maxImageSide = _defaultMaxSide,
     this.healthGate = _defaultDiseaseGate,
-    this.activeThreshold = _defaultActiveThreshold,
   })  : _healthModel = healthModel,
         _diseaseModel = diseaseModel,
         _segmenter = segmenter,
@@ -65,15 +63,19 @@ class LocalDiagnoser implements Diagnoser {
     final resized = _resizeIfNeeded(decoded);
 
     Uint8List? segMask;
-    double globalSeverityPct = 0.0;
+    double globalSeverityPct;
 
     final seg = _segmenter;
+    img.Image imageForM2 = resized;
     if (seg != null) {
       segMask = seg.segment(resized);
       globalSeverityPct = seg.severityPct(segMask);
+      imageForM2 = seg.applyMask(resized, segMask);
+    } else {
+      globalSeverityPct = _severity.calculate(resized).percent;
     }
 
-    final scan = await _scanWholeImage(resized);
+    final scan = await _scanWholeImage(imageForM2, globalSeverityPct);
 
     final effectiveZones = scan.zones;
 
@@ -83,7 +85,7 @@ class LocalDiagnoser implements Diagnoser {
       diseaseColoredMask = DiseaseColorizer.build(segMask, actives);
     }
 
-    final findings = _aggregateFindings(effectiveZones, scan.totalPatches, scan.leafPatches);
+    final findings = _aggregateFindings(effectiveZones);
     final climate = await _fetchClimate(lat, lon);
     final onset = _estimateOnset(findings, climate);
     final plan = _treatments.buildComposite(findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
@@ -115,7 +117,7 @@ class LocalDiagnoser implements Diagnoser {
     );
   }
 
-  Future<_ScanResult> _scanWholeImage(img.Image image) async {
+  Future<_ScanResult> _scanWholeImage(img.Image image, double severityPct) async {
     final healthScore = _healthModel.run(image);
     final pDiseased = _probabilityDiseased(healthScore);
 
@@ -126,16 +128,21 @@ class LocalDiagnoser implements Diagnoser {
     await Future.delayed(Duration.zero);
 
     final diseaseScore = _diseaseModel.run(image);
-    final severity = _severity.calculate(image);
-    final actives = _activeDiseases(diseaseScore, severity.percent);
+    final detected = _topDisease(diseaseScore);
 
-    if (actives.isEmpty) return _ScanResult(const [], 1, 1);
+    if (detected == null) return _ScanResult(const [], 1, 1);
 
     final zone = Zone(
       bbox: Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble()),
-      severityPct: severity.percent,
-      severityLevel: severity.level,
-      activeDiseases: actives,
+      severityPct: severityPct,
+      severityLevel: _severityLevelFromPct(severityPct),
+      activeDiseases: [
+        ActiveDisease(
+          pathogenClass: detected.label,
+          probability: detected.score,
+          severityPct: severityPct,
+        ),
+      ],
     );
     return _ScanResult([zone], 1, 1);
   }
@@ -151,28 +158,21 @@ class LocalDiagnoser implements Diagnoser {
     return scores[0];
   }
 
-  List<ActiveDisease> _activeDiseases(List<double> scores, double totalSeverityPct) {
+  _LabelScore? _topDisease(List<double> scores) {
     final labels = _diseaseModel.labels;
-    final hits = <_LabelScore>[];
+    var bestIndex = -1;
+    var bestScore = 0.0;
     for (var i = 0; i < scores.length && i < labels.length; i++) {
-      final label = labels[i];
-      final threshold = _diseaseModel.thresholdFor(label);
-      final cutoff = threshold < activeThreshold ? threshold : activeThreshold;
-      if (scores[i] >= cutoff) hits.add(_LabelScore(label, scores[i]));
+      if (scores[i] > bestScore) {
+        bestScore = scores[i];
+        bestIndex = i;
+      }
     }
-    if (hits.isEmpty) return const [];
-    final sum = hits.fold<double>(0, (s, h) => s + h.score);
-    return hits
-        .map((h) => ActiveDisease(
-              pathogenClass: h.label,
-              probability: h.score,
-              severityPct: sum == 0 ? 0 : totalSeverityPct * h.score / sum,
-            ))
-        .toList();
+    if (bestIndex < 0 || bestScore < _diseaseConfidence) return null;
+    return _LabelScore(labels[bestIndex], bestScore);
   }
 
-  List<DiseaseFinding> _aggregateFindings(
-      List<Zone> zones, int totalPatches, int leafPatches) {
+  List<DiseaseFinding> _aggregateFindings(List<Zone> zones) {
     final byClass = <String, _ClassAccumulator>{};
     for (final zone in zones) {
       for (final disease in zone.activeDiseases) {
@@ -181,13 +181,11 @@ class LocalDiagnoser implements Diagnoser {
             .add(disease.severityPct, disease.probability);
       }
     }
-    final denom =
-        leafPatches > 0 ? leafPatches : (totalPatches > 0 ? totalPatches : 1);
     final findings = byClass.entries.map((entry) {
       final acc = entry.value;
       return DiseaseFinding(
         pathogenClass: entry.key,
-        coveragePct: acc.count / denom * 100,
+        coveragePct: acc.avgSeverity,
         avgSeverityPct: acc.avgSeverity,
         maxSeverityPct: acc.maxSeverity,
         severityLevel: _severityLevelFromPct(acc.avgSeverity),

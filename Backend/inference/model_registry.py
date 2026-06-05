@@ -1,4 +1,3 @@
-import json
 from pathlib import Path
 import tensorflow as tf
 from config import MODELS_DIR, TFLITE_THREADS
@@ -11,7 +10,6 @@ class ModelRegistry:
         self.health_labels = self._load_labels("health/labels.txt")
         self.disease = self._load("disease/model_int8.tflite")
         self.disease_labels = self._load_labels("disease/labels.txt")
-        self.disease_thresholds = self._load_thresholds("disease/thresholds.json", self.disease_labels)
         self.segmenter = self._try_load("segmentation/model_int8.tflite")
 
     def _load(self, name: str) -> tf.lite.Interpreter:
@@ -36,10 +34,3 @@ class ModelRegistry:
             parts = stripped.split(" ", 1)
             labels.append(parts[1] if len(parts) == 2 and parts[0].isdigit() else stripped)
         return labels
-
-    def _load_thresholds(self, name: str, labels: list[str]) -> dict[str, float]:
-        path = self._dir / name
-        if not path.exists():
-            return {label: 0.5 for label in labels}
-        raw = json.loads(path.read_text(encoding="utf-8"))
-        return {label: float(raw.get(label, 0.5)) for label in labels}

@@ -15,20 +15,36 @@ class DiseaseFindingCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: AppTheme.cardDecoration(),
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          _Header(
-            label: labelToEs(finding.pathogenClass),
-            accent: accent,
-            severityLevel: finding.severityLevel,
-          ),
-          const SizedBox(height: 12),
-          _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
-          const SizedBox(height: 12),
-          _MetricsRow(finding: finding),
-        ],
+      clipBehavior: Clip.antiAlias,
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Container(width: 5, color: accent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    _Header(
+                      label: labelToEs(finding.pathogenClass),
+                      accent: accent,
+                      severityLevel: finding.severityLevel,
+                    ),
+                    const SizedBox(height: 12),
+                    _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
+                    const SizedBox(height: 12),
+                    _Confidence(
+                      probability: finding.avgProbability,
+                      accent: accent,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -63,10 +79,10 @@ class _Header extends StatelessWidget {
         Expanded(
           child: Text(
             label,
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.bold,
-              color: AppTheme.accentDark,
+              color: accent,
               letterSpacing: -0.2,
             ),
           ),
@@ -149,69 +165,32 @@ class _SeverityBar extends StatelessWidget {
   }
 }
 
-class _MetricsRow extends StatelessWidget {
-  final DiseaseFinding finding;
+class _Confidence extends StatelessWidget {
+  final double probability;
+  final Color accent;
 
-  const _MetricsRow({required this.finding});
+  const _Confidence({required this.probability, required this.accent});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        _Metric(label: 'Cobertura', value: '${finding.coveragePct.toStringAsFixed(0)}%'),
-        _Divider(),
-        _Metric(label: 'Nivel', value: severityToEs(finding.severityLevel)),
-        _Divider(),
-        _Metric(label: 'Probabilidad', value: '${(finding.avgProbability * 100).toStringAsFixed(0)}%'),
-        _Divider(),
-        _Metric(label: 'Sev. máx', value: '${finding.maxSeverityPct.toStringAsFixed(0)}%'),
+        Icon(Icons.verified_outlined, size: 14, color: accent),
+        const SizedBox(width: 6),
+        const Text(
+          'Confianza del modelo',
+          style: TextStyle(fontSize: 11, color: AppTheme.textMuted),
+        ),
+        const Spacer(),
+        Text(
+          '${(probability * 100).toStringAsFixed(0)}%',
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: accent,
+          ),
+        ),
       ],
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return const SizedBox(
-      height: 28,
-      child: VerticalDivider(
-        width: 1,
-        thickness: 1,
-        color: AppTheme.border,
-      ),
-    );
-  }
-}
-
-class _Metric extends StatelessWidget {
-  final String label;
-  final String value;
-
-  const _Metric({required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
-          Text(
-            value,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.bold,
-              color: AppTheme.accentDark,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            label,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
-          ),
-        ],
-      ),
     );
   }
 }

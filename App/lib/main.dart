@@ -9,6 +9,7 @@ import 'infrastructure/TreatmentRepo.dart';
 import 'presentation/Theme.dart';
 import 'presentation/screens/DiagnoseResult.dart';
 import 'presentation/screens/HomeScreen.dart';
+import 'presentation/screens/TreatmentScreen.dart';
 import 'presentation/state/AppState.dart';
 import 'presentation/widgets/AppHeader.dart';
 
@@ -103,6 +104,15 @@ class MainScreen extends StatelessWidget {
                             width: width,
                             padding: const EdgeInsets.all(10),
                             child: const DiagnoseResult(),
+                          ),
+                        ),
+                      ),
+                    Screen.treatment => SingleChildScrollView(
+                        child: Center(
+                          child: Container(
+                            width: width,
+                            padding: const EdgeInsets.all(10),
+                            child: const TreatmentScreen(),
                           ),
                         ),
                       ),

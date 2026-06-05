@@ -1,12 +1,15 @@
+import base64
 from typing import Optional
+
 import cv2
 import numpy as np
-from config import HEALTH_GATE, ACTIVE_THRESHOLD, MAX_IMAGE_SIDE
+
+from config import DISEASE_CONFIDENCE, HEALTH_GATE, MAX_IMAGE_SIDE
 from inference.classifier import (
     run_health,
     run_disease,
     probability_diseased,
-    active_diseases,
+    top_disease,
 )
 from inference.leaf_analyzer import severity_hsv
 from inference.model_registry import ModelRegistry
@@ -27,12 +30,12 @@ class DiagnosisService:
         p_diseased = probability_diseased(health_scores, self._registry.health_labels)
         print(f"[diag] p_diseased={p_diseased:.3f}")
 
-        zones, total_patches, leaf_patches = self._scan(image_bgr, image_rgb, p_diseased)
-        findings = _aggregate_findings(zones, total_patches, leaf_patches)
+        seg_result = None
+        if self._registry.segmenter:
+            seg_result = run_segmentation(self._registry.segmenter, image_bgr)
 
-        seg_result = run_segmentation(self._registry.segmenter, image_bgr) if (
-            self._registry.segmenter and zones
-        ) else None
+        zones, total_patches, leaf_patches = self._scan(image_bgr, image_rgb, p_diseased, seg_result)
+        findings = _aggregate_findings(zones)
 
         climate = fetch_climate(lat, lon) if lat is not None and lon is not None else None
 
@@ -54,30 +57,50 @@ class DiagnosisService:
         image_bgr: np.ndarray,
         image_rgb: np.ndarray,
         p_diseased: float,
+        seg_result: Optional[dict],
     ) -> tuple[list[dict], int, int]:
         if p_diseased < HEALTH_GATE:
             return [], 1, 1
 
-        disease_scores = run_disease(self._registry.disease, image_rgb)
-        sev_pct, sev_lvl = severity_hsv(image_bgr)
-        actives = active_diseases(
+        clean_rgb = image_rgb
+        if seg_result is not None:
+            mask = np.frombuffer(base64.b64decode(seg_result["b64"]), dtype=np.uint8)
+            clean_rgb = _apply_mask(image_rgb, mask)
+
+        disease_scores = run_disease(self._registry.disease, clean_rgb)
+        detected = top_disease(
             disease_scores,
             self._registry.disease_labels,
-            self._registry.disease_thresholds,
-            sev_pct,
-            ACTIVE_THRESHOLD,
+            DISEASE_CONFIDENCE,
         )
-        if not actives:
+        if detected is None:
             return [], 1, 1
+
+        label, confidence = detected
+        sev_pct = seg_result["severity"] if seg_result is not None else severity_hsv(image_bgr)[0]
+        sev_lvl = _level_from_pct(sev_pct)
 
         height, width = image_bgr.shape[:2]
         zone = {
             "bbox": [0, 0, width, height],
             "severidad_pct": sev_pct,
             "nivel": sev_lvl,
-            "enfermedades": actives,
+            "enfermedades": [{
+                "clase": label,
+                "prob": round(confidence, 3),
+                "severidad_pct": sev_pct,
+            }],
         }
         return [zone], 1, 1
+
+
+def _apply_mask(image_rgb: np.ndarray, mask_flat: np.ndarray) -> np.ndarray:
+    out = image_rgb.copy()
+    h, w = image_rgb.shape[:2]
+    mask_2d = mask_flat.reshape(256, 256).astype(np.uint8)
+    mask_resized = cv2.resize(mask_2d, (w, h), interpolation=cv2.INTER_NEAREST)
+    out[mask_resized == 0] = 0
+    return out
 
 
 def _resize_to_max(image: np.ndarray) -> np.ndarray:
@@ -89,7 +112,7 @@ def _resize_to_max(image: np.ndarray) -> np.ndarray:
     return cv2.resize(image, (int(w * scale), int(h * scale)))
 
 
-def _aggregate_findings(zones: list[dict], total: int, leaf: int) -> list[dict]:
+def _aggregate_findings(zones: list[dict]) -> list[dict]:
     acc: dict[str, dict] = {}
     for zone in zones:
         for d in zone["enfermedades"]:
@@ -101,7 +124,6 @@ def _aggregate_findings(zones: list[dict], total: int, leaf: int) -> list[dict]:
             entry["sev_max"] = max(entry["sev_max"], d["severidad_pct"])
             entry["prob_sum"] += d["prob"]
             entry["count"] += 1
-    denom = leaf if leaf > 0 else (total if total > 0 else 1)
     severity_order = ["minima", "leve", "moderada", "severa", "critica"]
     findings = []
     for clase, e in acc.items():
@@ -109,7 +131,7 @@ def _aggregate_findings(zones: list[dict], total: int, leaf: int) -> list[dict]:
         avg_sev = e["sev_sum"] / n
         findings.append({
             "clase": clase,
-            "coverage_pct": round(n / denom * 100, 1),
+            "coverage_pct": round(avg_sev, 1),
             "avg_severidad_pct": round(avg_sev, 1),
             "max_severidad_pct": round(e["sev_max"], 1),
             "nivel": _level_from_pct(avg_sev),

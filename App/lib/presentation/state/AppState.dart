@@ -2,7 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../domain/DiagnoseResult.dart';
 
-enum Screen { home, diagnoseResult }
+enum Screen { home, diagnoseResult, treatment }
 
 enum DiagnosisStep { idle, analyzing, classifying, fetching, done }
 

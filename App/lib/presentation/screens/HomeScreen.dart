@@ -20,7 +20,6 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
-  double _fieldAreaHa = 1.0;
 
   Future<void> _pickGallery() async {
     final file = await _picker.pickImage(
@@ -82,7 +81,7 @@ class _HomeScreenState extends State<HomeScreen> {
         state.currentImage!,
         lat: coords?.$1,
         lon: coords?.$2,
-        fieldAreaHa: _fieldAreaHa,
+        fieldAreaHa: 1.0,
       );
       if (!mounted || state.isCancelled) return;
 
@@ -118,12 +117,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const SizedBox(height: 16),
           _AnimatedSubtitle(hasImage: state.currentImage != null),
-          const SizedBox(height: 12),
-          _FieldAreaRow(
-            value: _fieldAreaHa,
-            onChanged: (v) => setState(() => _fieldAreaHa = v),
-          ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
           Expanded(
             child: AnimatedSwitcher(
               duration: AppTheme.animNormal,
@@ -220,84 +214,7 @@ class _AnimatedSubtitle extends StatelessWidget {
   }
 }
 
-class _FieldAreaRow extends StatelessWidget {
-  final double value;
-  final ValueChanged<double> onChanged;
 
-  const _FieldAreaRow({required this.value, required this.onChanged});
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(Icons.grass_outlined, size: 16, color: AppTheme.textMuted),
-        const SizedBox(width: 6),
-        const Text(
-          'Área del cultivo',
-          style: TextStyle(fontSize: 12, color: AppTheme.textMuted),
-        ),
-        const Spacer(),
-        _AreaButton(
-          label: '0.5 ha',
-          selected: value == 0.5,
-          onTap: () => onChanged(0.5),
-        ),
-        const SizedBox(width: 6),
-        _AreaButton(
-          label: '1 ha',
-          selected: value == 1.0,
-          onTap: () => onChanged(1.0),
-        ),
-        const SizedBox(width: 6),
-        _AreaButton(
-          label: '2 ha',
-          selected: value == 2.0,
-          onTap: () => onChanged(2.0),
-        ),
-        const SizedBox(width: 6),
-        _AreaButton(
-          label: '5 ha',
-          selected: value == 5.0,
-          onTap: () => onChanged(5.0),
-        ),
-      ],
-    );
-  }
-}
-
-class _AreaButton extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _AreaButton({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: AppTheme.animFast,
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: selected ? AppTheme.accent : AppTheme.accent.withValues(alpha: 0.25),
-          ),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-            color: selected ? Colors.white : AppTheme.accent,
-          ),
-        ),
-      ),
-    );
-  }
-}
 
 class _UploadArea extends StatelessWidget {
   final dynamic imageFile;
