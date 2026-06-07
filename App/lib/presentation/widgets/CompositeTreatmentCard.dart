@@ -37,7 +37,14 @@ class CompositeTreatmentCard extends StatelessWidget {
           if (plan.applicationWindow != null) ...[
             const SizedBox(height: 4),
             Text(
-              'Window: ${plan.applicationWindow}',
+              'Ventana de aplicación: ${plan.applicationWindow}',
+              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
+            ),
+          ],
+          if (plan.sprayVolume != null) ...[
+            const SizedBox(height: 2),
+            Text(
+              'Volumen para ${plan.fieldAreaHa % 1 == 0 ? plan.fieldAreaHa.toStringAsFixed(0) : plan.fieldAreaHa.toStringAsFixed(1)} ha: ${plan.sprayVolume}',
               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
@@ -121,11 +128,52 @@ class _PriorityBlock extends StatelessWidget {
             style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
           ),
           const SizedBox(height: 8),
-          _ActionSection(title: 'Chemical', text: priority.actions.chemical),
+          _ActionSection(title: 'Químico', text: priority.actions.chemical),
+          if (priority.dosageNote.isNotEmpty) _DosageNote(text: priority.dosageNote, accent: accent),
           _ActionSection(title: 'Cultural', text: priority.actions.cultural),
-          _ActionSection(title: 'Biological', text: priority.actions.biological),
-          _ActionSection(title: 'Preventive', text: priority.actions.preventive),
+          _ActionSection(title: 'Biológico', text: priority.actions.biological),
+          _ActionSection(title: 'Preventivo', text: priority.actions.preventive),
         ],
+      ),
+    );
+  }
+}
+
+class _DosageNote extends StatelessWidget {
+  final String text;
+  final Color accent;
+
+  const _DosageNote({required this.text, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+        decoration: BoxDecoration(
+          color: accent.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.science_outlined, size: 14, color: accent),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                text,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: accent,
+                  height: 1.3,
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

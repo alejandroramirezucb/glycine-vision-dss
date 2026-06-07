@@ -12,6 +12,11 @@ import 'IncompatibilityChecker.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
   static const double _minCoveragePct = 5.0;
+  static const double _sprayLitersPerHa = 200.0;
+  static final RegExp _doseRe = RegExp(
+    r'(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l)\s*/\s*100\s*l',
+    caseSensitive: false,
+  );
   static const Map<String, int> _severityRank = {
     'minima': 0, 'leve': 1, 'moderada': 2, 'severa': 3, 'critica': 4,
   };
@@ -76,7 +81,7 @@ class JsonTreatmentRepository implements TreatmentRepository {
       return const TreatmentPlan(priorities: [], warnings: []);
 
     final priorities = relevant
-        .map((f) => _buildPriority(f, climate))
+        .map((f) => _buildPriority(f, climate, fieldAreaHa))
         .whereType<TreatmentPriority>()
         .toList()
       ..sort((a, b) => _rank(b.severityLevel).compareTo(_rank(a.severityLevel)));
@@ -86,10 +91,13 @@ class JsonTreatmentRepository implements TreatmentRepository {
       warnings: _checker.findWarnings(priorities),
       applicationWindow: _worstWindow(priorities),
       climateGuidance: climate == null ? null : _climateGuidance(climate),
+      fieldAreaHa: fieldAreaHa,
+      sprayVolume: '${(fieldAreaHa * _sprayLitersPerHa).round()} L de caldo (~200 L/ha)',
     );
   }
 
-  TreatmentPriority? _buildPriority(DiseaseFinding finding, ClimateData? climate) {
+  TreatmentPriority? _buildPriority(
+      DiseaseFinding finding, ClimateData? climate, double fieldAreaHa) {
     final key = _resolveKey(finding.pathogenClass);
     final body = _diseaseData[key];
     if (body == null) return null;
@@ -101,8 +109,31 @@ class JsonTreatmentRepository implements TreatmentRepository {
       severityLevel: level,
       rationale: _rationale(finding, level, climate),
       actions: actions,
+      dosageNote: _dosageNote(actions.chemical, fieldAreaHa),
     );
   }
+
+  String _dosageNote(String chemical, double fieldAreaHa) {
+    final match = _doseRe.firstMatch(chemical);
+    if (match == null) return '';
+    final value = double.tryParse(match.group(1)!.replaceAll(',', '.'));
+    if (value == null) return '';
+    final unit = match.group(2)!.toLowerCase();
+    final liters = fieldAreaHa * _sprayLitersPerHa;
+    var total = value * liters / 100.0;
+    var outUnit = unit;
+    if (unit == 'g' && total >= 1000) {
+      total /= 1000;
+      outUnit = 'kg';
+    } else if (unit == 'ml' && total >= 1000) {
+      total /= 1000;
+      outUnit = 'L';
+    }
+    final amount = total >= 100 ? total.toStringAsFixed(0) : total.toStringAsFixed(1);
+    return 'Para ${_fmtArea(fieldAreaHa)} ha: ~$amount $outUnit de producto en ${liters.round()} L de caldo';
+  }
+
+  String _fmtArea(double ha) => ha % 1 == 0 ? ha.toStringAsFixed(0) : ha.toStringAsFixed(1);
 
   String _resolveKey(String label) {
     final norm = normalizeKey(label);

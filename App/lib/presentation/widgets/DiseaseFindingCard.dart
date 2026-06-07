@@ -15,36 +15,20 @@ class DiseaseFindingCard extends StatelessWidget {
     return Container(
       width: double.infinity,
       decoration: AppTheme.cardDecoration(),
-      clipBehavior: Clip.antiAlias,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Container(width: 5, color: accent),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _Header(
-                      label: labelToEs(finding.pathogenClass),
-                      accent: accent,
-                      severityLevel: finding.severityLevel,
-                    ),
-                    const SizedBox(height: 12),
-                    _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
-                    const SizedBox(height: 12),
-                    _Confidence(
-                      probability: finding.avgProbability,
-                      accent: accent,
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          _Header(
+            label: labelToEs(finding.pathogenClass),
+            accent: accent,
+            severityLevel: finding.severityLevel,
+          ),
+          const SizedBox(height: 12),
+          _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
+          const SizedBox(height: 12),
+          _Confidence(probability: finding.avgProbability, accent: accent),
+        ],
       ),
     );
   }
