@@ -98,6 +98,10 @@ docker compose up --build
 **Manual:**
 ```bash
 cd Backend
+
+python -m venv env
+.\env\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 python server.py
 ```
