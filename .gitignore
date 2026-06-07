@@ -41,3 +41,10 @@ app.*.map.json
 **/ios/Flutter/.last_build_id
 Code/build/
 **/build/
+node_modules/
+Training/outputs/
+Training/data/
+Training/clean/
+Training/splits/
+*.keras
+Models/segmentation/model.tflite

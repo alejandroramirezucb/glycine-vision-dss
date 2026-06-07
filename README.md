@@ -21,8 +21,8 @@ Detects and classifies diseases from a smartphone photo, estimates severity, and
 │  │ M1 — binary health check │   │  EfficientNetB1 240×240
 │  │ healthy vs diseased       │   │  float32, on-device
 │  ├──────────────────────────┤   │
-│  │ M2 — multi-label 5 class │   │  EfficientNetB0 224×224
-│  │ bacterianas/fungicas/...  │   │  sigmoid, ASL loss
+│  │ M2 — single-label 5 class│   │  EfficientNetB0 224×224
+│  │ bacterianas/fungicas/...  │   │  softmax, cross-entropy
 │  ├──────────────────────────┤   │
 │  │ M_seg — U-Net semantic   │   │  ResNet50 encoder 256×256
 │  │ bg / sana / enferma       │   │  int8, pseudo-labels HSV
@@ -66,7 +66,7 @@ glycine-vision-dss/
 │   └── requirements.txt
 ├── Models/                  Trained models organized by type
 │   ├── health/              model.tflite, model_int8.tflite, labels.txt
-│   ├── disease/             model.tflite, labels.txt, thresholds.json
+│   ├── disease/             model.tflite, model_int8.tflite, labels.txt
 │   └── segmentation/        model.tflite, model_int8.tflite
 ├── Training/
 │   └── notebooks/           01-06 Colab training notebooks
@@ -114,34 +114,27 @@ python server.py
 
 ## Deploy trained models
 
-Run from project root after completing training notebooks:
+Run from project root after completing training notebooks. M2 es single-label (softmax), no usa thresholds.
 
-```bash
-SRC="Training/outputs"
-APP="App/assets/models"
-MOD="Models"
+**PowerShell (Windows):**
+```powershell
+$SRC = "Training/outputs"; $APP = "App/assets/models"; $MOD = "Models"
 
-cp "$SRC/model1.tflite"         "$APP/hs/model.tflite"
-cp "$SRC/labels_m1.txt"         "$APP/hs/labels.txt"
-cp "$SRC/hs_threshold.json"     "$APP/hs/threshold.json"
-cp "$SRC/model2.tflite"         "$APP/pd/model_unquant.tflite"
-cp "$SRC/labels_m2.txt"         "$APP/pd/labels.txt"
-cp "$SRC/thresholds.json"       "$APP/pd/thresholds.json"
-cp "$SRC/model_seg_int8.tflite" "$APP/seg/model_seg.tflite"
+Copy-Item "$SRC/model1.tflite"         "$APP/hs/model.tflite" -Force
+Copy-Item "$SRC/labels_m1.txt"         "$APP/hs/labels.txt" -Force
+Copy-Item "$SRC/model2.tflite"         "$APP/pd/model_unquant.tflite" -Force
+Copy-Item "$SRC/labels_m2.txt"         "$APP/pd/labels.txt" -Force
+Copy-Item "$SRC/model_seg_int8.tflite" "$APP/seg/model_seg.tflite" -Force
 
-mkdir -p "$MOD/health" "$MOD/disease" "$MOD/segmentation"
-cp "$SRC/model1.tflite"         "$MOD/health/model.tflite"
-cp "$SRC/model1_int8.tflite"    "$MOD/health/model_int8.tflite"
-cp "$SRC/labels_m1.txt"         "$MOD/health/labels.txt"
-cp "$SRC/hs_threshold.json"     "$MOD/health/threshold.json"
-cp "$SRC/model2.tflite"         "$MOD/disease/model.tflite"
-cp "$SRC/model2_int8.tflite"    "$MOD/disease/model_int8.tflite"
-cp "$SRC/labels_m2.txt"         "$MOD/disease/labels.txt"
-cp "$SRC/thresholds.json"       "$MOD/disease/thresholds.json"
-cp "$SRC/model_seg.tflite"      "$MOD/segmentation/model.tflite"
-cp "$SRC/model_seg_int8.tflite" "$MOD/segmentation/model_int8.tflite"
-
-echo "Deploy OK"
+Copy-Item "$SRC/model1.tflite"         "$MOD/health/model.tflite" -Force
+Copy-Item "$SRC/model1_int8.tflite"    "$MOD/health/model_int8.tflite" -Force
+Copy-Item "$SRC/labels_m1.txt"         "$MOD/health/labels.txt" -Force
+Copy-Item "$SRC/model2.tflite"         "$MOD/disease/model.tflite" -Force
+Copy-Item "$SRC/model2_int8.tflite"    "$MOD/disease/model_int8.tflite" -Force
+Copy-Item "$SRC/labels_m2.txt"         "$MOD/disease/labels.txt" -Force
+Copy-Item "$SRC/model_seg.tflite"      "$MOD/segmentation/model.tflite" -Force
+Copy-Item "$SRC/model_seg_int8.tflite" "$MOD/segmentation/model_int8.tflite" -Force
+Write-Host "Deploy OK"
 ```
 
 ---
@@ -154,7 +147,7 @@ Notebooks run on **Google Colab** (GPU required). Execute in order:
 |---|---|---|
 | `01_prepare_dataset.ipynb` | Download + split dataset | `splits/` |
 | `02_train_model1_binary.ipynb` | M1 EfficientNetB1 binary | `model1.tflite` |
-| `03_train_model2_pathogen.ipynb` | M2 EfficientNetB0 multi-label | `model2.tflite` + `thresholds.json` |
+| `03_train_model2_pathogen.ipynb` | M2 EfficientNetB0 single-label softmax | `model2.tflite` |
 | `04_train_segmentation.ipynb` | M_seg ResNet50 U-Net | `model_seg_int8.tflite` |
 | `05_evaluate.ipynb` | Full metrics on test set | `training_metrics.json` |
 | `06_export_tflite.ipynb` | TFLite export + int8 quant | All `.tflite` files |
@@ -163,19 +156,24 @@ Notebooks run on **Google Colab** (GPU required). Execute in order:
 
 ## Model performance
 
+Evaluado sobre el test set independiente (`splits/test/`, balanceado por clase).
+
 | Model | Metric | Value | Target |
 |---|---|---|---|
-| M1 | Accuracy | 0.98 | ≥0.85 ✅ |
-| M1 | F1 | 0.98 | ≥0.85 ✅ |
-| M2 | mAP | 0.80 | ≥0.85 ⚠️ |
-| M2 | F1 macro | 0.45 | ≥0.80 ❌ |
-| M_seg | Dice enferma | 0.95 | ≥0.65 ✅ |
-| M_seg | CCC severidad | 0.95 | ≥0.85 ✅ |
-| M_seg | MAE severidad | 1.97% | ≤15% ✅ |
+| M1 | Accuracy | 0.98 | ≥0.98 ✅ |
+| M1 | F1 | 0.98 | ≥0.98 ✅ |
+| M1 | Recall (enferma) | 0.96 | ≥0.97 ⚠️ |
+| M2 | Accuracy | 0.949 | ≥0.9514 ⚠️ |
+| M2 | F1 macro | 0.948 | ≥0.9472 ✅ |
+| M_seg | Dice enferma | 0.949 | ≥0.65 ✅ |
+| M_seg | Dice sana | 0.866 | — |
 
-**M2 known issues:**
-- `virales` AP=0 → insufficient training samples, model cannot separate virales visually
-- `roya` F1≈0 at threshold=0.40 → threshold too high for absolute score range; recalibrate with `[0.05, 0.60]`
+M2 F1 por clase: bacterianas 0.919 · fungicas 0.884 · plagas_insectos 0.993 · roya 0.944 · virales 1.000.
+
+**Estado actual / mejoras:**
+- `fungicas` es la clase más débil (F1 0.884): se confunde con bacterianas/roya → más datos fúngicos variados.
+- M1 recall 0.96 (<0.97): faltan imágenes de enfermedad temprana (los falsos negativos son el error más costoso).
+- M_seg: excelente en textura sana/enferma, pero confunde hoja con suelo en fondos complejos → mitigado con la Fase 3 (máscaras COCO reales).
 
 ---
 
@@ -208,7 +206,11 @@ Dose formula: `total = base_per_ha × field_area_ha × severity_multiplier[level
 
 ## Known limitations
 
-1. **M_seg pseudo-labels**: trained against HSV-generated masks, not expert annotations. Dice/CCC metrics measure similarity to HSV reference. Scientific validation requires expert-annotated ground truth.
-2. **Multi-leaf images**: M_seg may misclassify background leaves as leaf tissue. Use the crop feature (camera mode) to isolate a single leaf before diagnosis.
-3. **virales detection**: very low F1 due to limited training data. More diverse viral symptom images required.
-4. **Treatment doses**: derived from agronomic literature (CABI, ANAPO, Ridnik et al.). No certified database API available for Latin American soybean — consult local agronomist before application.
+1. **M_seg pseudo-labels (Fases 1–2)**: entrenadas contra máscaras HSV, no anotaciones de experto. La Fase 3 incorpora máscaras reales (COCO) para el límite hoja/fondo; la separación sana/enferma sigue basada en HSV.
+2. **Fondos complejos**: M_seg puede confundir suelo/hojas de fondo con tejido foliar. La Fase 3 lo mitiga; aislar una sola hoja mejora el resultado.
+3. **fungicas**: clase con más confusión (F1 0.884) por similitud visual con bacterianas/roya temprana. Requiere más datos fúngicos variados.
+4. **Treatment doses**: derived from agronomic literature (CABI, ANAPO). No certified database API for Latin American soybean — consult local agronomist before application.
+
+### Metodología de evaluación
+- M1/M2 se evalúan sobre un **test set independiente** (carpeta `Test/` del dataset HF, balanceada: 100/clase M1, 70/clase M2), separado del train/val (split 80/20). Test held-out + balanceado = estándar para clasificación y evita fuga de datos.
+- Data augmentation: **on-the-fly** (albumentations) durante el entrenamiento; no se usa dataset sintético offline.

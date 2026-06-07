@@ -33,7 +33,6 @@ class DiagnoserFactory {
     final diseaseModel = await TfliteClassifier.load(
       modelAsset: 'assets/models/pd/model_unquant.tflite',
       labelsAsset: 'assets/models/pd/labels.txt',
-      thresholdsAsset: 'assets/models/pd/thresholds.json',
     );
     TfliteSegmenter? segmenter;
     try {
