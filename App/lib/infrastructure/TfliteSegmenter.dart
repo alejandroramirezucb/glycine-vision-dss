@@ -19,7 +19,7 @@ class TfliteSegmenter {
 
   Uint8List segment(img.Image source) {
     final resized = img.copyResize(source, width: _maskSize, height: _maskSize);
-    final src = resized.getBytes(order: img.ChannelOrder.rgb);
+    final src = _grayWorld(resized.getBytes(order: img.ChannelOrder.rgb));
     final n = _maskSize * _maskSize;
 
     if (_isQuantized) {
@@ -52,6 +52,30 @@ class TfliteSegmenter {
         else
           out.setPixel(x, y, source.getPixel(x, y));
       }
+    }
+    return out;
+  }
+
+  Uint8List _grayWorld(Uint8List rgb) {
+    var sumR = 0.0, sumG = 0.0, sumB = 0.0;
+    final pixels = rgb.length ~/ 3;
+    for (var i = 0; i < rgb.length; i += 3) {
+      sumR += rgb[i];
+      sumG += rgb[i + 1];
+      sumB += rgb[i + 2];
+    }
+    final avgR = sumR / pixels;
+    final avgG = sumG / pixels;
+    final avgB = sumB / pixels;
+    final gray = (avgR + avgG + avgB) / 3;
+    final scaleR = gray / (avgR + 1e-6);
+    final scaleG = gray / (avgG + 1e-6);
+    final scaleB = gray / (avgB + 1e-6);
+    final out = Uint8List(rgb.length);
+    for (var i = 0; i < rgb.length; i += 3) {
+      out[i] = (rgb[i] * scaleR).clamp(0, 255).toInt();
+      out[i + 1] = (rgb[i + 1] * scaleG).clamp(0, 255).toInt();
+      out[i + 2] = (rgb[i + 2] * scaleB).clamp(0, 255).toInt();
     }
     return out;
   }

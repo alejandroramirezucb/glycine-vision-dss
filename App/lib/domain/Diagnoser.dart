@@ -7,5 +7,6 @@ abstract class Diagnoser {
     double? lat,
     double? lon,
     double fieldAreaHa = 1.0,
+    DateTime? onsetDate,
   });
 }

@@ -55,10 +55,11 @@ class _ResultPageState extends State<_ResultPage> {
             ),
             const SizedBox(height: 10),
           ],
+          const SizedBox(height: 28),
           _TreatmentNavButton(
             onTap: () => context.read<AppState>().push(Screen.treatment),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
         ],
       ],
     );

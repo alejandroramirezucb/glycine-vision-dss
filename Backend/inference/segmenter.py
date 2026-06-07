@@ -4,8 +4,15 @@ import numpy as np
 import tensorflow as tf
 
 
+def gray_world(image_rgb: np.ndarray) -> np.ndarray:
+    result = image_rgb.astype(np.float32)
+    avg = result.reshape(-1, 3).mean(axis=0)
+    scale = avg.mean() / (avg + 1e-6)
+    return np.clip(result * scale, 0, 255).astype(np.uint8)
+
+
 def run_segmentation(interp: tf.lite.Interpreter, image_bgr: np.ndarray) -> dict | None:
-    image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+    image_rgb = gray_world(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
     inp = interp.get_input_details()[0]
     out = interp.get_output_details()[0]
     resized = cv2.resize(image_rgb, (256, 256))

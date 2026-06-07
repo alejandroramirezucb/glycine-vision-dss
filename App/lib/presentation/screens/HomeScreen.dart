@@ -20,6 +20,8 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final _picker = ImagePicker();
+  double _fieldAreaHa = 1.0;
+  DateTime? _onsetDate;
 
   Future<void> _pickGallery() async {
     final file = await _picker.pickImage(
@@ -81,7 +83,8 @@ class _HomeScreenState extends State<HomeScreen> {
         state.currentImage!,
         lat: coords?.$1,
         lon: coords?.$2,
-        fieldAreaHa: 1.0,
+        fieldAreaHa: _fieldAreaHa,
+        onsetDate: _onsetDate,
       );
       if (!mounted || state.isCancelled) return;
 
@@ -107,6 +110,46 @@ class _HomeScreenState extends State<HomeScreen> {
     } catch (_) {
       return null;
     }
+  }
+
+  Future<void> _editArea() async {
+    final controller = TextEditingController(text: _fieldAreaHa.toString());
+    final value = await showDialog<double>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Área del cultivo'),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: const InputDecoration(suffixText: 'ha'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar'),
+          ),
+          TextButton(
+            onPressed: () =>
+                Navigator.pop(ctx, double.tryParse(controller.text.replaceAll(',', '.'))),
+            child: const Text('Guardar'),
+          ),
+        ],
+      ),
+    );
+    if (value != null && value > 0) setState(() => _fieldAreaHa = value);
+  }
+
+  Future<void> _pickOnset() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _onsetDate ?? now,
+      firstDate: now.subtract(const Duration(days: 180)),
+      lastDate: now,
+      helpText: '¿Cuándo aparecieron los síntomas?',
+    );
+    if (picked != null) setState(() => _onsetDate = picked);
   }
 
   @override
@@ -170,6 +213,15 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
             ],
           ),
+          if (state.currentImage != null && !state.isLoading) ...[
+            const SizedBox(height: 10),
+            _OptionsRow(
+              areaHa: _fieldAreaHa,
+              onsetDate: _onsetDate,
+              onEditArea: _editArea,
+              onPickOnset: _pickOnset,
+            ),
+          ],
           const SizedBox(height: 10),
           _ActionButton(
             onPressed: state.currentImage != null && !state.isLoading
@@ -335,6 +387,106 @@ class _PlaceholderFrame extends StatelessWidget {
         color: AppTheme.accent.withValues(alpha: 0.04),
       ),
       child: Center(child: child),
+    );
+  }
+}
+
+class _OptionsRow extends StatelessWidget {
+  final double areaHa;
+  final DateTime? onsetDate;
+  final VoidCallback onEditArea;
+  final VoidCallback onPickOnset;
+
+  const _OptionsRow({
+    required this.areaHa,
+    required this.onsetDate,
+    required this.onEditArea,
+    required this.onPickOnset,
+  });
+
+  String get _onsetLabel => onsetDate == null
+      ? 'Inicio síntomas'
+      : '${onsetDate!.day}/${onsetDate!.month}/${onsetDate!.year}';
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _OptionChip(
+            icon: Icons.crop_square_outlined,
+            label: 'Área',
+            value: '${areaHa.toStringAsFixed(areaHa % 1 == 0 ? 0 : 1)} ha',
+            onTap: onEditArea,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _OptionChip(
+            icon: Icons.event_outlined,
+            label: 'Inicio',
+            value: _onsetLabel,
+            onTap: onPickOnset,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _OptionChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final String value;
+  final VoidCallback onTap;
+
+  const _OptionChip({
+    required this.icon,
+    required this.label,
+    required this.value,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppTheme.bgCard,
+      borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppTheme.radiusChip),
+            border: Border.all(color: AppTheme.border),
+          ),
+          child: Row(
+            children: [
+              Icon(icon, size: 16, color: AppTheme.accent),
+              const SizedBox(width: 8),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                  ),
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                      color: AppTheme.accentDark,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

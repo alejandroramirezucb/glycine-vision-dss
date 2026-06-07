@@ -151,9 +151,7 @@ class _SeverityBar extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Container(
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [AppTheme.accentLight, accent],
-                  ),
+                  color: accent,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

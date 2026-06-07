@@ -29,23 +29,29 @@ class AppTheme {
   static const Curve easeOutCurve = Curves.easeOut;
   static const Curve springCurve = Curves.elasticOut;
 
+  static const Color sevMinima = Color(0xFF2E9E7A);
+  static const Color sevLeve = Color(0xFFC9A227);
+  static const Color sevModerada = Color(0xFFE08A1E);
+  static const Color sevSevera = Color(0xFFCF5A2A);
+  static const Color sevCritica = Color(0xFFB23A2E);
+
   static const Map<String, Color> _severityLevelColors = {
-    'critica':  Color(0xFFB71C1C),
-    'severa':   Color(0xFFE53935),
-    'moderada': Color(0xFFFB8C00),
-    'leve':     Color(0xFFFDD835),
+    'critica':  sevCritica,
+    'severa':   sevSevera,
+    'moderada': sevModerada,
+    'leve':     sevLeve,
+    'minima':   sevMinima,
   };
-  static const Color _severityDefault = Color(0xFF43A047);
 
   static Color severityLevelColor(String level) =>
-      _severityLevelColors[level.toLowerCase()] ?? _severityDefault;
+      _severityLevelColors[level.toLowerCase()] ?? sevMinima;
 
   static Color severityPctColor(double pct) {
-    if (pct < 5) return Colors.green;
-    if (pct < 15) return Colors.lightGreen;
-    if (pct < 35) return const Color(0xFFFB8C00);
-    if (pct < 60) return const Color(0xFFE53935);
-    return const Color(0xFFB71C1C);
+    if (pct < 5) return sevMinima;
+    if (pct < 15) return sevLeve;
+    if (pct < 35) return sevModerada;
+    if (pct < 60) return sevSevera;
+    return sevCritica;
   }
 
   static BoxDecoration cardDecoration() => BoxDecoration(

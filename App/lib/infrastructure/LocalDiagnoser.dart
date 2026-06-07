@@ -55,7 +55,7 @@ class LocalDiagnoser implements Diagnoser {
         _onsetEstimator = onsetEstimator;
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0}) async {
+  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0, DateTime? onsetDate}) async {
     final bytes = await image.readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw Exception('Imagen inválida');
@@ -87,7 +87,7 @@ class LocalDiagnoser implements Diagnoser {
 
     final findings = _aggregateFindings(effectiveZones);
     final climate = await _fetchClimate(lat, lon);
-    final onset = _estimateOnset(findings, climate);
+    final onset = _resolveOnset(findings, climate, onsetDate);
     final plan = _treatments.buildComposite(findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
 
     return DiagnoseResult(
@@ -220,8 +220,17 @@ class LocalDiagnoser implements Diagnoser {
     }
   }
 
-  OnsetEstimate? _estimateOnset(List<DiseaseFinding> findings, ClimateData? climate) {
+  OnsetEstimate? _resolveOnset(
+      List<DiseaseFinding> findings, ClimateData? climate, DateTime? onsetDate) {
     if (findings.isEmpty) return null;
+    if (onsetDate != null) {
+      final days = DateTime.now().difference(onsetDate).inDays.clamp(0, 999);
+      return OnsetEstimate(
+        minDays: days,
+        maxDays: days,
+        explanation: 'Indicado: hace $days dias',
+      );
+    }
     final worst = findings.first;
     return _onsetEstimator.estimate(
       pathogenClass: worst.pathogenClass,

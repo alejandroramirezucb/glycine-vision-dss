@@ -12,6 +12,13 @@ class DiagnoseUseCase {
     double? lat,
     double? lon,
     double fieldAreaHa = 1.0,
+    DateTime? onsetDate,
   }) =>
-      _diagnoser.diagnose(image, lat: lat, lon: lon, fieldAreaHa: fieldAreaHa);
+      _diagnoser.diagnose(
+        image,
+        lat: lat,
+        lon: lon,
+        fieldAreaHa: fieldAreaHa,
+        onsetDate: onsetDate,
+      );
 }

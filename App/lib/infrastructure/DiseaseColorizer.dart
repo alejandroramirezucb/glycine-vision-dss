@@ -46,8 +46,8 @@ class DiseaseColorizer {
         'roya' => (r: 255, g: 111, b: 0),
         'fungicas' => (r: 27, g: 94, b: 32),
         'bacterianas' => (r: 13, g: 71, b: 161),
-        'virales' => (r: 74, g: 20, b: 140),
-        'plagas_insectos' => (r: 183, g: 28, b: 28),
-        _ => (r: 191, g: 54, b: 12),
+        'virales' => (r: 106, g: 27, b: 154),
+        'plagas_insectos' => (r: 109, g: 76, b: 65),
+        _ => (r: 69, g: 90, b: 100),
       };
 }

@@ -27,7 +27,7 @@ class HttpDiagnoser implements Diagnoser {
   });
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0}) async {
+  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0, DateTime? onsetDate}) async {
     final compressed = await _compress(image);
 
     final request = http.MultipartRequest('POST', Uri.parse(endpoint))
@@ -46,10 +46,10 @@ class HttpDiagnoser implements Diagnoser {
     }
 
     final json = jsonDecode(body) as Map<String, dynamic>;
-    return _parseResult(json, compressed.width, compressed.height);
+    return _parseResult(json, compressed.width, compressed.height, fieldAreaHa, onsetDate);
   }
 
-  DiagnoseResult _parseResult(Map<String, dynamic> json, int width, int height) {
+  DiagnoseResult _parseResult(Map<String, dynamic> json, int width, int height, double fieldAreaHa, DateTime? onsetDate) {
     final zones = (json['zonas'] as List? ?? [])
         .map((e) => Zone.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -77,8 +77,9 @@ class HttpDiagnoser implements Diagnoser {
       diseaseColoredMask = DiseaseColorizer.build(mask256, actives);
     }
 
-    final onset = _resolveOnset(findings, climate);
-    final plan = treatments.buildComposite(findings: findings, climate: climate);
+    final onset = _resolveOnset(findings, climate, onsetDate);
+    final plan = treatments.buildComposite(
+      findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
 
     return DiagnoseResult(
       zones: zones,
@@ -96,8 +97,17 @@ class HttpDiagnoser implements Diagnoser {
     );
   }
 
-  OnsetEstimate? _resolveOnset(List<DiseaseFinding> findings, ClimateData? climate) {
+  OnsetEstimate? _resolveOnset(
+      List<DiseaseFinding> findings, ClimateData? climate, DateTime? onsetDate) {
     if (findings.isEmpty) return null;
+    if (onsetDate != null) {
+      final days = DateTime.now().difference(onsetDate).inDays.clamp(0, 999);
+      return OnsetEstimate(
+        minDays: days,
+        maxDays: days,
+        explanation: 'Indicado: hace $days dias',
+      );
+    }
     final worst = findings.first;
     return onsetEstimator.estimate(
       pathogenClass: worst.pathogenClass,
