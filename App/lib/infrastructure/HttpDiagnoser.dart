@@ -105,7 +105,8 @@ class HttpDiagnoser implements Diagnoser {
       return OnsetEstimate(
         minDays: days,
         maxDays: days,
-        explanation: 'Indicado: hace $days dias',
+        explanation: '',
+        indicated: true,
       );
     }
     final worst = findings.first;

@@ -180,9 +180,9 @@ class JsonTreatmentRepository implements TreatmentRepository {
 
   String _rationale(DiseaseFinding f, String level, ClimateData? climate) {
     final coverage = f.coveragePct.toStringAsFixed(0);
-    final base = '${coverage}% leaf area · avg severity ${f.avgSeverityPct.toStringAsFixed(1)}%';
+    final base = '${coverage}% del área foliar · severidad promedio ${f.avgSeverityPct.toStringAsFixed(1)}%';
     return (climate != null && level != f.severityLevel)
-        ? '$base · urgency escalated by climate'
+        ? '$base · urgencia elevada por el clima'
         : base;
   }
 
@@ -199,11 +199,11 @@ class JsonTreatmentRepository implements TreatmentRepository {
   String? _climateGuidance(ClimateData c) {
     final parts = <String>[];
     if (c.humidity > 80)
-      parts.add('Humidity ${c.humidity.toStringAsFixed(0)}% — apply at dawn to prevent dew spread');
+      parts.add('Humedad ${c.humidity.toStringAsFixed(0)}% — aplicar al amanecer para evitar dispersión por rocío');
     if (c.tempC > 32)
-      parts.add('Temperature ${c.tempC.toStringAsFixed(1)}°C — avoid midday; apply before 9h or after 17h');
+      parts.add('Temperatura ${c.tempC.toStringAsFixed(1)}°C — evitar el mediodía; aplicar antes de las 9h o después de las 17h');
     if (c.precipMm > 3)
-      parts.add('Recent rain ${c.precipMm.toStringAsFixed(1)} mm — advance application by 24h');
+      parts.add('Lluvia reciente ${c.precipMm.toStringAsFixed(1)} mm — adelantar la aplicación 24h');
     return parts.isEmpty ? null : parts.join(' · ');
   }
 }

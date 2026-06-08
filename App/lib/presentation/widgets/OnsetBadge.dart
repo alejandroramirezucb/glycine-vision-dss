@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../domain/OnsetEstimate.dart';
 import '../Theme.dart';
+import 'GlassCard.dart';
 
 class OnsetBadge extends StatelessWidget {
   final OnsetEstimate onset;
@@ -9,13 +10,9 @@ class OnsetBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppTheme.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppTheme.radiusChip),
-        border: Border.all(color: AppTheme.accent.withValues(alpha: 0.3)),
-      ),
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+    return GlassCard(
+      radius: AppTheme.radiusChip,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       child: Row(mainAxisSize: MainAxisSize.max, children: [
         const Icon(Icons.schedule_outlined, size: 16, color: AppTheme.accent),
         const SizedBox(width: 6),
@@ -25,7 +22,9 @@ class OnsetBadge extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Text(
-                'Inicio estimado: ${onset.rangeLabel}',
+                onset.indicated
+                    ? 'Inicio: hace ${onset.minDays} días'
+                    : 'Inicio estimado: ${onset.rangeLabel}',
                 style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,

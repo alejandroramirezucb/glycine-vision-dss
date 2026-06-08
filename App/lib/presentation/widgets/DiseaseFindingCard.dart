@@ -3,6 +3,7 @@ import '../../domain/DiseaseFinding.dart';
 import '../LabelNames.dart';
 import '../PathogenColors.dart';
 import '../Theme.dart';
+import 'GlassCard.dart';
 
 class DiseaseFindingCard extends StatelessWidget {
   final DiseaseFinding finding;
@@ -12,10 +13,8 @@ class DiseaseFindingCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final accent = pathogenColor(finding.pathogenClass);
-    return Container(
-      width: double.infinity,
-      decoration: AppTheme.cardDecoration(),
-      padding: const EdgeInsets.all(16),
+    final severityColor = AppTheme.severityLevelColor(finding.severityLevel);
+    return GlassCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -25,7 +24,7 @@ class DiseaseFindingCard extends StatelessWidget {
             severityLevel: finding.severityLevel,
           ),
           const SizedBox(height: 12),
-          _SeverityBar(percent: finding.avgSeverityPct, accent: accent),
+          _SeverityBar(percent: finding.avgSeverityPct, color: severityColor),
           const SizedBox(height: 12),
           _Confidence(probability: finding.avgProbability, accent: accent),
         ],
@@ -94,9 +93,9 @@ class _Header extends StatelessWidget {
 
 class _SeverityBar extends StatelessWidget {
   final double percent;
-  final Color accent;
+  final Color color;
 
-  const _SeverityBar({required this.percent, required this.accent});
+  const _SeverityBar({required this.percent, required this.color});
 
   @override
   Widget build(BuildContext context) {
@@ -116,7 +115,7 @@ class _SeverityBar extends StatelessWidget {
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
-                color: accent,
+                color: color,
               ),
             ),
           ],
@@ -135,7 +134,7 @@ class _SeverityBar extends StatelessWidget {
               alignment: Alignment.centerLeft,
               child: Container(
                 decoration: BoxDecoration(
-                  color: accent,
+                  color: color,
                   borderRadius: BorderRadius.circular(4),
                 ),
               ),

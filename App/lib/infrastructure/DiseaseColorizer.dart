@@ -17,7 +17,7 @@ class DiseaseColorizer {
       final cls = mask256[i];
       final px = i * 4;
       if (cls == 0) {
-        rgba[px + 3] = 255;
+        rgba[px + 3] = 120;
         continue;
       }
       if (cls == 1) {
