@@ -15,30 +15,27 @@ Detects and classifies diseases from a smartphone photo, estimates severity, and
 ## Architecture
 
 ```
-┌─────────────────────────────────┐
-│  Flutter App (iOS / Android)    │
-│  ┌──────────────────────────┐   │
-│  │ M1 — binary health check │   │  EfficientNetB1 240×240
-│  │ healthy vs diseased       │   │  float32, on-device
-│  ├──────────────────────────┤   │
-│  │ M2 — single-label 5 class│   │  EfficientNetB0 224×224
-│  │ bacterianas/fungicas/...  │   │  softmax, cross-entropy
-│  ├──────────────────────────┤   │
-│  │ M_seg — U-Net semantic   │   │  ResNet50 encoder 256×256
-│  │ bg / sana / enferma       │   │  int8, pseudo-labels HSV
-│  └──────────────────────────┘   │
-└─────────────────────────────────┘
-         │  optional remote fallback
-         ▼
-┌─────────────────────────────────┐
-│  Backend  FastAPI + Docker      │
-│  same models via HTTP API       │
-└─────────────────────────────────┘
+imagen → Gray-World → M_seg (hoja / fondo)  ──►  hoja aislada (fondo negro)
+                          │                                │
+                          ▼                                ▼
+                   overlay + hull           M1 [original + hoja]  sana/enferma
+                          │                                │ (si enferma)
+                          ▼                                ▼
+   severidad por color CIELab            M2 [original + hoja]  tipo de patógeno
+   (clorosis + necrosis + huecos)
+                          └──────────────► tratamiento (enfermedad, severidad, clima, onset)
+
+M_seg  : U-Net ResNet50 256×256, 2 clases (hoja/fondo), entrenado con máscaras COCO expertas
+M1     : EfficientNetB1 240×240, doble entrada (original + hoja aislada), sigmoid
+M2     : EfficientNetB0 224×224, doble entrada, softmax single-label (5 clases)
+Backend: FastAPI + Docker (mismos modelos por HTTP, fallback opcional)
 ```
 
 **Disease classes (M2):** `bacterianas` · `fungicas` · `plagas_insectos` · `roya` · `virales`
 
 **Severity levels:** `minima` (<5%) · `leve` (5-15%) · `moderada` (15-35%) · `severa` (35-60%) · `critica` (≥60%)
+
+**Severidad (estilo Edgar, soya):** % área foliar afectada = (clorosis ∪ necrosis por color CIELab ∪ huecos/defoliación) / área foliar. La red **no** decide enferma; solo segmenta hoja/fondo.
 
 ---
 
@@ -145,12 +142,14 @@ Notebooks run on **Google Colab** (GPU required). Execute in order:
 
 | Notebook | Description | Key output |
 |---|---|---|
-| `01_prepare_dataset.ipynb` | Download + split dataset | `splits/` |
-| `02_train_model1_binary.ipynb` | M1 EfficientNetB1 binary | `model1.tflite` |
-| `03_train_model2_pathogen.ipynb` | M2 EfficientNetB0 single-label softmax | `model2.tflite` |
-| `04_train_segmentation.ipynb` | M_seg ResNet50 U-Net | `model_seg_int8.tflite` |
-| `05_evaluate.ipynb` | Full metrics on test set | `training_metrics.json` |
-| `06_export_tflite.ipynb` | TFLite export + int8 quant | All `.tflite` files |
+| `01_prepare_dataset.ipynb` | Descarga + split (train/val 80/20 + Test) | `splits/` |
+| `02_train_segmentation.ipynb` | M_seg ResNet50 U-Net **hoja/fondo** (GT máscaras COCO, recall de hoja) | `model_seg.tflite` |
+| `03_train_model1_binary.ipynb` | M1 EfficientNetB1 **doble entrada** (original+hoja) | `model1.tflite` |
+| `04_train_model2_pathogen.ipynb` | M2 EfficientNetB0 **doble entrada** single-label softmax | `model2.tflite` |
+| `05_evaluate.ipynb` | Métricas en test (M1/M2 dual; M_seg recall/Dice vs experto) | `training_metrics.json` |
+| `06_export_tflite.ipynb` | Export TFLite + int8 (multi-input) | `.tflite` |
+
+M_seg se entrena **antes** que M1/M2 porque produce la hoja aislada que es su segunda entrada. Severidad por color (CIELab) se calcula en inferencia, no en la red.
 
 ---
 
