@@ -1,39 +1,57 @@
 import cv2
 import numpy as np
 
-_HSV_GREEN = (np.array([20, 30, 30]), np.array([90, 255, 255]))
-_HSV_LESION = [
-    (np.array([10, 50, 20]), np.array([30, 255, 200])),
-    (np.array([0, 50, 20]), np.array([10, 255, 180])),
-]
-_HSV_NECROTIC = [(np.array([0, 0, 0]), np.array([180, 80, 60]))]
-_SEVERITY_LEVELS = ("minima", "leve", "moderada", "severa", "critica")
+_MASK_SIZE = 256
+_GREEN_A_MAX = 123
+_CHLOROSIS_B_MIN = 150
+_CHLOROSIS_L_MIN = 110
+_NECROSIS_L_MAX = 130
+_NECROSIS_B_MIN = 130
+_SOIL_AB_TOL = 14
+_SOIL_L_MIN = 150
 
 
-def severity_hsv(image_bgr: np.ndarray) -> tuple[float, str]:
-    hsv = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2HSV)
-    healthy = cv2.inRange(hsv, _HSV_GREEN[0], _HSV_GREEN[1])
-    diseased = _union_masks(hsv, _HSV_LESION + _HSV_NECROTIC)
-    kernel = np.ones((3, 3), np.uint8)
-    diseased = cv2.morphologyEx(diseased, cv2.MORPH_OPEN, kernel)
-    diseased = cv2.morphologyEx(diseased, cv2.MORPH_CLOSE, kernel)
-    leaf = cv2.bitwise_or(healthy, diseased)
-    total = image_bgr.shape[0] * image_bgr.shape[1]
-    leaf_px = int(cv2.countNonZero(leaf))
-    if leaf_px < total * 0.1:
-        return 0.0, "minima"
-    pct = round(min(int(cv2.countNonZero(diseased)) / leaf_px * 100, 100.0), 1)
-    return pct, _level_from_pct(pct)
+def _hull_mask(leaf: np.ndarray) -> np.ndarray:
+    contours, _ = cv2.findContours(leaf.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    hull = np.zeros_like(leaf, dtype=np.uint8)
+    if contours:
+        cv2.fillPoly(hull, [cv2.convexHull(np.vstack(contours))], 1)
+        return hull
+    return leaf.astype(np.uint8)
 
 
-def _union_masks(hsv: np.ndarray, ranges: list) -> np.ndarray:
-    mask = np.zeros(hsv.shape[:2], dtype=np.uint8)
-    for lo, hi in ranges:
-        mask = cv2.bitwise_or(mask, cv2.inRange(hsv, lo, hi))
-    return mask
+def analyze_leaf(image_rgb_256: np.ndarray, leaf_mask_256: np.ndarray) -> tuple[np.ndarray, float, dict]:
+    lab = cv2.cvtColor(image_rgb_256, cv2.COLOR_RGB2LAB)
+    L = lab[:, :, 0].astype(np.int16)
+    a = lab[:, :, 1].astype(np.int16)
+    b = lab[:, :, 2].astype(np.int16)
+    leaf = leaf_mask_256.astype(bool)
+
+    green = a < _GREEN_A_MAX
+    chlorosis = leaf & (~green) & (b > _CHLOROSIS_B_MIN) & (L > _CHLOROSIS_L_MIN)
+    necrosis = leaf & (~green) & (L < _NECROSIS_L_MAX) & (b > _NECROSIS_B_MIN)
+    soil = leaf & (np.abs(a - 128) < _SOIL_AB_TOL) & (np.abs(b - 128) < _SOIL_AB_TOL + 6) & (L > _SOIL_L_MIN)
+
+    hull = _hull_mask(leaf_mask_256).astype(bool)
+    holes = soil | (hull & ~leaf)
+
+    hull_area = int(np.count_nonzero(hull)) or 1
+    symptomatic = chlorosis | necrosis | holes
+    severity = round(float(np.count_nonzero(symptomatic)) / hull_area * 100, 1)
+
+    mask3 = np.zeros((_MASK_SIZE, _MASK_SIZE), dtype=np.uint8)
+    mask3[leaf] = 1
+    mask3[symptomatic] = 2
+
+    components = {
+        "clorosis_pct": round(float(np.count_nonzero(chlorosis)) / hull_area * 100, 1),
+        "necrosis_pct": round(float(np.count_nonzero(necrosis)) / hull_area * 100, 1),
+        "defoliacion_pct": round(float(np.count_nonzero(holes)) / hull_area * 100, 1),
+    }
+    return mask3, min(severity, 100.0), components
 
 
-def _level_from_pct(pct: float) -> str:
+def level_from_pct(pct: float) -> str:
     if pct < 5:
         return "minima"
     if pct < 15:
