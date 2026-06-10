@@ -1,15 +1,26 @@
+import cv2
 import numpy as np
 import tensorflow as tf
 
+_LEAF_INPUT_KEYS = ("hoja", "aislada", "leaf")
 
-def _run_single(interp: tf.lite.Interpreter, image_rgb: np.ndarray) -> np.ndarray:
-    inp = interp.get_input_details()[0]
-    out = interp.get_output_details()[0]
-    target_h, target_w = int(inp["shape"][1]), int(inp["shape"][2])
-    import cv2
+
+def _prep(image_rgb: np.ndarray, detail: dict) -> np.ndarray:
+    target_h, target_w = int(detail["shape"][1]), int(detail["shape"][2])
     resized = cv2.resize(image_rgb, (target_w, target_h))
-    tensor = resized[np.newaxis].astype(inp["dtype"])
-    interp.set_tensor(inp["index"], tensor)
+    return resized[np.newaxis].astype(detail["dtype"])
+
+
+def _run(interp: tf.lite.Interpreter, original_rgb: np.ndarray, leaf_rgb: np.ndarray) -> np.ndarray:
+    details = interp.get_input_details()
+    out = interp.get_output_details()[0]
+    if len(details) == 1:
+        interp.set_tensor(details[0]["index"], _prep(original_rgb, details[0]))
+    else:
+        for d in details:
+            name = d["name"].lower()
+            src = leaf_rgb if any(k in name for k in _LEAF_INPUT_KEYS) else original_rgb
+            interp.set_tensor(d["index"], _prep(src, d))
     interp.invoke()
     raw = interp.get_tensor(out["index"])[0]
     return raw.astype(np.float32) / 255.0 if out["dtype"] == np.uint8 else raw.astype(np.float32)
@@ -43,9 +54,9 @@ def top_disease(
     return labels[index], confidence
 
 
-def run_health(interp: tf.lite.Interpreter, image_rgb: np.ndarray) -> np.ndarray:
-    return _run_single(interp, image_rgb)
+def run_health(interp: tf.lite.Interpreter, original_rgb: np.ndarray, leaf_rgb: np.ndarray) -> np.ndarray:
+    return _run(interp, original_rgb, leaf_rgb)
 
 
-def run_disease(interp: tf.lite.Interpreter, image_rgb: np.ndarray) -> np.ndarray:
-    return _run_single(interp, image_rgb)
+def run_disease(interp: tf.lite.Interpreter, original_rgb: np.ndarray, leaf_rgb: np.ndarray) -> np.ndarray:
+    return _run(interp, original_rgb, leaf_rgb)

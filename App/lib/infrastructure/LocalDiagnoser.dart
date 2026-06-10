@@ -16,7 +16,7 @@ import 'TfliteSegmenter.dart';
 
 class LocalDiagnoser implements Diagnoser {
   static const int _defaultMaxSide = 400;
-  static const double _defaultDiseaseGate = 0.10;
+  static const double _defaultDiseaseGate = 0.5;
   static const double _diseaseConfidence = 0.50;
 
   final TfliteClassifier _healthModel;
@@ -65,7 +65,7 @@ class LocalDiagnoser implements Diagnoser {
       leafIsolated = seg.applyMask(resized, leaf256);
     }
 
-    final pDiseased = _probabilityDiseased(_healthModel.run(resized));
+    final pDiseased = _probabilityDiseased(_healthModel.runDual(resized, leafIsolated));
 
     final findings = <DiseaseFinding>[];
     final zones = <Zone>[];
@@ -74,7 +74,7 @@ class LocalDiagnoser implements Diagnoser {
 
     if (seg != null && leaf256 != null && norm256 != null && pDiseased >= healthGate) {
       await Future.delayed(Duration.zero);
-      final detected = _topDisease(_diseaseModel.run(leafIsolated));
+      final detected = _topDisease(_diseaseModel.runDual(resized, leafIsolated));
       final sev = _severity.analyze(norm256, leaf256);
       globalSeverityPct = sev.percent;
 

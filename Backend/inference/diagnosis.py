@@ -28,19 +28,23 @@ class DiagnosisService:
         height, width = image_bgr.shape[:2]
         image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
 
-        health_scores = run_health(self._registry.health, image_rgb)
+        leaf = segment_leaf(self._registry.segmenter, image_bgr) if self._registry.segmenter else None
+        if leaf is not None:
+            leaf_full = cv2.resize(leaf, (width, height), interpolation=cv2.INTER_NEAREST)
+            clean_rgb = image_rgb.copy()
+            clean_rgb[leaf_full == 0] = 0
+        else:
+            clean_rgb = image_rgb
+
+        health_scores = run_health(self._registry.health, image_rgb, clean_rgb)
         p_diseased = probability_diseased(health_scores, self._registry.health_labels)
 
-        leaf = segment_leaf(self._registry.segmenter, image_bgr) if self._registry.segmenter else None
         findings: list[dict] = []
         mask3: Optional[np.ndarray] = None
         severity = 0.0
 
         if leaf is not None and p_diseased >= HEALTH_GATE:
-            leaf_full = cv2.resize(leaf, (width, height), interpolation=cv2.INTER_NEAREST)
-            clean_rgb = image_rgb.copy()
-            clean_rgb[leaf_full == 0] = 0
-            disease_scores = run_disease(self._registry.disease, clean_rgb)
+            disease_scores = run_disease(self._registry.disease, image_rgb, clean_rgb)
             detected = top_disease(disease_scores, self._registry.disease_labels, DISEASE_CONFIDENCE)
 
             norm256 = shades_of_gray(cv2.resize(image_rgb, (_MASK_SIZE, _MASK_SIZE)))

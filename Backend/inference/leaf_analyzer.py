@@ -11,13 +11,11 @@ _SOIL_AB_TOL = 14
 _SOIL_L_MIN = 150
 
 
-def _hull_mask(leaf: np.ndarray) -> np.ndarray:
-    contours, _ = cv2.findContours(leaf.astype(np.uint8), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-    hull = np.zeros_like(leaf, dtype=np.uint8)
-    if contours:
-        cv2.fillPoly(hull, [cv2.convexHull(np.vstack(contours))], 1)
-        return hull
-    return leaf.astype(np.uint8)
+def _enclosed_holes(leaf: np.ndarray) -> np.ndarray:
+    padded = np.pad(leaf.astype(np.uint8), 1, constant_values=0)
+    flood = padded.copy()
+    cv2.floodFill(flood, np.zeros((padded.shape[0] + 2, padded.shape[1] + 2), np.uint8), (0, 0), 1)
+    return (flood[1:-1, 1:-1] == 0) & ~leaf
 
 
 def analyze_leaf(image_rgb_256: np.ndarray, leaf_mask_256: np.ndarray) -> tuple[np.ndarray, float, dict]:
@@ -30,23 +28,22 @@ def analyze_leaf(image_rgb_256: np.ndarray, leaf_mask_256: np.ndarray) -> tuple[
     green = a < _GREEN_A_MAX
     chlorosis = leaf & (~green) & (b > _CHLOROSIS_B_MIN) & (L > _CHLOROSIS_L_MIN)
     necrosis = leaf & (~green) & (L < _NECROSIS_L_MAX) & (b > _NECROSIS_B_MIN)
-    soil = leaf & (np.abs(a - 128) < _SOIL_AB_TOL) & (np.abs(b - 128) < _SOIL_AB_TOL + 6) & (L > _SOIL_L_MIN)
 
-    hull = _hull_mask(leaf_mask_256).astype(bool)
-    holes = soil | (hull & ~leaf)
+    bg_like = (np.abs(a - 128) < _SOIL_AB_TOL) & (np.abs(b - 128) < _SOIL_AB_TOL + 6) & (L > _SOIL_L_MIN)
+    holes = _enclosed_holes(leaf) & bg_like
 
-    hull_area = int(np.count_nonzero(hull)) or 1
+    expected_area = int(np.count_nonzero(leaf)) + int(np.count_nonzero(holes)) or 1
     symptomatic = chlorosis | necrosis | holes
-    severity = round(float(np.count_nonzero(symptomatic)) / hull_area * 100, 1)
+    severity = round(float(np.count_nonzero(symptomatic)) / expected_area * 100, 1)
 
     mask3 = np.zeros((_MASK_SIZE, _MASK_SIZE), dtype=np.uint8)
     mask3[leaf] = 1
     mask3[symptomatic] = 2
 
     components = {
-        "clorosis_pct": round(float(np.count_nonzero(chlorosis)) / hull_area * 100, 1),
-        "necrosis_pct": round(float(np.count_nonzero(necrosis)) / hull_area * 100, 1),
-        "defoliacion_pct": round(float(np.count_nonzero(holes)) / hull_area * 100, 1),
+        "clorosis_pct": round(float(np.count_nonzero(chlorosis)) / expected_area * 100, 1),
+        "necrosis_pct": round(float(np.count_nonzero(necrosis)) / expected_area * 100, 1),
+        "defoliacion_pct": round(float(np.count_nonzero(holes)) / expected_area * 100, 1),
     }
     return mask3, min(severity, 100.0), components
 

@@ -34,7 +34,7 @@ class DiagnoseResult {
     this.globalSeverityPct = 0.0,
   });
 
-  bool get isHealthy => zones.isEmpty;
+  bool get isHealthy => findings.isEmpty;
   bool get hasSegmentation => diseaseColoredMask != null;
   bool get hasMultipleDiseases => findings.length > 1;
 }

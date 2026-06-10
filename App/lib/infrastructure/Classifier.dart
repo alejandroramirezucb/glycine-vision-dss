@@ -82,6 +82,35 @@ class TfliteClassifier {
 
   List<double> run(img.Image image) => runBatch([image]).first;
 
+  static const List<String> _leafInputKeys = ['hoja', 'aislada', 'leaf'];
+
+  List<double> runDual(img.Image original, img.Image isolated) {
+    final inputs = _interpreter.getInputTensors();
+    if (inputs.length < 2) return run(original);
+    final isQuantized = inputs.first.type == TensorType.uint8;
+    for (final tensor in inputs) {
+      final size = tensor.shape[1];
+      final name = tensor.name.toLowerCase();
+      final isLeaf = _leafInputKeys.any(name.contains);
+      final resized = img.copyResize(isLeaf ? isolated : original, width: size, height: size);
+      final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
+      if (isQuantized) {
+        tensor.data.buffer.asUint8List().setAll(0, bytes);
+      } else {
+        final floats = Float32List(bytes.length);
+        for (var i = 0; i < bytes.length; i++) floats[i] = bytes[i].toDouble();
+        tensor.data.buffer.asFloat32List().setAll(0, floats);
+      }
+    }
+    _interpreter.invoke();
+    final out = _interpreter.getOutputTensor(0);
+    final outSize = out.shape.skip(1).reduce((a, b) => a * b);
+    final scores = isQuantized
+        ? List.generate(outSize, (j) => out.data.buffer.asUint8List()[j] / 255.0)
+        : List.generate(outSize, (j) => out.data.buffer.asFloat32List()[j]);
+    return _expandBinary(scores);
+  }
+
   List<List<double>> runBatch(List<img.Image> images) {
     final n = images.length;
     if (n == 0) return const [];

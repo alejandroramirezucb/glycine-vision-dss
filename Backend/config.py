@@ -4,7 +4,7 @@ from pathlib import Path
 _ROOT = Path(__file__).parent.parent
 MODELS_DIR = Path(os.getenv("MODELS_DIR", str(_ROOT / "Models")))
 MAX_IMAGE_SIDE = 400
-HEALTH_GATE = 0.10
+HEALTH_GATE = 0.5
 DISEASE_CONFIDENCE = 0.50
 TFLITE_THREADS = max(2, os.cpu_count() or 4)
 SPLITS_DIR = _ROOT / "Training" / "splits"

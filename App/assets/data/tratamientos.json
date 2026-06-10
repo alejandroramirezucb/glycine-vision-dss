@@ -4,27 +4,27 @@
     "incompatibilities": [
       {
         "products": ["cobre", "aceite mineral"],
-        "reason": "Phytotoxic mixture causing severe leaf burns in soybean"
+        "reason": "Mezcla fitotóxica que causa quemaduras foliares graves en la soya"
       },
       {
         "products": ["streptomicina", "cobre"],
-        "reason": "Antagonism: copper reduces bactericidal efficacy of streptomycin when mixed in the same tank"
+        "reason": "Antagonismo: el cobre reduce la eficacia bactericida de la estreptomicina al mezclarse en el mismo tanque"
       },
       {
         "products": ["azufre", "aceite"],
-        "reason": "Exothermic reaction with phytotoxicity risk when temperature exceeds 28°C"
+        "reason": "Reacción exotérmica con riesgo de fitotoxicidad cuando la temperatura supera los 28 °C"
       },
       {
         "products": ["mancozeb", "cobre"],
-        "reason": "Chemical synergy with precipitation risk in alkaline water (pH >7); apply separately"
+        "reason": "Sinergia química con riesgo de precipitación en agua alcalina (pH >7); aplicar por separado"
       }
     ],
     "application_windows": {
-      "minima": "monitor every 7 days, no immediate treatment",
-      "leve": "apply within 7 days",
-      "moderada": "apply within 48-72 hours",
-      "severa": "apply within 24 hours",
-      "critica": "immediate application; consult agronomist"
+      "minima": "monitorear cada 7 días, sin tratamiento inmediato",
+      "leve": "aplicar dentro de 7 días",
+      "moderada": "aplicar en 48-72 horas",
+      "severa": "aplicar dentro de 24 horas",
+      "critica": "aplicación inmediata; consultar a un agrónomo"
     }
   },
   "bacterianas": {

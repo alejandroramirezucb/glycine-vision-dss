@@ -65,7 +65,7 @@ class HttpDiagnoser implements Diagnoser {
     final globalSeverityPct =
         (json['global_severity_pct'] as num?)?.toDouble() ?? 0.0;
     Uint8List? diseaseColoredMask;
-    if (segB64 != null && findings.isNotEmpty) {
+    if (segB64 != null) {
       final mask256 = base64Decode(segB64);
       final actives = findings
           .map((f) => ActiveDisease(

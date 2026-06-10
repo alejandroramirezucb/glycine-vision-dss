@@ -36,20 +36,14 @@ class SeverityCalculator {
     final bytes = norm256.getBytes(order: img.ChannelOrder.rgb);
     final n = _size * _size;
     final symptomatic = Uint8List(n);
-    var clorosis = 0, necrosis = 0;
-
-    final hull = _convexHullMask(leaf256);
-    var hullArea = 0;
-    for (final h in hull) {
-      if (h == 1) hullArea++;
-    }
-    if (hullArea == 0) hullArea = 1;
+    final reachable = _externalBackground(leaf256);
+    var clorosis = 0, necrosis = 0, holes = 0, leafArea = 0;
 
     for (var i = 0; i < n; i++) {
-      final leaf = leaf256[i] == 1;
-      if (leaf) {
-        final lab = _rgbToLab8(bytes[i * 3], bytes[i * 3 + 1], bytes[i * 3 + 2]);
-        final l = lab[0], a = lab[1], b = lab[2];
+      final lab = _rgbToLab8(bytes[i * 3], bytes[i * 3 + 1], bytes[i * 3 + 2]);
+      final l = lab[0], a = lab[1], b = lab[2];
+      if (leaf256[i] == 1) {
+        leafArea++;
         final green = a < _greenAMax;
         if (!green && b > _chlorosisBMin && l > _chlorosisLMin) {
           symptomatic[i] = 1;
@@ -57,11 +51,13 @@ class SeverityCalculator {
         } else if (!green && l < _necrosisLMax && b > _necrosisBMin) {
           symptomatic[i] = 1;
           necrosis++;
-        } else if ((a - 128).abs() < _soilAbTol && (b - 128).abs() < _soilAbTol + 6 && l > _soilLMin) {
-          symptomatic[i] = 1;
         }
-      } else if (hull[i] == 1) {
+      } else if (reachable[i] == 0 &&
+          (a - 128).abs() < _soilAbTol &&
+          (b - 128).abs() < _soilAbTol + 6 &&
+          l > _soilLMin) {
         symptomatic[i] = 1;
+        holes++;
       }
     }
 
@@ -75,16 +71,52 @@ class SeverityCalculator {
       }
     }
 
-    final pct = (symptCount / hullArea * 100).clamp(0.0, 100.0);
-    final defol = symptCount - clorosis - necrosis;
+    final expected = (leafArea + holes) == 0 ? 1 : (leafArea + holes);
+    final pct = (symptCount / expected * 100).clamp(0.0, 100.0);
     return SeverityResult(
       percent: double.parse(pct.toStringAsFixed(1)),
       level: _levelFromPct(pct),
       mask3: mask3,
-      clorosisPct: double.parse((clorosis / hullArea * 100).toStringAsFixed(1)),
-      necrosisPct: double.parse((necrosis / hullArea * 100).toStringAsFixed(1)),
-      defoliacionPct: double.parse(((defol < 0 ? 0 : defol) / hullArea * 100).toStringAsFixed(1)),
+      clorosisPct: double.parse((clorosis / expected * 100).toStringAsFixed(1)),
+      necrosisPct: double.parse((necrosis / expected * 100).toStringAsFixed(1)),
+      defoliacionPct: double.parse((holes / expected * 100).toStringAsFixed(1)),
     );
+  }
+
+  Uint8List _externalBackground(Uint8List leaf) {
+    final reachable = Uint8List(leaf.length);
+    final queue = Int32List(leaf.length);
+    var head = 0, tail = 0;
+    void seed(int i) {
+      if (leaf[i] == 0 && reachable[i] == 0) {
+        reachable[i] = 1;
+        queue[tail++] = i;
+      }
+    }
+
+    for (var x = 0; x < _size; x++) {
+      seed(x);
+      seed((_size - 1) * _size + x);
+    }
+    for (var y = 0; y < _size; y++) {
+      seed(y * _size);
+      seed(y * _size + _size - 1);
+    }
+    while (head < tail) {
+      final px = queue[head++];
+      final x = px % _size;
+      for (final d in const [-1, 1, -_size, _size]) {
+        final nx = px + d;
+        if (d == -1 && x == 0) continue;
+        if (d == 1 && x == _size - 1) continue;
+        if (nx < 0 || nx >= leaf.length) continue;
+        if (leaf[nx] == 0 && reachable[nx] == 0) {
+          reachable[nx] = 1;
+          queue[tail++] = nx;
+        }
+      }
+    }
+    return reachable;
   }
 
   List<int> _rgbToLab8(int r, int g, int b) {
@@ -105,76 +137,6 @@ class SeverityCalculator {
 
   double _lin(double c) => c <= 0.04045 ? c / 12.92 : math.pow((c + 0.055) / 1.055, 2.4).toDouble();
   double _f(double t) => t > 0.008856 ? math.pow(t, 1 / 3).toDouble() : 7.787 * t + 16 / 116;
-
-  Uint8List _convexHullMask(Uint8List leaf) {
-    final pts = <List<int>>[];
-    for (var i = 0; i < leaf.length; i++) {
-      if (leaf[i] == 1) pts.add([i % _size, i ~/ _size]);
-    }
-    final out = Uint8List(leaf.length);
-    if (pts.length < 3) {
-      for (var i = 0; i < leaf.length; i++) {
-        out[i] = leaf[i];
-      }
-      return out;
-    }
-    pts.sort((p, q) => p[0] != q[0] ? p[0] - q[0] : p[1] - q[1]);
-    final hull = _monotoneChain(pts);
-    var minY = _size, maxY = 0;
-    for (final p in hull) {
-      minY = math.min(minY, p[1]);
-      maxY = math.max(maxY, p[1]);
-    }
-    for (var y = minY; y <= maxY; y++) {
-      var lo = _size, hi = -1;
-      for (var x = 0; x < _size; x++) {
-        if (_inside(hull, x, y)) {
-          if (x < lo) lo = x;
-          if (x > hi) hi = x;
-        }
-      }
-      for (var x = lo; x <= hi; x++) {
-        out[y * _size + x] = 1;
-      }
-    }
-    return out;
-  }
-
-  List<List<int>> _monotoneChain(List<List<int>> pts) {
-    int cross(List<int> o, List<int> a, List<int> b) =>
-        (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
-    final lower = <List<int>>[];
-    for (final p in pts) {
-      while (lower.length >= 2 && cross(lower[lower.length - 2], lower.last, p) <= 0) lower.removeLast();
-      lower.add(p);
-    }
-    final upper = <List<int>>[];
-    for (var i = pts.length - 1; i >= 0; i--) {
-      final p = pts[i];
-      while (upper.length >= 2 && cross(upper[upper.length - 2], upper.last, p) <= 0) upper.removeLast();
-      upper.add(p);
-    }
-    lower.removeLast();
-    upper.removeLast();
-    return [...lower, ...upper];
-  }
-
-  bool _inside(List<List<int>> hull, int x, int y) {
-    var sign = 0;
-    for (var i = 0; i < hull.length; i++) {
-      final a = hull[i], b = hull[(i + 1) % hull.length];
-      final c = (b[0] - a[0]) * (y - a[1]) - (b[1] - a[1]) * (x - a[0]);
-      if (c != 0) {
-        final s = c > 0 ? 1 : -1;
-        if (sign == 0) {
-          sign = s;
-        } else if (s != sign) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
 
   String _levelFromPct(double pct) {
     if (pct < 5) return 'minima';
