@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Glycine Vision · Presentación</title>
+<style>
+  :root{
+    --green:#1f6b3a; --green2:#2e8b50; --green3:#3ba35f;
+    --leaf:#e9f4ec; --leaf2:#d6ebda; --ink:#11231a; --body:#33473b; --muted:#56685c;
+    --bg:#f3f7f3; --card:#ffffff; --line:#dbe8dd; --amber:#c9690a; --rust:#b5531a;
+    --ease:cubic-bezier(0.23,1,0.32,1);
+    --z-nav:40; --z-chrome:50;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{font-family:"Segoe UI Variable","Segoe UI",Inter,Roboto,system-ui,Arial,sans-serif;
+       color:var(--body);background:#0a140d;overflow:hidden;-webkit-font-smoothing:antialiased}
+  .deck{position:relative;width:100vw;height:100vh}
+  .slide{position:absolute;inset:0;display:none;flex-direction:column;justify-content:center;
+         padding:clamp(28px,4.4vh,56px) clamp(36px,5vw,84px) clamp(54px,7vh,72px);
+         background:var(--bg);overflow:auto}
+  .slide.active{display:flex;animation:slidein .42s var(--ease) both}
+  @keyframes slidein{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+  .slide.active > *{animation:rise .5s var(--ease) both}
+  .slide.active > *:nth-child(1){animation-delay:.04s}
+  .slide.active > *:nth-child(2){animation-delay:.10s}
+  .slide.active > *:nth-child(3){animation-delay:.16s}
+  .slide.active > *:nth-child(4){animation-delay:.22s}
+  .slide.active > *:nth-child(5){animation-delay:.28s}
+  @keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+
+  h1{font-size:clamp(2.4rem,5.2vw,4rem);line-height:1.02;color:var(--ink);font-weight:800;letter-spacing:-0.02em;text-wrap:balance}
+  h2{font-size:clamp(1.6rem,3vw,2.3rem);color:var(--ink);font-weight:800;letter-spacing:-0.015em;
+     margin-bottom:18px;text-wrap:balance;display:flex;align-items:baseline;gap:14px}
+  h2::before{content:"";width:26px;height:5px;border-radius:3px;background:var(--green2);flex:none;transform:translateY(-6px)}
+  h3{font-size:1.12rem;color:var(--green);font-weight:700;margin:0 0 6px}
+  p,li{font-size:clamp(1rem,1.18vw,1.12rem);line-height:1.5;color:var(--body)}
+  ul{padding-left:20px;margin:4px 0}
+  li{margin:6px 0}
+  b,strong{color:var(--ink)}
+  .lead{font-size:clamp(1.05rem,1.5vw,1.32rem);color:var(--body);max-width:64ch;text-wrap:pretty}
+  .eyebrow{color:var(--green);font-weight:700;font-size:1rem;margin-bottom:6px}
+  .tag{display:inline-flex;align-items:center;background:var(--leaf);color:var(--green);
+       border:1px solid var(--line);border-radius:8px;padding:5px 11px;margin:5px 6px 0 0;font-size:.9rem;font-weight:600}
+  .stack{display:flex;flex-direction:column;gap:16px}
+  .grid{display:grid;gap:18px}
+  .g2{grid-template-columns:1fr 1fr}
+  .g3{grid-template-columns:repeat(3,1fr)}
+  .split{display:grid;grid-template-columns:1.25fr .9fr;gap:30px;align-items:center}
+  .split.fig-left{grid-template-columns:1.35fr .85fr}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:16px;
+        padding:18px 22px;box-shadow:0 6px 22px rgba(15,60,30,.05)}
+  table{width:100%;border-collapse:collapse;font-size:1.02rem;background:var(--card);
+        border:1px solid var(--line);border-radius:14px;overflow:hidden}
+  th,td{padding:9px 14px;text-align:left;border-bottom:1px solid var(--line)}
+  th{background:var(--green);color:#fff;font-weight:600;letter-spacing:.01em}
+  tr:last-child td{border-bottom:none}
+  .num{text-align:center}
+  tr.total td{font-weight:800;background:var(--leaf);color:var(--ink)}
+  figure{margin:0;display:flex;flex-direction:column;gap:8px}
+  figure img{width:100%;height:auto;max-height:68vh;object-fit:contain;background:#fff;
+             border:1px solid var(--line);border-radius:14px;padding:8px;box-shadow:0 8px 26px rgba(15,60,30,.07)}
+  figcaption{color:var(--muted);font-size:.92rem;text-align:center}
+  .figbig img{max-height:74vh}
+  .stat{display:flex;gap:16px;flex-wrap:wrap}
+  .stat .s{flex:1;min-width:120px;background:var(--card);border:1px solid var(--line);
+           border-radius:14px;padding:14px 16px}
+  .stat .v{font-size:1.9rem;font-weight:800;color:var(--green);line-height:1;letter-spacing:-0.02em}
+  .stat .l{color:var(--muted);font-size:.86rem;margin-top:5px}
+  .formula{background:#0e2417;color:#dff3e3;font-family:"Cascadia Code",Consolas,monospace;
+           border-radius:14px;padding:16px 20px;font-size:1.06rem;line-height:1.7}
+  .formula em{color:#ffc774;font-style:normal}
+  .formula .c{color:#7fc98f}
+  .mono{font-family:Consolas,monospace;background:var(--leaf);border:1px solid var(--line);
+        border-radius:7px;padding:1px 7px;color:var(--green);font-weight:600;font-size:.95em}
+  .flow{display:flex;align-items:stretch;gap:8px;flex-wrap:wrap}
+  .node{background:var(--card);border:1.5px solid var(--green2);border-radius:13px;
+        padding:11px 15px;font-weight:700;color:var(--green);text-align:center;font-size:.98rem;display:flex;flex-direction:column;justify-content:center}
+  .node small{font-weight:500;color:var(--muted);font-size:.8rem}
+  .arr{align-self:center;color:var(--green2);font-size:1.3rem;font-weight:800}
+  .legend{display:flex;gap:18px;flex-wrap:wrap;margin-top:4px}
+  .legend span{display:inline-flex;align-items:center;gap:7px;font-size:.96rem;color:var(--ink)}
+  .sw{width:14px;height:14px;border-radius:4px;display:inline-block}
+  .note{color:var(--muted);font-size:.9rem}
+  .cover{align-items:flex-start;justify-content:center}
+  .cover h1{margin:8px 0 16px}
+  .author{color:var(--ink);font-weight:600;font-size:1.15rem}
+  .affil{color:var(--muted);font-size:1rem;margin-top:2px}
+
+  /* chrome */
+  .progress{position:fixed;top:0;left:0;right:0;height:5px;background:var(--leaf2);z-index:var(--z-chrome)}
+  .progress > i{display:block;height:100%;background:var(--green2);width:0;transition:width .42s var(--ease)}
+  .edge{position:fixed;top:0;height:100%;width:8%;border:0;background:transparent;cursor:pointer;z-index:var(--z-nav);transition:transform .12s var(--ease)}
+  .edge:active{transform:scale(.985)}
+  .edge.r{right:0}
+  .dots{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);display:flex;gap:7px;
+        flex-wrap:wrap;max-width:64vw;justify-content:center;z-index:var(--z-chrome)}
+  .dot{width:9px;height:9px;border-radius:50%;background:#bcd3c0;border:0;cursor:pointer;padding:0;
+       transition:transform .18s var(--ease),background .18s var(--ease)}
+  .dot.on{background:var(--green);transform:scale(1.35)}
+  .count{position:fixed;bottom:13px;right:20px;color:var(--muted);font-size:.86rem;z-index:var(--z-chrome);
+         background:#fff;border:1px solid var(--line);border-radius:8px;padding:3px 10px;font-variant-numeric:tabular-nums}
+  .hint{position:fixed;bottom:13px;left:20px;color:var(--muted);font-size:.8rem;z-index:var(--z-chrome)}
+
+  @media (prefers-reduced-motion: reduce){
+    .slide.active,.slide.active > *{animation:fadeonly .25s ease both}
+    @keyframes fadeonly{from{opacity:0}to{opacity:1}}
+    .progress > i,.dot,.edge{transition:none}
+  }
+  @media (max-width:900px){.split,.g2,.g3{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="progress"><i id="bar"></i></div>
+<div class="deck" id="deck">
+
+  <!-- 1 PORTADA -->
+  <section class="slide cover">
+    <div class="stack" style="gap:6px;max-width:60ch">
+      <div class="tag">Visión por computadora · Inferencia en el borde</div>
+      <h1>Glycine Vision</h1>
+      <p class="lead">Detección de enfermedades y estimación de severidad foliar en soya
+        (<i>Glycine max</i>) mediante aprendizaje profundo en dispositivos móviles.</p>
+      <div style="margin-top:18px">
+        <div class="author">Alejandro Ramírez Vallejos</div>
+        <div class="affil">Universidad Católica Boliviana “San Pablo”, Santa Cruz, Bolivia · 2026</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2 PROBLEMA -->
+  <section class="slide">
+    <h2>El problema</h2>
+    <p class="lead">Las enfermedades foliares de la soya pueden costar entre el <b>20 % y el 80 %</b> del rendimiento si no se detectan a tiempo, y el diagnóstico depende de agrónomos o laboratorio: lento, costoso y poco accesible.</p>
+    <div class="grid g3" style="margin-top:20px">
+      <div class="card"><h3>Detección tardía</h3><p>La inspección experta no llega a todos los lotes ni a tiempo.</p></div>
+      <div class="card"><h3>Severidad subjetiva</h3><p>La estimación visual varía entre evaluadores y condiciones.</p></div>
+      <div class="card"><h3>Brecha campo–laboratorio</h3><p>Los modelos de laboratorio caen en condiciones reales de captura.</p></div>
+    </div>
+  </section>
+
+  <!-- 3 SANTA CRUZ -->
+  <section class="slide">
+    <h2>¿Por qué está diseñado para Santa Cruz?</h2>
+    <div class="split">
+      <div class="stack">
+        <div class="card"><h3>Producción concentrada</h3><p>Santa Cruz reúne ≈ <b>97 %</b> de la soya nacional (≈ 3.7 M t, 2024/25). El usuario objetivo está aquí.</p></div>
+        <div class="card"><h3>Mismos patógenos</h3><p>Roya asiática, mancha bacteriana, fúngicas, virales y plagas: las cinco categorías del modelo son las que afectan al cultivo cruceño. <i>P. pachyrhizi</i> circula desde 2003.</p></div>
+        <div class="card"><h3>Dominio transferible</h3><p>La soya comercial es genéticamente homogénea entre regiones; la morfología y los síntomas foliares son compatibles entre los datasets internacionales y el campo local.</p></div>
+      </div>
+      <div class="stack">
+        <div class="card"><h3>Clima local integrado</h3><p>El clima subtropical húmedo favorece roya y enfermedades fúngicas. El sistema lee el clima del lote (Open-Meteo) y ajusta urgencia, dosis y ventana de aplicación.</p></div>
+        <div class="stat" style="margin-top:2px">
+          <div class="s"><div class="v">97 %</div><div class="l">Producción nacional</div></div>
+          <div class="s"><div class="v">5</div><div class="l">Patógenos locales</div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 OBJETIVOS -->
+  <section class="slide">
+    <h2>Objetivo</h2>
+    <p class="lead">Desarrollar y evaluar un sistema que <b>detecte enfermedades foliares de soya y estime su severidad</b> mediante visión por computadora, con inferencia local en el teléfono.</p>
+    <div class="grid g2" style="margin-top:18px">
+      <div class="card"><h3>Específicos 1 y 2</h3><ul>
+        <li>Segmentar la hoja separándola del fondo, robusto a la variabilidad de campo.</li>
+        <li>Clasificar estado sanitario y tipo de patógeno en cascada.</li></ul></div>
+      <div class="card"><h3>Específicos 3 y 4</h3><ul>
+        <li>Cuantificar la severidad como % de área foliar afectada, interpretable.</li>
+        <li>Desplegar el sistema cuantizado para uso sin conexión.</li></ul></div>
+    </div>
+  </section>
+
+  <!-- 5 ARQUITECTURA -->
+  <section class="slide">
+    <h2>Arquitectura: tres etapas</h2>
+    <div class="flow">
+      <div class="node">Foto</div><div class="arr">→</div>
+      <div class="node">Shades-of-Gray<small>normalización</small></div><div class="arr">→</div>
+      <div class="node">M_seg<small>hoja / fondo</small></div><div class="arr">→</div>
+      <div class="node">Hoja aislada</div>
+    </div>
+    <div class="flow" style="margin-top:10px">
+      <div class="arr">↳</div>
+      <div class="node">M1<small>sana / enferma</small></div><div class="arr">si enferma →</div>
+      <div class="node">M2<small>patógeno (5)</small></div><div class="arr">+</div>
+      <div class="node">Severidad CIELab<small>por color</small></div>
+    </div>
+    <div class="grid g3" style="margin-top:22px">
+      <div class="card"><h3>M_seg</h3><p>U-Net + ResNet50, 256×256, 2 clases. Solo decide hoja/fondo.</p></div>
+      <div class="card"><h3>M1 · M2</h3><p>EfficientNet B1 / B0, doble entrada (original + hoja aislada).</p></div>
+      <div class="card"><h3>Severidad</h3><p>Análisis de color en inferencia, no es una red. Gated por M1=enferma.</p></div>
+    </div>
+  </section>
+
+  <!-- 6 DATOS -->
+  <section class="slide">
+    <h2>Datos y fuentes</h2>
+    <table>
+      <tr><th>Dataset</th><th class="num">Imágenes</th><th>Anotación</th><th>Referencia</th></tr>
+      <tr><td>PlantVillage (sana)</td><td class="num">6 096</td><td>1 (sana)</td><td>Hughes &amp; Salathé (2015)</td></tr>
+      <tr><td>ASDID – Auburn</td><td class="num">9 981</td><td>8 enf. + sana</td><td>Bevers et al. (2022)</td></tr>
+      <tr><td>MH-SoyaHealthVision</td><td class="num">5 680</td><td>6 clases</td><td>Shinde &amp; Attar (2024)</td></tr>
+      <tr><td>India Soybean / SoyNet</td><td class="num">3 363 / ≈1 100</td><td>6–10 clases</td><td>Kotwal (2023); Rajput (2023)</td></tr>
+      <tr><td>Cotton &amp; Soybean / Kaggle</td><td class="num">≈250 / 5 514</td><td>3 / plagas</td><td>Bhujade (2025); Kaggle</td></tr>
+      <tr><td>SoyCotton (segmentación)</td><td class="num">640 / 7 221 hojas</td><td>máscaras COCO</td><td>Segreto et al. (2026)</td></tr>
+    </table>
+    <p class="note" style="margin-top:14px">Campo real (ASDID) + fondo controlado (PlantVillage) reducen el desplazamiento de dominio. SoyCotton aporta máscaras de hoja de campo para la segmentación.</p>
+  </section>
+
+  <!-- 7 SPLITS -->
+  <section class="slide">
+    <h2>Separación de datos: train / validación / test</h2>
+    <div class="grid g2">
+      <div class="card">
+        <h3>Clasificación (M1 · M2)</h3>
+        <ul>
+          <li>De la carpeta <b>Train</b>: <b>train/val 80 / 20</b> (val para early stopping y selección del mejor modelo).</li>
+          <li><b>Test independiente</b> (held-out, nunca visto): 100/clase (M1), 70/clase (M2), para la cifra final.</li>
+          <li>Deduplicación MD5, balanceo por clase, semilla 42.</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>Segmentación (M_seg)</h3>
+        <ul>
+          <li>Máscaras COCO expertas <b>fusionadas</b> (Roboflow + SoyCotton).</li>
+          <li><b>75 % entrenamiento / 25 % test</b> (held-out, seed 42); del 75 %, un <b>15 % para validación</b>.</li>
+          <li>Resultado: ≈ 64 % train · 11 % val · 25 % test. Métrica principal: recall de hoja.</li>
+        </ul>
+      </div>
+    </div>
+    <div class="flow" style="margin-top:18px">
+      <div class="node">Dataset</div><div class="arr">→</div>
+      <div class="node" style="border-color:var(--green3)">Train 75–80 %<small>→ train + val</small></div><div class="arr">+</div>
+      <div class="node" style="border-color:var(--amber);color:var(--amber)">Test 20–25 %<small>held-out · cifra final</small></div>
+    </div>
+  </section>
+
+  <!-- 8 SHADES OF GRAY -->
+  <section class="slide">
+    <h2>Normalización cromática (Shades-of-Gray)</h2>
+    <div class="split">
+      <div class="stack">
+        <div class="card"><h3>Qué hace</h3><p>Estima el color de la luz de la escena y lo corrige <b>antes</b> de la red, dejando los colores como bajo iluminación neutra. Así una misma hoja se ve igual a pleno sol, sombra o luz cálida.</p></div>
+        <div class="card"><h3>Por qué importa</h3><p>Da <b>invariancia a la iluminación</b> sin hardware. Generaliza Gray-World y White-Patch (norma de Minkowski, <span class="mono">p = 6</span>). El acotamiento <span class="mono">[0.6, 1.6]</span> evita distorsionar primeros planos dominados por verde.</p></div>
+        <div class="card"><h3>Paridad train–serve</h3><p>La misma fórmula corre en entrenamiento (Python) y en la app (Dart): lo que la red aprendió es lo que ve en producción.</p></div>
+      </div>
+      <div class="formula">
+        illum<sub>c</sub> = ( media(I<sub>c</sub><sup>6</sup>) )<sup>1/6</sup><br>
+        gris = media(illum<sub>r,g,b</sub>)<br>
+        escala<sub>c</sub> = <em>clip</em>( gris / illum<sub>c</sub>, 0.6, 1.6 )<br>
+        salida = clip( I · escala, 0, 255 )<br>
+        <span class="c">Finlayson &amp; Trezzi (2004)</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9 M_seg -->
+  <section class="slide">
+    <h2>M_seg: segmentación hoja / fondo</h2>
+    <div class="split fig-left">
+      <figure>
+        <img src="Training/outputs/M_seg_curves.png" alt="Curvas de entrenamiento de M_seg">
+        <figcaption>Pérdida y recall de hoja (entrenamiento / validación).</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="card"><h3>Procedimiento</h3><ul>
+          <li>U-Net con codificador <b>ResNet50</b> (ImageNet), 256×256, salida 2 clases.</li>
+          <li>GT: máscaras COCO fusionadas (Roboflow + SoyCotton).</li>
+          <li>Pérdida CE + Dice; 2 fases (decoder → fine-tune conv4/5); mayor componente conexo.</li>
+        </ul>
+        <div style="margin-top:6px"><span class="tag">TensorFlow/Keras</span><span class="tag">OpenCV</span><span class="tag">Albumentations</span><span class="tag">pycocotools</span><span class="tag">Colab GPU</span></div></div>
+        <div class="stat">
+          <div class="s"><div class="v">0.961</div><div class="l">Recall hoja</div></div>
+          <div class="s"><div class="v">0.857</div><div class="l">Dice</div></div>
+          <div class="s"><div class="v">0.765</div><div class="l">IoU</div></div>
+        </div>
+        <p class="note">Test held-out 25 % (seed 42), n = 368.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 10 M1 -->
+  <section class="slide">
+    <h2>M1: estado sanitario (sana / enferma)</h2>
+    <div class="split fig-left">
+      <figure>
+        <img src="Training/outputs/cm_m1.png" alt="Matriz de confusión M1">
+        <figcaption>Matriz de confusión (test independiente).</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="card"><h3>Procedimiento</h3><ul>
+          <li><b>EfficientNetB1</b> 240×240, <b>doble entrada</b> (original + hoja aislada), codificador compartido → concat → sigmoide.</li>
+          <li>Pérdida focal binaria con balanceo; EMA, early stopping, fine-tune por fases.</li>
+        </ul>
+        <div style="margin-top:6px"><span class="tag">EfficientNetB1</span><span class="tag">TensorFlow/Keras</span><span class="tag">Albumentations</span><span class="tag">EMA</span></div></div>
+        <div class="stat">
+          <div class="s"><div class="v">0.985</div><div class="l">Exactitud</div></div>
+          <div class="s"><div class="v">1.000</div><div class="l">Recall enferma</div></div>
+          <div class="s"><div class="v">0.985</div><div class="l">F1 enferma</div></div>
+        </div>
+        <p class="note">Recall perfecto en “enferma”: minimiza falsos negativos, el error más costoso en triaje.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 11 M2 -->
+  <section class="slide">
+    <h2>M2: tipo de patógeno (5 clases)</h2>
+    <div class="split fig-left">
+      <figure>
+        <img src="Training/outputs/m2_per_class_metrics.png" alt="F1 por clase del M2">
+        <figcaption>Puntuación F1 por clase. Confusión completa en <span class="mono">cm_m2.png</span>.</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="card"><h3>Procedimiento</h3><ul>
+          <li><b>EfficientNetB0</b> 224×224, doble entrada, softmax de <b>etiqueta única</b> (1 enfermedad/hoja).</li>
+          <li>Entropía cruzada categórica con suavizado de etiquetas; class weights, EMA.</li>
+        </ul>
+        <div style="margin-top:6px"><span class="tag">EfficientNetB0</span><span class="tag">TensorFlow/Keras</span><span class="tag">Albumentations</span></div></div>
+        <table>
+          <tr><th>Métrica</th><th class="num">Valor</th></tr>
+          <tr><td>Exactitud global</td><td class="num">0.980</td></tr>
+          <tr><td>F1 macro</td><td class="num">0.980</td></tr>
+          <tr><td>Mejor / peor clase</td><td class="num">0.993 / 0.964</td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 SEVERIDAD CIELAB -->
+  <section class="slide">
+    <h2>Severidad por color en CIELab</h2>
+    <p class="lead">Dentro de la hoja segmentada, cada píxel se clasifica por su color en CIELab. La severidad se calcula <b>solo si M1 = enferma</b>; no la decide ninguna red, por eso es trazable.</p>
+    <div class="split" style="grid-template-columns:1.05fr .95fr;margin-top:14px">
+      <div class="card">
+        <h3>Clasificación de cada píxel</h3>
+        <div class="legend" style="flex-direction:column;gap:9px">
+          <span><i class="sw" style="background:#2e8b50"></i> <b>Sano (verde):</b> <span class="mono">a* &lt; 123</span></span>
+          <span><i class="sw" style="background:#f4c430"></i> <b>Clorosis:</b> no-verde · <span class="mono">b* &gt; 150</span> · <span class="mono">L* &gt; 110</span></span>
+          <span><i class="sw" style="background:#8d6e63"></i> <b>Necrosis:</b> no-verde · <span class="mono">L* &lt; 130</span> · <span class="mono">b* &gt; 130</span></span>
+          <span><i class="sw" style="background:#5a6b7a"></i> <b>Huecos:</b> fondo encerrado por la hoja + color suelo</span>
+        </div>
+      </div>
+      <div class="stack">
+        <div class="formula">
+          severidad (%) =<br>
+          &nbsp; (clorosis ∪ necrosis ∪ huecos)<br>
+          &nbsp; <em>/</em> área foliar esperada × 100<br>
+          <span class="c">área esperada = hoja + huecos</span>
+        </div>
+        <p class="note"><b>Niveles:</b> mínima &lt;5 · leve 5–15 · moderada 15–35 · severa 35–60 · crítica ≥60 (%). Reproduce el análisis por color de la fitopatometría de soya (da Silva et al., 2022).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 13 SIN BLACK-BOX -->
+  <section class="slide">
+    <h2>Por qué no usamos una caja negra</h2>
+    <p class="lead">En vez de un dispositivo físico que estandariza luz, sombra y fondo, el sistema neutraliza esa variabilidad <b>por software</b>. Esto lo justifican cuatro mecanismos:</p>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="card"><h3>Constancia de color</h3><p>Shades-of-Gray corrige el iluminante antes de la red: invariancia a temperatura de color e iluminación (Finlayson &amp; Trezzi, 2004).</p></div>
+      <div class="card"><h3>Aumento de datos</h3><p>Brillo, contraste, tono-saturación, rotación y escala enseñan al modelo a tolerar la captura variable (Shorten &amp; Khoshgoftaar, 2019).</p></div>
+      <div class="card"><h3>Entrenado en campo</h3><p>Datasets de campo real (ASDID, SoyCotton) muestran que las CNN sobre soya generalizan sin hardware de captura (Bevers et al., 2022).</p></div>
+      <div class="card"><h3>Segmentación hoja/fondo</h3><p>La rama de hoja aislada cumple por software la función de aislar la hoja, conservando el contexto en la otra rama.</p></div>
+    </div>
+  </section>
+
+  <!-- 14 FLUJO + OVERLAY -->
+  <section class="slide">
+    <h2>Flujo integrado y trazabilidad</h2>
+    <div class="flow">
+      <div class="node">Foto</div><div class="arr">→</div>
+      <div class="node">M_seg</div><div class="arr">→</div>
+      <div class="node">Hoja aislada</div><div class="arr">→</div>
+      <div class="node">M1</div><div class="arr">→</div>
+      <div class="node">M2</div><div class="arr">→</div>
+      <div class="node">Severidad</div>
+    </div>
+    <div class="grid g2" style="margin-top:20px">
+      <div class="card"><h3>Superposición de tres estados</h3>
+        <div class="legend" style="margin-top:8px">
+          <span><i class="sw" style="background:#2b2b2b;opacity:.6"></i> fondo (oscuro translúcido)</span>
+          <span><i class="sw" style="background:#2e8b50"></i> hoja sana</span>
+          <span><i class="sw" style="background:#b5531a"></i> tejido sintomático</span>
+        </div>
+        <p style="margin-top:10px">El usuario contrasta directamente la región marcada por el sistema con el síntoma observado.</p>
+      </div>
+      <div class="card"><h3>Salida agronómica</h3><p>Patógeno + nivel de severidad + componentes (clorosis, necrosis, defoliación) alimentan la recomendación de tratamiento.</p></div>
+    </div>
+  </section>
+
+  <!-- 15 TRATAMIENTO -->
+  <section class="slide">
+    <h2>Cómo se genera el tratamiento</h2>
+    <div class="split">
+      <div class="stack">
+        <div class="card"><h3>1 · Acciones por enfermedad y severidad</h3><p>Para cada patógeno y nivel, la app consulta <span class="mono">tratamientos.json</span> y devuelve cuatro acciones: <b>química, cultural, biológica y preventiva</b>.</p></div>
+        <div class="card"><h3>2 · Dosis real por hectárea</h3>
+          <div class="formula" style="font-size:1rem;padding:13px 16px">dosis = dosis_base/ha × área(ha) × mult_severidad<br><span class="c">sobre 200 L/ha de caldo</span></div>
+        </div>
+        <div class="card"><h3>3 · Seguridad</h3><p>Verifica <b>incompatibilidades</b> entre productos y define la <b>ventana de aplicación</b> (de “monitorear” a “aplicación inmediata”).</p></div>
+      </div>
+      <div class="card" style="align-self:start">
+        <h3>4 · Ajuste por clima</h3>
+        <p>El clima del lote puede <b>subir o bajar un nivel</b> de severidad y mover la urgencia:</p>
+        <ul>
+          <li>Humedad alta o lluvia reciente → adelantar y aplicar al amanecer.</li>
+          <li>Temperatura alta → evitar el mediodía.</li>
+        </ul>
+        <p class="note">El clima viene de Open-Meteo (siguiente diapositiva).</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 OPEN-METEO -->
+  <section class="slide">
+    <h2>Cómo se usa Open-Meteo</h2>
+    <div class="split">
+      <div class="stack">
+        <div class="card"><h3>Qué es</h3><p>API meteorológica <b>gratuita y sin clave</b> (uso no comercial). Se consulta el <b>clima actual</b> del lote por coordenadas.</p></div>
+        <div class="formula" style="font-size:.96rem">
+          GET api.open-meteo.com<span class="em">/v1/forecast</span><br>
+          &nbsp;?latitude=&amp;longitude=<br>
+          &nbsp;&amp;current=temperature_2m,<br>
+          &nbsp;&nbsp;relative_humidity_2m,precipitation,dew_point_2m<br>
+          &nbsp;&amp;timezone=auto
+        </div>
+        <p class="note">Devuelve temperatura, humedad relativa, precipitación y punto de rocío actuales.</p>
+      </div>
+      <div class="card" style="align-self:start">
+        <h3>Reglas de ajuste de severidad</h3>
+        <table>
+          <tr><th>Patógeno</th><th>Condición → cambio</th></tr>
+          <tr><td>Roya</td><td>H&gt;80 % y 20–28 °C → <b>+1</b>; H&lt;50 % → −1</td></tr>
+          <tr><td>Fúngicas</td><td>H&gt;75 % → <b>+1</b></td></tr>
+          <tr><td>Bacterianas</td><td>lluvia &gt;3 mm → <b>+1</b></td></tr>
+          <tr><td>Virales</td><td>T&gt;28 °C → <b>+1</b></td></tr>
+          <tr><td>Plagas</td><td>24–32 °C → <b>+1</b></td></tr>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- 17 VALIDACIÓN PROCESO -->
+  <section class="slide">
+    <h2>Validación con experto: cómo se hizo</h2>
+    <div class="grid g2">
+      <div class="card"><h3>Muestra y verdad de campo</h3><ul>
+        <li><b>60 hojas</b>: 10 por categoría (bacterianas, fúngicas, plagas, roya, virales, sana).</li>
+        <li>La <b>carpeta de origen</b> de cada hoja es la verdad de campo del patógeno.</li>
+        <li><b>Un único evaluador</b> experto, para controlar la variabilidad inter-evaluador.</li>
+      </ul></div>
+      <div class="card"><h3>Registro y métricas</h3><ul>
+        <li>Para cada hoja: la app y el experto registran severidad y patógeno en un CSV (<span class="mono">severidad_*</span>, <span class="mono">patogeno_*</span>).</li>
+        <li><b>Severidad:</b> Pearson r, CCC de Lin, MAE, RMSE, Bland-Altman.</li>
+        <li><b>Patógeno:</b> exactitud, F1 macro y prueba de McNemar (pareada).</li>
+      </ul></div>
+    </div>
+    <div class="flow" style="margin-top:16px">
+      <div class="node">60 hojas (carpeta = real)</div><div class="arr">→</div>
+      <div class="node">App + experto<small>severidad y patógeno</small></div><div class="arr">→</div>
+      <div class="node">CSV</div><div class="arr">→</div>
+      <div class="node">Métricas + gráficas</div>
+    </div>
+  </section>
+
+  <!-- 18 VALIDACIÓN SEVERIDAD -->
+  <section class="slide">
+    <h2>Validación: severidad (app vs. experto)</h2>
+    <div class="split fig-left">
+      <figure class="figbig">
+        <img src="Training/outputs/severidad_app_vs_experto.png" alt="Severidad app vs experto: dispersión y Bland-Altman">
+        <figcaption>Dispersión con línea de identidad y análisis de Bland-Altman (n = 60).</figcaption>
+      </figure>
+      <div class="stack">
+        <table>
+          <tr><th>Métrica</th><th class="num">Valor</th></tr>
+          <tr><td>Pearson r</td><td class="num">0.967</td></tr>
+          <tr><td>CCC de Lin</td><td class="num">0.941</td></tr>
+          <tr><td>MAE (%)</td><td class="num">5.7</td></tr>
+          <tr><td>RMSE (%)</td><td class="num">7.4</td></tr>
+          <tr><td>Sesgo / LoA 95 %</td><td class="num">−5.0 · [−15.8, 5.9]</td></tr>
+          <tr><td>±10 % / ±20 %</td><td class="num">83.3 % / 100 %</td></tr>
+        </table>
+        <p class="note">Comparación de dos métodos (Bland &amp; Altman, 1986): la app reproduce el criterio experto con alta concordancia.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 19 VALIDACIÓN PATÓGENO -->
+  <section class="slide">
+    <h2>Validación: patógeno (app vs. experto vs. real)</h2>
+    <div class="split fig-left">
+      <figure class="figbig">
+        <img src="Training/outputs/patogeno_app_vs_experto.png" alt="Exactitud por clase: app vs experto">
+        <figcaption>Exactitud por clase frente a la verdad de campo. Confusión en <span class="mono">patogeno_confusion_app_experto.png</span>.</figcaption>
+      </figure>
+      <div class="stack">
+        <div class="stat" style="flex-direction:column">
+          <div class="s"><div class="v">0.950</div><div class="l">Exactitud app (F1 0.952)</div></div>
+          <div class="s"><div class="v">0.867</div><div class="l">Exactitud experto (F1 0.872)</div></div>
+        </div>
+        <div class="card"><h3>Comparación pareada</h3><p>La app corrigió <b>5</b> diagnósticos que el experto erró, <b>sin ningún caso</b> inverso. McNemar p = 0.0625 (orientativo por n = 60).</p></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 20 CONCLUSIONES -->
+  <section class="slide">
+    <h2>Conclusiones</h2>
+    <div class="stat" style="margin-bottom:18px">
+      <div class="s"><div class="v">0.961</div><div class="l">M_seg recall</div></div>
+      <div class="s"><div class="v">0.985</div><div class="l">M1 exactitud</div></div>
+      <div class="s"><div class="v">0.980</div><div class="l">M2 exactitud</div></div>
+      <div class="s"><div class="v">0.967</div><div class="l">r severidad</div></div>
+    </div>
+    <ul style="max-width:80ch">
+      <li>Sistema de tres etapas con <b>inferencia local</b>: segmentación hoja/fondo, clasificación en cascada y severidad por color trazable.</li>
+      <li>La <b>validación experta</b> confirma alta concordancia en severidad (r = 0.967; MAE 5.7 %) y exactitud de diagnóstico <b>igual o superior</b> a la del experto (0.95 vs. 0.87).</li>
+      <li>Funciona sin caja negra y sin conexión, contextualizado al clima de Santa Cruz.</li>
+      <li>Herramienta accesible para el triaje fitosanitario de los productores de la región.</li>
+    </ul>
+  </section>
+
+</div>
+
+<button class="edge" onclick="go(-1)" aria-label="Diapositiva anterior"></button>
+<button class="edge r" onclick="go(1)" aria-label="Diapositiva siguiente"></button>
+<div class="dots" id="dots"></div>
+<div class="count" id="count"></div>
+<div class="hint">← →  ·  espacio  ·  F pantalla completa</div>
+
+<script>
+  const slides=[...document.querySelectorAll('.slide')];
+  const dots=document.getElementById('dots');
+  let i=0;
+  slides.forEach((_,k)=>{const b=document.createElement('button');b.className='dot';
+    b.setAttribute('aria-label','Ir a diapositiva '+(k+1));b.onclick=()=>show(k);dots.appendChild(b);});
+  const dotEls=[...dots.children];
+  function show(n){
+    i=Math.max(0,Math.min(slides.length-1,n));
+    slides.forEach((s,k)=>{const a=k===i;s.classList.toggle('active',a);if(a)s.scrollTop=0;});
+    dotEls.forEach((d,k)=>d.classList.toggle('on',k===i));
+    document.getElementById('count').textContent=(i+1)+' / '+slides.length;
+    document.getElementById('bar').style.width=((i+1)/slides.length*100)+'%';
+  }
+  function go(d){show(i+d);}
+  addEventListener('keydown',e=>{
+    if(['ArrowRight',' ','PageDown'].includes(e.key)){e.preventDefault();go(1);}
+    else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();go(-1);}
+    else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);
+    else if(e.key.toLowerCase()==='f'){document.fullscreenElement?document.exitFullscreen():document.documentElement.requestFullscreen();}
+  });
+  show(0);
+</script>
+</body>
+</html>
