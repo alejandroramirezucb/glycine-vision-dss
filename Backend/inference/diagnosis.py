@@ -1,55 +1,61 @@
 import base64
-from typing import Optional
+from typing import Callable, Optional
 
 import cv2
 import numpy as np
 
-from config import DISEASE_CONFIDENCE, HEALTH_GATE, MAX_IMAGE_SIDE
-from inference.classifier import (
-    run_health,
-    run_disease,
-    probability_diseased,
-    top_disease,
-)
-from inference.leaf_analyzer import analyze_leaf, level_from_pct
-from inference.model_registry import ModelRegistry
-from inference.segmenter import segment_leaf, shades_of_gray
-from services.climate import fetch_climate
-
-_MASK_SIZE = 256
+from inference.classifier import LeafClassifier
+from inference.leaf_analyzer import SeverityAnalyzer
+from inference.preprocessor import Preprocessor
+from inference.segmenter import LeafSegmenter
 
 
 class DiagnosisService:
-    def __init__(self, registry: ModelRegistry):
-        self._registry = registry
+    def __init__(
+        self,
+        segmenter: Optional[LeafSegmenter],
+        health: LeafClassifier,
+        disease: LeafClassifier,
+        severity: SeverityAnalyzer,
+        preprocessor: Preprocessor,
+        climate_provider: Callable[[float, float], Optional[dict]],
+        health_gate: float,
+        disease_confidence: float,
+        max_image_side: int,
+    ):
+        self._segmenter = segmenter
+        self._health = health
+        self._disease = disease
+        self._severity = severity
+        self._pre = preprocessor
+        self._climate = climate_provider
+        self._gate = health_gate
+        self._disease_confidence = disease_confidence
+        self._max_side = max_image_side
 
     def diagnose(self, image_bgr: np.ndarray, lat: Optional[float], lon: Optional[float]) -> dict:
-        image_bgr = _resize_to_max(image_bgr)
+        image_bgr = self._resize_to_max(image_bgr)
         height, width = image_bgr.shape[:2]
-        image_rgb = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB)
+        norm = self._pre.normalize(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
 
-        leaf = segment_leaf(self._registry.segmenter, image_bgr) if self._registry.segmenter else None
+        leaf = self._segmenter.segment(norm) if self._segmenter is not None else None
         if leaf is not None:
             leaf_full = cv2.resize(leaf, (width, height), interpolation=cv2.INTER_NEAREST)
-            clean_rgb = image_rgb.copy()
-            clean_rgb[leaf_full == 0] = 0
+            isolated = self._pre.isolate(norm, leaf_full)
         else:
-            clean_rgb = image_rgb
+            isolated = norm
 
-        health_scores = run_health(self._registry.health, image_rgb, clean_rgb)
-        p_diseased = probability_diseased(health_scores, self._registry.health_labels)
+        health_scores = self._health.predict(norm, isolated)
+        p_diseased = self._health.probability_diseased(health_scores)
 
         findings: list[dict] = []
         mask3: Optional[np.ndarray] = None
         severity = 0.0
 
-        if leaf is not None and p_diseased >= HEALTH_GATE:
-            disease_scores = run_disease(self._registry.disease, image_rgb, clean_rgb)
-            detected = top_disease(disease_scores, self._registry.disease_labels, DISEASE_CONFIDENCE)
-
-            norm256 = shades_of_gray(cv2.resize(image_rgb, (_MASK_SIZE, _MASK_SIZE)))
-            mask3, severity, components = analyze_leaf(norm256, leaf)
-
+        if leaf is not None and p_diseased >= self._gate:
+            disease_scores = self._disease.predict(norm, isolated)
+            detected = self._disease.top(disease_scores, self._disease_confidence)
+            mask3, severity, components = self._severity.analyze(self._pre.to_mask_size(norm), leaf)
             if detected is not None:
                 label, confidence = detected
                 findings = [{
@@ -57,7 +63,7 @@ class DiagnosisService:
                     "coverage_pct": severity,
                     "avg_severidad_pct": severity,
                     "max_severidad_pct": severity,
-                    "nivel": level_from_pct(severity),
+                    "nivel": self._severity.level(severity),
                     "avg_probability": round(confidence, 3),
                     "zone_count": 1,
                     **components,
@@ -65,30 +71,29 @@ class DiagnosisService:
         elif leaf is not None:
             mask3 = leaf.astype(np.uint8)
 
-        climate = fetch_climate(lat, lon) if lat is not None and lon is not None else None
+        climate = self._climate(lat, lon) if lat is not None and lon is not None else None
 
         return {
             "zonas": [],
             "enfermedades_detectadas": findings,
             "total_patches": 1,
             "leaf_patches": 1,
-            "patch_size": MAX_IMAGE_SIDE,
+            "patch_size": self._max_side,
             "image_width": width,
             "image_height": height,
-            "seg_mask": _encode(mask3) if mask3 is not None else None,
+            "seg_mask": self._encode(mask3) if mask3 is not None else None,
             "global_severity_pct": severity,
             "climate": climate,
         }
 
+    def _resize_to_max(self, image: np.ndarray) -> np.ndarray:
+        height, width = image.shape[:2]
+        longest = max(height, width)
+        if longest <= self._max_side:
+            return image
+        scale = self._max_side / longest
+        return cv2.resize(image, (int(width * scale), int(height * scale)))
 
-def _encode(mask: np.ndarray) -> str:
-    return base64.b64encode(mask.astype(np.uint8).flatten().tobytes()).decode("ascii")
-
-
-def _resize_to_max(image: np.ndarray) -> np.ndarray:
-    h, w = image.shape[:2]
-    longest = max(h, w)
-    if longest <= MAX_IMAGE_SIDE:
-        return image
-    scale = MAX_IMAGE_SIDE / longest
-    return cv2.resize(image, (int(w * scale), int(h * scale)))
+    @staticmethod
+    def _encode(mask: np.ndarray) -> str:
+        return base64.b64encode(mask.astype(np.uint8).flatten().tobytes()).decode("ascii")
