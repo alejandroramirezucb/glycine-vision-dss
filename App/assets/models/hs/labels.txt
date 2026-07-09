@@ -1,2 +1,0 @@
-0 soya_enferma
-1 soya_sana

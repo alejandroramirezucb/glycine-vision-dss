@@ -1,5 +1,0 @@
-0 bacterianas
-1 fungicas
-2 plagas_insectos
-3 roya
-4 virales
