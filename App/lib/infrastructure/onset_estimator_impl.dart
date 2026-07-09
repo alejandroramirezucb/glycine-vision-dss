@@ -1,7 +1,7 @@
-import '../domain/ClimateData.dart';
-import '../domain/OnsetEstimate.dart';
-import '../domain/Protocols.dart';
-import '../domain/StringNormalizer.dart';
+import '../domain/climate_data.dart';
+import '../domain/onset_estimate.dart';
+import '../domain/protocols.dart';
+import '../domain/string_normalizer.dart';
 
 class OnsetEstimatorImpl implements OnsetEstimator {
   static const Map<String, Map<String, List<int>>> _table = {

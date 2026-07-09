@@ -1,5 +1,5 @@
 import 'dart:typed_data';
-import '../domain/Zone.dart';
+import '../domain/zone.dart';
 
 class DiseaseColorizer {
   static const int _maskSize = 256;

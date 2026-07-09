@@ -1,4 +1,4 @@
-import 'Treatment.dart';
+import 'treatment.dart';
 
 class TreatmentPriority {
   final String pathogenClass;

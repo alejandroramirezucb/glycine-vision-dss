@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../domain/DiseaseFinding.dart';
-import '../LabelNames.dart';
-import '../PathogenColors.dart';
-import '../Theme.dart';
+import '../../domain/disease_finding.dart';
+import '../label_names.dart';
+import '../pathogen_colors.dart';
+import '../theme.dart';
 
 class DiseaseLegend extends StatelessWidget {
   final List<DiseaseFinding> findings;

@@ -1,5 +1,5 @@
 import 'package:image_picker/image_picker.dart';
-import 'DiagnoseResult.dart';
+import 'diagnose_result.dart';
 
 abstract class Diagnoser {
   Future<DiagnoseResult> diagnose(

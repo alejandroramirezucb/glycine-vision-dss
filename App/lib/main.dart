@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'application/DiagnoseUseCase.dart';
-import 'domain/Diagnoser.dart';
-import 'domain/Protocols.dart';
-import 'infrastructure/DiagnoserFactory.dart';
-import 'infrastructure/OpenMeteoClient.dart';
-import 'infrastructure/TreatmentRepo.dart';
-import 'presentation/Theme.dart';
-import 'presentation/screens/DiagnoseResult.dart';
-import 'presentation/screens/HomeScreen.dart';
-import 'presentation/screens/TreatmentScreen.dart';
-import 'presentation/state/AppState.dart';
-import 'presentation/widgets/AppHeader.dart';
+import 'application/diagnose_use_case.dart';
+import 'domain/diagnoser.dart';
+import 'domain/protocols.dart';
+import 'infrastructure/diagnoser_factory.dart';
+import 'infrastructure/open_meteo_client.dart';
+import 'infrastructure/treatment_repo.dart';
+import 'presentation/theme.dart';
+import 'presentation/screens/diagnose_result_screen.dart';
+import 'presentation/screens/home_screen.dart';
+import 'presentation/screens/treatment_screen.dart';
+import 'presentation/state/app_state.dart';
+import 'presentation/widgets/app_header.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -103,7 +103,7 @@ class MainScreen extends StatelessWidget {
                           child: Container(
                             width: width,
                             padding: const EdgeInsets.all(10),
-                            child: const DiagnoseResult(),
+                            child: const DiagnoseResultScreen(),
                           ),
                         ),
                       ),

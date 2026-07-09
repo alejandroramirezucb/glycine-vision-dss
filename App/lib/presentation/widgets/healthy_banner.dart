@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../Theme.dart';
+import '../theme.dart';
 
 class HealthyBanner extends StatefulWidget {
   const HealthyBanner({super.key});

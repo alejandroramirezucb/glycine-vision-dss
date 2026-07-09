@@ -1,4 +1,4 @@
-import '../domain/ClimateData.dart';
+import '../domain/climate_data.dart';
 
 class ClimateSeverityAdjuster {
   static const List<String> _severityOrder = ['minima', 'leve', 'moderada', 'severa', 'critica'];

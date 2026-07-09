@@ -3,14 +3,14 @@ import 'dart:typed_data';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
-import '../domain/ClimateData.dart';
-import '../domain/DiagnoseResult.dart';
-import '../domain/Diagnoser.dart';
-import '../domain/DiseaseFinding.dart';
-import '../domain/OnsetEstimate.dart';
-import '../domain/Protocols.dart';
-import '../domain/Zone.dart';
-import 'DiseaseColorizer.dart';
+import '../domain/climate_data.dart';
+import '../domain/diagnose_result.dart';
+import '../domain/diagnoser.dart';
+import '../domain/disease_finding.dart';
+import '../domain/onset_estimate.dart';
+import '../domain/protocols.dart';
+import '../domain/zone.dart';
+import 'disease_colorizer.dart';
 
 class HttpDiagnoser implements Diagnoser {
   static const int _maxSide = 400;

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '../../domain/DiagnoseResult.dart';
-import '../Theme.dart';
+import '../../domain/diagnose_result.dart';
+import '../theme.dart';
 
 class SeverityPanel extends StatelessWidget {
   final DiagnoseResult result;

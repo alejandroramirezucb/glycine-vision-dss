@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../Theme.dart';
-import '../state/AppState.dart';
-import '../widgets/CompositeTreatmentCard.dart';
-import '../widgets/OnsetBadge.dart';
+import '../theme.dart';
+import '../state/app_state.dart';
+import '../widgets/composite_treatment_card.dart';
+import '../widgets/onset_badge.dart';
 
 class TreatmentScreen extends StatelessWidget {
   const TreatmentScreen({super.key});

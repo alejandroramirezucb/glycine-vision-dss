@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../../domain/OnsetEstimate.dart';
-import '../Theme.dart';
-import 'GlassCard.dart';
+import '../../domain/onset_estimate.dart';
+import '../theme.dart';
+import 'glass_card.dart';
 
 class OnsetBadge extends StatelessWidget {
   final OnsetEstimate onset;

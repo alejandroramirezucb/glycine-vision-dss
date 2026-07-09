@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../domain/Treatment.dart';
-import '../../domain/TreatmentPlan.dart';
-import '../LabelNames.dart';
-import '../PathogenColors.dart';
-import '../Theme.dart';
+import '../../domain/treatment.dart';
+import '../../domain/treatment_plan.dart';
+import '../label_names.dart';
+import '../pathogen_colors.dart';
+import '../theme.dart';
 
 class CompositeTreatmentCard extends StatelessWidget {
   final TreatmentPlan plan;

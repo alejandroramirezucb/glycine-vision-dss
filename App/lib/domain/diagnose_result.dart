@@ -1,9 +1,9 @@
 import 'dart:typed_data';
-import 'ClimateData.dart';
-import 'DiseaseFinding.dart';
-import 'OnsetEstimate.dart';
-import 'TreatmentPlan.dart';
-import 'Zone.dart';
+import 'climate_data.dart';
+import 'disease_finding.dart';
+import 'onset_estimate.dart';
+import 'treatment_plan.dart';
+import 'zone.dart';
 
 class DiagnoseResult {
   final List<Zone> zones;

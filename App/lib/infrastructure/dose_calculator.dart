@@ -1,4 +1,4 @@
-import '../domain/TreatmentDose.dart';
+import '../domain/treatment_dose.dart';
 
 class DoseCalculator {
   double calculate({

@@ -41,13 +41,12 @@ class TfliteSegmenter {
     return _largestComponent(_leafArgmax(out, n, channels, (i) => out[i]));
   }
 
-  img.Image normalized256(img.Image source) {
-    final resized = img.copyResize(source, width: _maskSize, height: _maskSize);
-    final src = _shadesOfGray(resized.getBytes(order: img.ChannelOrder.rgb));
-    final out = img.Image(width: _maskSize, height: _maskSize);
+  img.Image normalize(img.Image source) {
+    final src = _shadesOfGray(source.getBytes(order: img.ChannelOrder.rgb));
+    final out = img.Image(width: source.width, height: source.height);
     var k = 0;
-    for (var y = 0; y < _maskSize; y++) {
-      for (var x = 0; x < _maskSize; x++) {
+    for (var y = 0; y < source.height; y++) {
+      for (var x = 0; x < source.width; x++) {
         out.setPixelRgb(x, y, src[k], src[k + 1], src[k + 2]);
         k += 3;
       }

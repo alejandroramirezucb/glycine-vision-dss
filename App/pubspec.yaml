@@ -24,7 +24,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - logo.png
+    - assets/logo.png
     - assets/models/hs/
     - assets/models/pd/
     - assets/models/seg/

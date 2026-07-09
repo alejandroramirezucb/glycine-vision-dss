@@ -1,6 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
-import '../../domain/DiagnoseResult.dart';
+import '../../domain/diagnose_result.dart';
 
 enum Screen { home, diagnoseResult, treatment }
 

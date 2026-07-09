@@ -1,7 +1,7 @@
-import 'ClimateData.dart';
-import 'DiseaseFinding.dart';
-import 'OnsetEstimate.dart';
-import 'TreatmentPlan.dart';
+import 'climate_data.dart';
+import 'disease_finding.dart';
+import 'onset_estimate.dart';
+import 'treatment_plan.dart';
 
 abstract class TreatmentRepository {
   TreatmentPlan buildComposite({

@@ -2,17 +2,17 @@ import 'dart:typed_data';
 import 'dart:ui';
 import 'package:image/image.dart' as img;
 import 'package:image_picker/image_picker.dart';
-import '../domain/ClimateData.dart';
-import '../domain/DiagnoseResult.dart';
-import '../domain/Diagnoser.dart';
-import '../domain/DiseaseFinding.dart';
-import '../domain/OnsetEstimate.dart';
-import '../domain/Protocols.dart';
-import '../domain/Zone.dart';
-import 'Classifier.dart';
-import 'DiseaseColorizer.dart';
-import 'SeverityCalculator.dart';
-import 'TfliteSegmenter.dart';
+import '../domain/climate_data.dart';
+import '../domain/diagnose_result.dart';
+import '../domain/diagnoser.dart';
+import '../domain/disease_finding.dart';
+import '../domain/onset_estimate.dart';
+import '../domain/protocols.dart';
+import '../domain/zone.dart';
+import 'classifier.dart';
+import 'disease_colorizer.dart';
+import 'severity_calculator.dart';
+import 'tflite_segmenter.dart';
 
 class LocalDiagnoser implements Diagnoser {
   static const int _defaultMaxSide = 400;
@@ -58,14 +58,16 @@ class LocalDiagnoser implements Diagnoser {
 
     Uint8List? leaf256;
     img.Image? norm256;
+    img.Image original = resized;
     img.Image leafIsolated = resized;
     if (seg != null) {
       leaf256 = seg.segmentLeaf(resized);
-      norm256 = seg.normalized256(resized);
-      leafIsolated = seg.applyMask(resized, leaf256);
+      original = seg.normalize(resized);
+      norm256 = img.copyResize(original, width: 256, height: 256);
+      leafIsolated = seg.applyMask(original, leaf256);
     }
 
-    final pDiseased = _probabilityDiseased(_healthModel.runDual(resized, leafIsolated));
+    final pDiseased = _probabilityDiseased(_healthModel.runDual(original, leafIsolated));
 
     final findings = <DiseaseFinding>[];
     final zones = <Zone>[];
@@ -74,7 +76,7 @@ class LocalDiagnoser implements Diagnoser {
 
     if (seg != null && leaf256 != null && norm256 != null && pDiseased >= healthGate) {
       await Future.delayed(Duration.zero);
-      final detected = _topDisease(_diseaseModel.runDual(resized, leafIsolated));
+      final detected = _topDisease(_diseaseModel.runDual(original, leafIsolated));
       final sev = _severity.analyze(norm256, leaf256);
       globalSeverityPct = sev.percent;
 

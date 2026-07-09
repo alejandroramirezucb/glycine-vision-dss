@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../domain/DiseaseFinding.dart';
-import '../LabelNames.dart';
-import '../PathogenColors.dart';
-import '../Theme.dart';
-import 'GlassCard.dart';
+import '../../domain/disease_finding.dart';
+import '../label_names.dart';
+import '../pathogen_colors.dart';
+import '../theme.dart';
+import 'glass_card.dart';
 
 class DiseaseFindingCard extends StatelessWidget {
   final DiseaseFinding finding;

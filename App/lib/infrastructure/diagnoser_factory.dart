@@ -1,14 +1,14 @@
 import 'package:flutter/foundation.dart';
-import '../domain/Diagnoser.dart';
-import '../domain/Protocols.dart';
-import 'Classifier.dart'
-    if (dart.library.js_interop) 'ClassifierWebStub.dart';
-import 'HttpDiagnoser.dart';
-import 'LocalDiagnoser.dart'
-    if (dart.library.js_interop) 'LocalDiagnoserWebStub.dart';
-import 'OnsetEstimatorImpl.dart';
-import 'TfliteSegmenter.dart'
-    if (dart.library.js_interop) 'TfliteSegmenterWebStub.dart';
+import '../domain/diagnoser.dart';
+import '../domain/protocols.dart';
+import 'classifier.dart'
+    if (dart.library.js_interop) 'classifier_web_stub.dart';
+import 'http_diagnoser.dart';
+import 'local_diagnoser.dart'
+    if (dart.library.js_interop) 'local_diagnoser_web_stub.dart';
+import 'onset_estimator_impl.dart';
+import 'tflite_segmenter.dart'
+    if (dart.library.js_interop) 'tflite_segmenter_web_stub.dart';
 
 const _serverBase = 'http://localhost:8001';
 

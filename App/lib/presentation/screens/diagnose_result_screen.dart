@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../domain/DiagnoseResult.dart' as domain;
-import '../Theme.dart';
-import '../state/AppState.dart';
-import '../widgets/DiagnosisImageSection.dart';
-import '../widgets/DiseaseFindingCard.dart';
-import '../widgets/HealthyBanner.dart';
+import '../../domain/diagnose_result.dart' as domain;
+import '../theme.dart';
+import '../state/app_state.dart';
+import '../widgets/diagnosis_image_section.dart';
+import '../widgets/disease_finding_card.dart';
+import '../widgets/healthy_banner.dart';
 
-class DiagnoseResult extends StatelessWidget {
-  const DiagnoseResult({super.key});
+class DiagnoseResultScreen extends StatelessWidget {
+  const DiagnoseResultScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -1,5 +1,5 @@
-import '../domain/Incompatibility.dart';
-import '../domain/TreatmentPlan.dart';
+import '../domain/incompatibility.dart';
+import '../domain/treatment_plan.dart';
 
 class IncompatibilityChecker {
   final List<Incompatibility> _rules;

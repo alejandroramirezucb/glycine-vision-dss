@@ -1,14 +1,14 @@
 import 'dart:convert';
 import 'package:flutter/services.dart';
-import '../domain/ClimateData.dart';
-import '../domain/DiseaseFinding.dart';
-import '../domain/Incompatibility.dart';
-import '../domain/Protocols.dart';
-import '../domain/StringNormalizer.dart';
-import '../domain/Treatment.dart';
-import '../domain/TreatmentPlan.dart';
-import 'ClimateSeverityAdjuster.dart';
-import 'IncompatibilityChecker.dart';
+import '../domain/climate_data.dart';
+import '../domain/disease_finding.dart';
+import '../domain/incompatibility.dart';
+import '../domain/protocols.dart';
+import '../domain/string_normalizer.dart';
+import '../domain/treatment.dart';
+import '../domain/treatment_plan.dart';
+import 'climate_severity_adjuster.dart';
+import 'incompatibility_checker.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
   static const double _minCoveragePct = 5.0;

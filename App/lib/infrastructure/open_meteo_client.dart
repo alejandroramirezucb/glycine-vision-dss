@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
-import '../domain/ClimateData.dart';
-import '../domain/Protocols.dart';
+import '../domain/climate_data.dart';
+import '../domain/protocols.dart';
 
 class OpenMeteoClient implements ClimateRepository {
   static const _base = 'https://api.open-meteo.com/v1/forecast';

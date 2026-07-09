@@ -1,6 +1,6 @@
 import 'package:image_picker/image_picker.dart';
-import '../domain/DiagnoseResult.dart';
-import '../domain/Diagnoser.dart';
+import '../domain/diagnose_result.dart';
+import '../domain/diagnoser.dart';
 
 class LocalDiagnoser implements Diagnoser {
   LocalDiagnoser({

@@ -5,11 +5,11 @@ import 'package:geolocator/geolocator.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
-import '../../application/DiagnoseUseCase.dart';
-import '../Theme.dart';
-import '../state/AppState.dart';
-import '../widgets/ErrorBanner.dart';
-import '../widgets/ImagePreview.dart';
+import '../../application/diagnose_use_case.dart';
+import '../theme.dart';
+import '../state/app_state.dart';
+import '../widgets/error_banner.dart';
+import '../widgets/image_preview.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});

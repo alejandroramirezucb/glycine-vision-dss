@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../domain/DiagnoseResult.dart';
-import '../Theme.dart';
-import 'DiseaseLegend.dart';
-import 'ImagePreview.dart';
-import 'SegmentationOverlay.dart';
+import '../../domain/diagnose_result.dart';
+import '../theme.dart';
+import 'disease_legend.dart';
+import 'image_preview.dart';
+import 'segmentation_overlay.dart';
 
 class DiagnosisImageSection extends StatefulWidget {
   final dynamic image;
