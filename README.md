@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="Images/logo.png" alt="Glycine Vision DSS" width="180" />
+  <img src="assets/logo.png" alt="Glycine Vision DSS" width="180" />
   <br /><br />
 
 # Glycine Vision DSS
@@ -30,11 +30,14 @@ imagen → M_seg (hoja/fondo) → hoja aislada → M1 [original+hoja] sana/enfer
 
 ```
 glycine-vision-dss/
-├── App/                Flutter app (Clean Architecture)
+├── app/                Flutter (Clean Architecture: domain · application · infrastructure · presentation)
 │   └── assets/models/{hs,pd,seg}/   M1 · M2 · M_seg (.tflite)
-├── Backend/            FastAPI (server.py, config.py, inference/, Dockerfile)
-├── Models/             Modelos desplegados {health,disease,segmentation}/
-├── Training/notebooks/ 01–06 (Google Colab)
+├── backend/            FastAPI (server.py, config.py, inference/, services/, Dockerfile)
+├── training/notebooks/ 01–06 (Google Colab) + requirements.txt
+├── models/             Modelos desplegados {health,disease,segmentation}/ (no versionado)
+├── paper/              Manuscrito (articulo-cientifico.docx · .pdf)
+├── assets/             Logo del proyecto
+├── CITATION.cff        Metadatos de cita (formato CFF)
 └── docker-compose.yml
 ```
 
@@ -43,7 +46,7 @@ glycine-vision-dss/
 ## Ejecutar la app
 
 ```bash
-cd App
+cd app
 flutter pub get
 flutter run -d <device_id>      # Android / iOS
 flutter run -d chrome           # Web (requiere el backend corriendo)
@@ -60,7 +63,7 @@ docker compose up --build       # API en http://localhost:8001
 
 **Manual:**
 ```bash
-cd Backend
+cd backend
 python -m venv env
 .\env\Scripts\Activate.ps1
 pip install -r requirements.txt
@@ -69,7 +72,7 @@ python server.py
 
 | Variable de entorno | Default | Descripción |
 |---|---|---|
-| `MODELS_DIR` | `../Models` | Ruta a la carpeta de modelos |
+| `MODELS_DIR` | `../models` | Ruta a la carpeta de modelos |
 
 ### API
 
@@ -88,16 +91,16 @@ Ejecutar los notebooks en orden. M_seg se entrena **antes** que M1/M2 (produce l
 
 | Notebook | Hace | Salida |
 |---|---|---|
-| `01_prepare_dataset.ipynb` | Descarga datasets (HF) + split train/val + Test; prepara máscaras COCO (Roboflow + SoyCotton) | `splits/` |
-| `02_train_segmentation.ipynb` | M_seg ResNet50 U-Net hoja/fondo (COCO fusionado) | `model_seg.tflite` |
-| `03_train_model1_binary.ipynb` | M1 EfficientNetB1 doble entrada | `model1.tflite` |
-| `04_train_model2_pathogen.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2.tflite` |
-| `05_evaluate.ipynb` | Métricas en test (M1/M2; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
-| `06_export_tflite.ipynb` | Export TFLite float32 + int8 | `.tflite` |
+| `01_prepare_dataset.ipynb` | Descarga datasets (HF) + dedup (MD5 + pHash, sin fuga train/test) + split train/val + Test; máscaras COCO (Roboflow + SoyCotton) | `splits/` |
+| `02_train_segmentation.ipynb` | M_seg ResNet50 U-Net hoja/fondo (COCO fusionado) | `model_seg.keras` (+ `.tflite`) |
+| `03_train_model1_binary.ipynb` | M1 EfficientNetB1 doble entrada (hoja aislada por M_seg + Shades-of-Gray) | `model1_binary.keras` |
+| `04_train_model2_pathogen.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2_pathogen.keras` |
+| `05_evaluate.ipynb` | Métricas en test (M1/M2 + IC95% bootstrap; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
+| `06_export_tflite.ipynb` | Export TFLite float32 + int8, equivalencia Keras↔TFLite, labels | `.tflite`, `model_metadata.json` |
 
 **Máscaras de segmentación (M_seg):**
-- Tus máscaras de Roboflow → `Training/splits/masks/` (con `_annotations.coco.json`).
-- Dataset SoyCotton (figshare CC BY 4.0) → `Training/splits/masks_soycotton/annotations/` (JSON COCO) + `Training/splits/masks_soycotton/images/` (imágenes). El notebook 02 las **fusiona** automáticamente. La celda de descarga del notebook 01 reproduce esa estructura.
+- Tus máscaras de Roboflow → `training/splits/masks/` (con `_annotations.coco.json`).
+- Dataset SoyCotton (figshare CC BY 4.0) → `training/splits/masks_soycotton/annotations/` (JSON COCO) + `training/splits/masks_soycotton/images/` (imágenes). El notebook 02 las **fusiona** automáticamente. La celda de descarga del notebook 01 reproduce esa estructura.
 
 Tras mejorar solo M_seg: reentrenar `02`, reejecutar `05` (métricas) y `06` (export). M1/M2 (`03`/`04`) no requieren reentrenamiento.
 
@@ -108,7 +111,7 @@ Tras mejorar solo M_seg: reentrenar `02`, reejecutar `05` (métricas) y `06` (ex
 Desde la raíz del proyecto, tras completar los notebooks:
 
 ```powershell
-$SRC = "Training/outputs"; $APP = "App/assets/models"; $MOD = "Models"
+$SRC = "training/outputs"; $APP = "app/assets/models"; $MOD = "models"
 
 Copy-Item "$SRC/model1.tflite"         "$APP/hs/model.tflite" -Force
 Copy-Item "$SRC/labels_m1.txt"         "$APP/hs/labels.txt" -Force
