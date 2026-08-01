@@ -53,8 +53,10 @@ async def diagnose(
     image_bgr = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
     if image_bgr is None:
         raise HTTPException(status_code=400, detail="Unable to read image")
+    coarse_lat = round(lat, 2) if lat is not None else None
+    coarse_lon = round(lon, 2) if lon is not None else None
     try:
-        return _service.diagnose(image_bgr, lat, lon)
+        return _service.diagnose(image_bgr, coarse_lat, coarse_lon)
     except Exception as error:
         raise HTTPException(status_code=500, detail="Diagnosis failed") from error
 
