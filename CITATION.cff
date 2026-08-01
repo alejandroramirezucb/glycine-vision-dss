@@ -6,14 +6,14 @@ type: software
 authors:
   - given-names: Alejandro
     family-names: "Ramirez Vallejos"
-    email: alejandroramirezvallejos@gmail.com
+    email: alejandro.ramirez.v@ucb.edu.bo
 license: MIT
 version: 1.0.0
-date-released: "2026-07-08"
+date-released: "2026-07-14"
 keywords:
   - soja
   - fitopatologia
   - vision por computadora
   - edge AI
   - TensorFlow Lite
-repository-code: "https://github.com/USUARIO/glycine-vision-dss"
+repository-code: "https://github.com/alejandroramirezucb/glycine-vision-dss"

@@ -33,7 +33,7 @@ glycine-vision-dss/
 ├── app/                Flutter (Clean Architecture: domain · application · infrastructure · presentation)
 │   └── assets/models/{hs,pd,seg}/   M1 · M2 · M_seg (.tflite)
 ├── backend/            FastAPI (server.py, config.py, inference/, services/, Dockerfile)
-├── training/notebooks/ 01–06 (Google Colab) + requirements.txt
+├── training/notebooks/ 01–10 (Google Colab) + requirements.txt
 ├── models/             Modelos desplegados {health,disease,segmentation}/ (no versionado)
 ├── paper/              Manuscrito (articulo-cientifico.docx · .pdf)
 ├── assets/             Logo del proyecto
@@ -97,6 +97,10 @@ Ejecutar los notebooks en orden. M_seg se entrena **antes** que M1/M2 (produce l
 | `04_train_model2_pathogen.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2_pathogen.keras` |
 | `05_evaluate.ipynb` | Métricas en test (M1/M2 + IC95% bootstrap; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
 | `06_export_tflite.ipynb` | Export TFLite float32 + int8, equivalencia Keras↔TFLite, labels | `.tflite`, `model_metadata.json` |
+| `07_comparacion_app_vs_experto.ipynb` | Severidad CIELab (M_seg + reglas de color) y patógeno de la app vs. experto (n=60): Pearson, CCC, MAE, RMSE, Bland-Altman, McNemar | `comparacion_app_vs_experto.json` |
+| `08_diagnostico.ipynb` | Diagnóstico rápido de baselines vs. propuesto (M2, 1 semilla, presupuesto reducido) | `diagnostico_m2.csv` |
+| `09_ablacion.ipynb` | Baselines y ablación por componente (M2, 3 semillas): media ± desviación | `baselines_m2.csv`, `ablation_m2.csv` |
+| `10_verificacion_full.ipynb` | Verificación al presupuesto completo (propuesto vs. EfficientNetB0 de una entrada) | `verificacion_full_m2.csv` |
 
 **Máscaras de segmentación (M_seg):**
 - Tus máscaras de Roboflow → `training/splits/masks/` (con `_annotations.coco.json`).
