@@ -45,14 +45,12 @@ async def diagnose(
     lat: Optional[float] = Form(None),
     lon: Optional[float] = Form(None),
 ):
-    if image.content_type is None or not image.content_type.startswith("image/"):
-        raise HTTPException(status_code=415, detail="Unsupported media type")
     payload = await image.read()
     if len(payload) > MAX_UPLOAD_BYTES:
         raise HTTPException(status_code=413, detail="Image too large")
     image_bgr = cv2.imdecode(np.frombuffer(payload, np.uint8), cv2.IMREAD_COLOR)
     if image_bgr is None:
-        raise HTTPException(status_code=400, detail="Unable to read image")
+        raise HTTPException(status_code=415, detail="Unsupported media type")
     coarse_lat = round(lat, 2) if lat is not None else None
     coarse_lon = round(lon, 2) if lon is not None else None
     try:
