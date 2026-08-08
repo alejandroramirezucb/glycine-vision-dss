@@ -12,7 +12,7 @@ class ModelRegistry:
     def __init__(self, models_dir: Path = MODELS_DIR):
         self._dir = models_dir
         self.health = LeafClassifier(self._load("health/model_int8.tflite"), self._load_labels("health/labels.txt"))
-        self.disease = LeafClassifier(self._load("disease/model_int8.tflite"), self._load_labels("disease/labels.txt"))
+        self.disease = LeafClassifier(self._load("disease/model.tflite"), self._load_labels("disease/labels.txt"))
         segmenter = self._try_load("segmentation/model_int8.tflite")
         self.segmenter: Optional[LeafSegmenter] = LeafSegmenter(segmenter) if segmenter is not None else None
 
