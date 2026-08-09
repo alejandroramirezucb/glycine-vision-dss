@@ -30,8 +30,8 @@ Recursos publicados: el dataset curado en
 | Bland-Altman: sesgo y límites de acuerdo | −5.0 %, [−15.8, 5.9] | `07_validacion_frente_a_experto.ipynb` | `comparacion_app_vs_experto.json` → `severidad.bias`, `loa_low`, `loa_high` |
 | Patógeno app vs. experto y McNemar | 0.950 vs. 0.867; p = 0.0625 | `07_validacion_frente_a_experto.ipynb` | `comparacion_app_vs_experto.json` → `patogeno` |
 | Costo computacional (parámetros, MACs, tamaño) | Tabla 3 del artículo | `06_exportacion_tflite.ipynb` | `model_metadata.json` y tamaños de `.tflite` |
-| Ablación por componente (media ± DE, 3 semillas) | Tabla 5 del artículo | `11_ablacion_presupuesto_completo.ipynb` | `ablation_full_m2.csv`, `raw_results_full_m2.csv` |
-| Comparación con baseline de una sola entrada | 0.969 vs. 0.963 | `10_verificacion_presupuesto_completo.ipynb` | `verificacion_full_m2.csv` |
+| Ablación por componente (media ± DE, 3 semillas) | Tabla 5 del artículo | `11_ablacion_presupuesto_completo.ipynb` | `ablation_full_m2.csv` |
+| Verificación frente a baseline de una sola entrada (1 semilla) | 0.980 vs. 0.963 | `10_verificacion_presupuesto_completo.ipynb` | `verificacion_full_m2.csv` |
 | Calibración: ECE, MCE, Brier | M1 0.011 / 0.63 / 0.016; M2 0.039 / 0.55 / 0.049 | `12_calibracion_probabilidades.ipynb` | `calibracion.json`, `calibracion.csv` |
 | Variantes exportadas (Keras, float32, int8) | Tabla 4 del artículo | `13_evaluacion_variantes_exportadas.ipynb` | `evaluacion_variantes.csv`, `.json` |
 | Latencia y memoria en dispositivo | 126 / 19 / 12 ms; 120 / 54 / 40 MB | Medición externa con `benchmark_model` (TFLite) vía `adb` sobre Xiaomi 2203129G | Salida de consola del benchmark |
