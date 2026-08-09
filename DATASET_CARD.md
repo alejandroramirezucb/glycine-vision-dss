@@ -102,7 +102,7 @@ bajo CC BY 4.0; véase la sección de licencias del repositorio.
 
 ## Cita recomendada
 
-> Jaldín Torrico, E., & Ramírez Vallejos, A. (2026b). *Soybean image dataset* [Conjunto de datos]. Hugging Face. https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset
+> Jaldín Torrico, E., & Ramírez Vallejos, A. (2026c). *Soybean image dataset* [Conjunto de datos]. Hugging Face. https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset
 
 ## Limitaciones
 
