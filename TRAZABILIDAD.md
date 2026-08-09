@@ -7,6 +7,11 @@ cualquier revisor pueda verificar, sin ejecutar el proyecto completo, de dónde 
 Convenciones: los notebooks están en `training/notebooks/`, sus salidas en `training/outputs/`,
 y el código de inferencia en `backend/inference/`.
 
+Recursos publicados: el dataset curado en
+[Hugging Face](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset), los modelos entrenados en
+[Hugging Face](https://huggingface.co/alejandroramirezucb/glycine-vision-models) y los archivos de resultados en el
+[release v1.0-paper](https://github.com/alejandroramirezucb/glycine-vision-dss/releases/tag/v1.0-paper).
+
 ---
 
 ## 1. Resultados cuantitativos

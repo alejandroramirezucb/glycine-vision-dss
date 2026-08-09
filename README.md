@@ -21,6 +21,14 @@ Diagnóstico de enfermedades foliares de soya en el dispositivo: detecta, estima
 - **M2**: EfficientNetB0 224×224, doble entrada, softmax 5 clases (`bacterianas`, `fungicas`, `plagas_insectos`, `roya`, `virales`).
 - **Backend**: FastAPI + Docker (mismos modelos por HTTP, opcional).
 
+### Recursos publicados
+
+| Recurso | Enlace |
+|---|---|
+| Dataset curado | [alejandroramirezucb/soybean_image_dataset](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset) |
+| Modelos entrenados (float32 e int8) | [alejandroramirezucb/glycine-vision-models](https://huggingface.co/alejandroramirezucb/glycine-vision-models) |
+| Resultados computacionales del artículo | [Release v1.0-paper](https://github.com/alejandroramirezucb/glycine-vision-dss/releases/tag/v1.0-paper) |
+
 ---
 
 ## Estructura
