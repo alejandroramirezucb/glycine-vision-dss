@@ -12,12 +12,9 @@ Diagnóstico de enfermedades foliares de soya en el dispositivo: detecta, estima
 
 ## Pipeline
 
-```
-imagen → M_seg (hoja/fondo) → hoja aislada → M1 [original+hoja] sana/enferma
-                                                  │ (si enferma)
-                                                  ▼
-                                   M2 [original+hoja] tipo de patógeno + severidad por color
-```
+<div align="center">
+  <img src="assets/pipeline.jpg" alt="Diagrama de actividad del pipeline" width="760" />
+</div>
 
 - **M_seg**: U-Net ResNet50 256×256, 2 clases (hoja/fondo).
 - **M1**: EfficientNetB1 240×240, doble entrada (original + hoja aislada), sigmoid.
