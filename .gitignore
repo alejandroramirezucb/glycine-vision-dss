@@ -39,3 +39,4 @@ training/outputs/
 /models/
 /dev/
 /hf_upload/
+app/.flutter-plugins-dependencies
