@@ -1,11 +1,15 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 title: "Glycine Vision DSS"
-abstract: "Sistema movil de apoyo al triaje fitosanitario en soya (Glycine max): segmentacion de hoja, clasificacion sana/enferma y de patogeno, y estimacion de severidad foliar por reglas CIELab, con inferencia local TFLite int8."
+abstract: "Sistema movil de apoyo al triaje fitosanitario en soya (Glycine max): segmentacion de hoja, clasificacion sana/enferma y de patogeno, y estimacion de severidad foliar por reglas CIELab, con inferencia local con TensorFlow Lite."
 type: software
 authors:
-  - given-names: Alejandro
+  - given-names: "Edgar"
+    family-names: "Jaldin Torrico"
+    orcid: "https://orcid.org/0009-0005-5329-4908"
+  - given-names: "Alejandro"
     family-names: "Ramirez Vallejos"
+    orcid: "https://orcid.org/0009-0009-1517-6838"
     email: alejandro.ramirez.v@ucb.edu.bo
 license: MIT
 version: 1.0.0

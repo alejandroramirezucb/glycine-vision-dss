@@ -33,13 +33,33 @@ glycine-vision-dss/
 ├── app/                Flutter (Clean Architecture: domain · application · infrastructure · presentation)
 │   └── assets/models/{hs,pd,seg}/   M1 · M2 · M_seg (.tflite)
 ├── backend/            FastAPI (server.py, config.py, inference/, services/, Dockerfile)
-├── training/notebooks/ 01–10 (Google Colab) + requirements.txt
+├── training/notebooks/ 01–13 (Google Colab / Kaggle) + requirements.txt
 ├── models/             Modelos desplegados {health,disease,segmentation}/ (no versionado)
 ├── paper/              Manuscrito (articulo-cientifico.docx · .pdf)
+├── TRAZABILIDAD.md     Mapa afirmación del artículo → código y evidencia
+├── DATASET_CARD.md     Tarjeta del dataset (fuentes, licencias, curación)
+├── MODEL_CARD.md       Tarjeta de los modelos publicados en Hugging Face
 ├── assets/             Logo del proyecto
 ├── CITATION.cff        Metadatos de cita (formato CFF)
 └── docker-compose.yml
 ```
+
+---
+
+## Licencias
+
+El proyecto combina tres componentes con condiciones distintas. No es posible unificarlos bajo una sola licencia
+porque los datos derivan de fuentes de terceros con restricciones propias.
+
+| Componente | Licencia | Alcance |
+|---|---|---|
+| Código (app, backend, notebooks) | **MIT** (`LICENSE`) | Uso libre con atribución |
+| Manuscrito (`paper/`) | **CC BY 4.0** | Declarado en el artículo |
+| Dataset curado | **Indeterminada, no comercial** | Deriva de fuentes mixtas; véase [DATASET_CARD.md](DATASET_CARD.md) |
+| Modelos entrenados (`models/`, `app/assets/models/`) | Siguen la condición del dataset | Uso académico |
+
+El dataset hereda **CC BY-NC-SA 4.0** de PlantVillage y contiene dos fuentes sin licencia declarada, por lo que el
+conjunto combinado **no debe asumirse reutilizable comercialmente**.
 
 ---
 
@@ -91,16 +111,19 @@ Ejecutar los notebooks en orden. M_seg se entrena **antes** que M1/M2 (produce l
 
 | Notebook | Hace | Salida |
 |---|---|---|
-| `01_prepare_dataset.ipynb` | Descarga datasets (HF) + dedup (MD5 + pHash, sin fuga train/test) + split train/val + Test; máscaras COCO (Roboflow + SoyCotton) | `splits/` |
-| `02_train_segmentation.ipynb` | M_seg ResNet50 U-Net hoja/fondo (COCO fusionado) | `model_seg.keras` (+ `.tflite`) |
-| `03_train_model1_binary.ipynb` | M1 EfficientNetB1 doble entrada (hoja aislada por M_seg + Shades-of-Gray) | `model1_binary.keras` |
-| `04_train_model2_pathogen.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2_pathogen.keras` |
-| `05_evaluate.ipynb` | Métricas en test (M1/M2 + IC95% bootstrap; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
-| `06_export_tflite.ipynb` | Export TFLite float32 + int8, equivalencia Keras↔TFLite, labels | `.tflite`, `model_metadata.json` |
-| `07_comparacion_app_vs_experto.ipynb` | Severidad CIELab (M_seg + reglas de color) y patógeno de la app vs. experto (n=60): Pearson, CCC, MAE, RMSE, Bland-Altman, McNemar | `comparacion_app_vs_experto.json` |
-| `08_diagnostico.ipynb` | Diagnóstico rápido de baselines vs. propuesto (M2, 1 semilla, presupuesto reducido) | `diagnostico_m2.csv` |
-| `09_ablacion.ipynb` | Baselines y ablación por componente (M2, 3 semillas): media ± desviación | `baselines_m2.csv`, `ablation_m2.csv` |
-| `10_verificacion_full.ipynb` | Verificación al presupuesto completo (propuesto vs. EfficientNetB0 de una entrada) | `verificacion_full_m2.csv` |
+| `01_preparacion_datos.ipynb` | Descarga datasets (HF) + dedup (MD5 + pHash, sin fuga train/test) + split train/val + Test; máscaras COCO (Roboflow + SoyCotton) | `splits/` |
+| `02_entrenamiento_segmentacion.ipynb` | M_seg ResNet50 U-Net hoja/fondo (COCO fusionado) | `model_seg.keras` (+ `.tflite`) |
+| `03_entrenamiento_m1_estado_sanitario.ipynb` | M1 EfficientNetB1 doble entrada (hoja aislada por M_seg + Shades-of-Gray) | `model1_binary.keras` |
+| `04_entrenamiento_m2_patogeno.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2_pathogen.keras` |
+| `05_evaluacion_modelos.ipynb` | Métricas en test (M1/M2 + IC95% bootstrap; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
+| `06_exportacion_tflite.ipynb` | Export TFLite float32 + int8, equivalencia Keras↔TFLite, labels | `.tflite`, `model_metadata.json` |
+| `07_validacion_frente_a_experto.ipynb` | Severidad CIELab (M_seg + reglas de color) y patógeno de la app vs. experto (n=60): Pearson, CCC, MAE, RMSE, Bland-Altman, McNemar | `comparacion_app_vs_experto.json` |
+| `08_diagnostico_baselines.ipynb` | Diagnóstico rápido de baselines vs. propuesto (M2, 1 semilla, presupuesto reducido) | `diagnostico_m2.csv` |
+| `09_ablacion_presupuesto_reducido.ipynb` | Baselines y ablación por componente (M2, 3 semillas): media ± desviación | `baselines_m2.csv`, `ablation_m2.csv` |
+| `10_verificacion_presupuesto_completo.ipynb` | Verificación al presupuesto completo (propuesto vs. EfficientNetB0 de una entrada) | `verificacion_full_m2.csv` |
+| `11_ablacion_presupuesto_completo.ipynb` | Ablación por componente al presupuesto completo (20+45, datos completos, 3 semillas) | `ablation_full_m2.csv` |
+| `12_calibracion_probabilidades.ipynb` | Calibración de M1 y M2: ECE, MCE, Brier y diagramas de confiabilidad | `calibracion.csv`, `calibracion.json` |
+| `13_evaluacion_variantes_exportadas.ipynb` | Keras vs. TFLite float32 vs. int8 en el test: exactitud, F1 y diferencias | `evaluacion_variantes.csv`, `.json` |
 
 **Máscaras de segmentación (M_seg):**
 - Tus máscaras de Roboflow → `training/splits/masks/` (con `_annotations.coco.json`).
@@ -117,7 +140,7 @@ Desde la raíz del proyecto, tras completar los notebooks:
 ```powershell
 $SRC = "training/outputs"; $APP = "app/assets/models"; $MOD = "models"
 
-Copy-Item "$SRC/model1.tflite"         "$APP/hs/model.tflite" -Force
+Copy-Item "$SRC/model1_int8.tflite"    "$APP/hs/model.tflite" -Force
 Copy-Item "$SRC/labels_m1.txt"         "$APP/hs/labels.txt" -Force
 Copy-Item "$SRC/model2.tflite"         "$APP/pd/model_unquant.tflite" -Force
 Copy-Item "$SRC/labels_m2.txt"         "$APP/pd/labels.txt" -Force

@@ -38,3 +38,4 @@ training/outputs/
 *.keras
 /models/
 /dev/
+/hf_upload/
