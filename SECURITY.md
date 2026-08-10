@@ -2,54 +2,54 @@
 
 ## Versiones soportadas
 
-| Versión | Soporte de seguridad |
+| Versión | Soporte |
 |---|---|
-| latest (main) | ✅ Activa |
-| versiones anteriores | ❌ No soportadas |
-
----
+| `main` | Activo |
+| Etiquetas anteriores | Sin soporte |
 
 ## Reportar una vulnerabilidad
 
-**No reportes vulnerabilidades de seguridad en issues públicos.**
+**No abras una incidencia pública para reportar una vulnerabilidad.**
 
-Si descubres una vulnerabilidad de seguridad en Glycine Vision DSS, envía un reporte por correo electrónico a:
+Escribe a **alejandroramirezvallejos@gmail.com** con:
 
-**alejandroramirezvallejos@gmail.com**
+- El tipo de vulnerabilidad y el componente afectado.
+- Pasos para reproducirla.
+- El impacto que consideras posible.
+- Cualquier mitigación que hayas identificado.
 
-Incluye en tu reporte:
+| Etapa | Plazo |
+|---|---|
+| Acuse de recibo | 48 horas |
+| Evaluación inicial | 7 días |
+| Parche o plan de acción | 30 días, según la severidad |
 
-- Descripción del tipo de vulnerabilidad
-- Pasos para reproducirla
-- Impacto potencial
-- Cualquier sugerencia de mitigación
+## Modelo de amenaza
 
-### Tiempo de respuesta
+### Imágenes y privacidad
 
-- Acuse de recibo: dentro de 48 horas
-- Evaluación inicial: dentro de 7 días
-- Parche o plan de acción: dentro de 30 días según severidad
+La inferencia ocurre íntegramente en el dispositivo: las imágenes **no se transmiten**. El backend FastAPI es opcional y no forma parte del flujo de la aplicación; cuando se usa, procesa las imágenes en memoria y no las persiste.
 
----
+### Servicio climático
 
-## Consideraciones de seguridad del sistema
+A Open-Meteo se envían únicamente coordenadas geográficas. No se transmite ninguna imagen ni dato personal. La petición no lleva credenciales, por lo que no hay secretos que filtrar por esta vía.
 
-### Privacidad de imágenes
+### Modelos
 
-- La inferencia se realiza **completamente en el dispositivo** — las imágenes nunca se envían a servidores externos.
-- El servidor Python opcional (`inference_server.py`) procesa imágenes solo en memoria y no las persiste en disco.
+Los modelos TFLite se empaquetan con la aplicación y **no se actualizan de forma remota**. No existe un canal de actualización over-the-air que pudiera usarse para introducir un modelo manipulado.
 
-### API climática
+### Backend FastAPI
 
-- Solo se envían coordenadas GPS (latitud/longitud) a la API de Open-Meteo.
-- No se transmite ningún dato de imagen ni información personal.
+Estas son las condiciones bajo las que se distribuye, y son deliberadas:
 
-### Modelos de ML
+- Escucha en `0.0.0.0:8001` y **no implementa autenticación**. Está pensado para uso local o tras un proxy inverso con TLS y control de acceso. **No lo expongas directamente a internet.**
+- CORS se restringe a `localhost` salvo que se defina `CORS_ORIGINS`.
+- Las cargas se limitan a 10 MB por defecto (`MAX_UPLOAD_BYTES`) y las imágenes se reescalan a 400 px de lado máximo antes de procesarse.
 
-- Los modelos TFLite están embebidos en el bundle de la app y no se actualizan remotamente.
-- No existe mecanismo de actualización de modelos over-the-air que pueda introducir modelos maliciosos.
+## Fuera de alcance
 
-### Servidor FastAPI
+Lo siguiente no se considera vulnerabilidad de seguridad, aunque sí puede ser una incidencia legítima:
 
-- Por defecto el servidor escucha en `0.0.0.0:8001` — **no exponer a internet en producción sin autenticación**.
-- No implementa autenticación — usar detrás de un proxy inverso con TLS si se despliega en red.
+- Un diagnóstico incorrecto o una estimación de severidad imprecisa. Son limitaciones del modelo, documentadas en [`docs/model-card.md`](docs/model-card.md).
+- La ausencia de autenticación en el backend cuando se despliega tal cual, dado que está documentada arriba.
+- Que las recomendaciones fitosanitarias no se ajusten a una normativa local concreta. El sistema declara explícitamente que son orientativas.

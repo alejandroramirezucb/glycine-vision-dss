@@ -1,163 +1,201 @@
 <div align="center">
-  <img src="assets/logo.png" alt="Glycine Vision DSS" width="180" />
-  <br /><br />
+  <img src="docs/assets/logo.png" alt="Glycine Vision DSS" width="160" />
 
-# Glycine Vision DSS
+  <h1>Glycine Vision DSS</h1>
 
-Diagnóstico de enfermedades foliares de soya en el dispositivo: detecta, estima severidad y genera recomendaciones de tratamiento ajustadas al clima.
+  <p><strong>Triaje fitosanitario de soya en el teléfono del productor: detecta la enfermedad, mide su severidad y ajusta el tratamiento al clima, sin conexión.</strong></p>
 
+  <p>
+    <a href="LICENSE"><img alt="Licencia MIT" src="https://img.shields.io/badge/c%C3%B3digo-MIT-blue.svg" /></a>
+    <a href="https://github.com/alejandroramirezucb/glycine-vision-dss/actions/workflows/ci.yml"><img alt="Estado de CI" src="https://github.com/alejandroramirezucb/glycine-vision-dss/actions/workflows/ci.yml/badge.svg" /></a>
+    <a href="https://huggingface.co/alejandroramirezucb/glycine-vision-models"><img alt="Modelos" src="https://img.shields.io/badge/modelos-Hugging%20Face-yellow.svg" /></a>
+    <a href="https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset"><img alt="Dataset" src="https://img.shields.io/badge/dataset-Hugging%20Face-yellow.svg" /></a>
+  </p>
 </div>
 
 ---
 
-## Pipeline
+El diagnóstico foliar de soya depende hoy de inspección visual o de laboratorio: caro, lento y poco accesible en campo. Glycine Vision encadena tres modelos que corren **en el propio dispositivo** para dar un diagnóstico trazable en menos de 200 ms por hoja, sin enviar una sola imagen a ningún servidor.
+
+Sobre conjuntos de prueba independientes alcanza **0.980** de exactitud en el estado sanitario, **0.969** en la identificación del patógeno y una concordancia de severidad con criterio experto de **r = 0.967** (MAE 5.7 %).
+
+> **Herramienta de apoyo, no de diagnóstico.** Las recomendaciones son orientativas y no sustituyen al criterio agronómico ni al análisis de laboratorio. Léase [Uso responsable](#uso-responsable) antes de aplicar cualquier producto fitosanitario.
+
+## Tabla de contenidos
+
+- [Cómo funciona](#cómo-funciona)
+- [Resultados](#resultados)
+- [Inicio rápido](#inicio-rápido)
+- [API del backend](#api-del-backend)
+- [Reproducir el entrenamiento](#reproducir-el-entrenamiento)
+- [Estructura del repositorio](#estructura-del-repositorio)
+- [Recursos publicados](#recursos-publicados)
+- [Uso responsable](#uso-responsable)
+- [Licencias](#licencias)
+- [Cómo citar](#cómo-citar)
+
+## Cómo funciona
 
 <div align="center">
-  <img src="assets/pipeline.jpg" alt="Diagrama de actividad del pipeline" width="760" />
+  <img src="docs/assets/pipeline.jpg" alt="Diagrama de actividad del sistema" width="760" />
 </div>
 
-- **M_seg**: U-Net ResNet50 256×256, 2 clases (hoja/fondo).
-- **M1**: EfficientNetB1 240×240, doble entrada (original + hoja aislada), sigmoid.
-- **M2**: EfficientNetB0 224×224, doble entrada, softmax 5 clases (`bacterianas`, `fungicas`, `plagas_insectos`, `roya`, `virales`).
-- **Backend**: FastAPI + Docker (mismos modelos por HTTP, opcional).
+La imagen atraviesa cuatro etapas. Cada una acota el problema de la siguiente, de modo que un fallo temprano no se propaga en silencio.
 
-### Recursos publicados
+| Etapa | Modelo | Entrada | Salida |
+|---|---|---|---|
+| Segmentación | U-Net con codificador ResNet50 | 256 × 256 | Máscara hoja–fondo |
+| Estado sanitario | EfficientNetB1, doble entrada | 240 × 240 | Sana o enferma |
+| Patógeno | EfficientNetB0, doble entrada | 224 × 224 | Cinco categorías |
+| Severidad | Reglas de color en CIELab | Región segmentada | Porcentaje de área afectada |
 
-| Recurso | Enlace |
-|---|---|
-| Dataset curado | [alejandroramirezucb/soybean_image_dataset](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset) |
-| Modelos entrenados (float32 e int8) | [alejandroramirezucb/glycine-vision-models](https://huggingface.co/alejandroramirezucb/glycine-vision-models) |
-| Resultados computacionales del artículo | [Release v1.0-paper](https://github.com/alejandroramirezucb/glycine-vision-dss/releases/tag/v1.0-paper) |
+Dos decisiones de diseño sostienen el resto:
 
----
+**Doble entrada.** Los clasificadores no ven solo la foto: reciben también la hoja recortada por el segmentador, con el fondo a cero. Ambas ramas comparten codificador y sus vectores se concatenan antes de la cabeza. El estudio de ablación muestra que ese aislamiento es el componente de mayor aporte; sustituirlo por la imagen cruda rinde *peor* que usar una sola entrada.
 
-## Estructura
+**Severidad sin red neuronal.** El porcentaje de área afectada se calcula con umbrales sobre L\*, a\* y b\* dentro de la región segmentada, separando clorosis, necrosis y defoliación. Es interpretable y auditable píxel a píxel, a cambio de requerir recalibración si cambian mucho las condiciones de captura.
 
-```
-glycine-vision-dss/
-├── app/                Flutter (Clean Architecture: domain · application · infrastructure · presentation)
-│   └── assets/models/{hs,pd,seg}/   M1 · M2 · M_seg (.tflite)
-├── backend/            FastAPI (server.py, config.py, inference/, services/, Dockerfile)
-├── training/notebooks/ 01–13 (Google Colab / Kaggle) + requirements.txt
-├── models/             Modelos desplegados {health,disease,segmentation}/ (no versionado)
-├── paper/              Manuscrito (articulo-cientifico.docx · .pdf)
-├── TRAZABILIDAD.md     Mapa afirmación del artículo → código y evidencia
-├── DATASET_CARD.md     Tarjeta del dataset (fuentes, licencias, curación)
-├── MODEL_CARD.md       Tarjeta de los modelos publicados en Hugging Face
-├── assets/             Logo del proyecto
-├── CITATION.cff        Metadatos de cita (formato CFF)
-└── docker-compose.yml
-```
+La aplicación consulta además Open-Meteo y desplaza el nivel de severidad un escalón según reglas específicas por patógeno, sin que ello altere el diagnóstico.
 
----
+## Resultados
 
-## Licencias
+| Modelo | Métrica | Valor | IC 95 % |
+|---|---|---|---|
+| Segmentador | Recall de hoja (Dice; IoU) | 0.977 (0.885; 0.808) | — |
+| Estado sanitario | Exactitud (recall clase enferma) | 0.980 (1.000) | 0.960–0.995 |
+| Patógeno | Exactitud / F1 macro | 0.969 / 0.968 | 0.949–0.986 |
 
-El proyecto combina tres componentes con condiciones distintas. No es posible unificarlos bajo una sola licencia
-porque los datos derivan de fuentes de terceros con restricciones propias.
+Frente a un evaluador experto sobre 60 hojas, la severidad concordó con r = 0.967 y CCC = 0.941, y el diagnóstico fue comparable (0.95 frente a 0.867; McNemar p = 0.0625).
 
-| Componente | Licencia | Alcance |
-|---|---|---|
-| Código (app, backend, notebooks) | **MIT** (`LICENSE`) | Uso libre con atribución |
-| Manuscrito (`paper/`) | **CC BY 4.0** | Declarado en el artículo |
-| Dataset curado | **Indeterminada, no comercial** | Deriva de fuentes mixtas; véase [DATASET_CARD.md](DATASET_CARD.md) |
-| Modelos entrenados (`models/`, `app/assets/models/`) | Siguen la condición del dataset | Uso académico |
+En un Xiaomi 2203129G de gama media, el flujo completo tarda unos **157 ms** por hoja con las variantes int8.
 
-El dataset hereda **CC BY-NC-SA 4.0** de PlantVillage y contiene dos fuentes sin licencia declarada, por lo que el
-conjunto combinado **no debe asumirse reutilizable comercialmente**.
+> Estas métricas provienen de un corpus que combina ocho fuentes públicas **sin partición por procedencia**, por lo que reflejan desempeño interno del corpus y no evidencia de generalización a dominios nuevos. Cada cifra es rastreable hasta el notebook que la produce en [`docs/trazabilidad.md`](docs/trazabilidad.md).
 
----
+## Inicio rápido
 
-## Ejecutar la app
+### Aplicación
+
+Requiere Flutter 3.x, Dart ≥ 3.0 y Android SDK ≥ 31. Los modelos se distribuyen con Git LFS, así que hace falta tenerlo instalado antes de clonar.
 
 ```bash
-cd app
+git lfs install
+git clone https://github.com/alejandroramirezucb/glycine-vision-dss.git
+cd glycine-vision-dss/app
 flutter pub get
-flutter run -d <device_id>      # Android / iOS
-flutter run -d chrome           # Web (requiere el backend corriendo)
+flutter run -d <id_del_dispositivo>
 ```
 
-Requisitos: Flutter 3.x, Android SDK ≥31, Dart ≥3.0.
+### Backend
 
-## Ejecutar el backend
+Opcional: expone los mismos modelos por HTTP para integraciones. La app no lo necesita.
 
-**Docker (recomendado):**
 ```bash
-docker compose up --build       # API en http://localhost:8001
+docker compose up --build
 ```
 
-**Manual:**
+La API queda en `http://localhost:8001`. Para ejecutarlo sin Docker:
+
 ```bash
 cd backend
-python -m venv env
-.\env\Scripts\Activate.ps1
+python -m venv .venv && .venv/Scripts/Activate.ps1   # Linux y macOS: source .venv/bin/activate
 pip install -r requirements.txt
 python server.py
 ```
 
-| Variable de entorno | Default | Descripción |
-|---|---|---|
-| `MODELS_DIR` | `../models` | Ruta a la carpeta de modelos |
+Los modelos del backend no se versionan: se generan desde `training/outputs/` con el procedimiento descrito en [`docs/reproducibilidad.md`](docs/reproducibilidad.md).
 
-### API
+| Variable de entorno | Valor por defecto | Descripción |
+|---|---|---|
+| `MODELS_DIR` | `../models` | Carpeta de la que se cargan los `.tflite` |
+| `MAX_UPLOAD_BYTES` | `10485760` | Tamaño máximo de imagen aceptado |
+| `CORS_ORIGINS` | *(vacío)* | Orígenes permitidos, separados por comas |
+
+## API del backend
 
 ```bash
 curl -X POST http://localhost:8001/api/diagnose \
-  -F "image=@leaf.jpg" -F "lat=-17.5" -F "lon=-65.3"
+  -F "image=@hoja.jpg" -F "lat=-17.78" -F "lon=-63.18"
 ```
 
-Respuesta: `enfermedades_detectadas`, `global_severity_pct`, `seg_mask` (base64 uint8 256×256), `climate`.
+Devuelve `enfermedades_detectadas`, `global_severity_pct`, `seg_mask` (máscara uint8 de 256 × 256 en base64) y `climate`.
 
----
+## Reproducir el entrenamiento
 
-## Entrenar (Google Colab, GPU)
+Los notebooks se ejecutan en orden en Google Colab o Kaggle con GPU. El segmentador debe entrenarse **antes** que los clasificadores, porque produce la hoja aislada que constituye su segunda entrada.
 
-Ejecutar los notebooks en orden. M_seg se entrena **antes** que M1/M2 (produce la hoja aislada que es su segunda entrada).
-
-| Notebook | Hace | Salida |
+| Notebook | Propósito | Salidas |
 |---|---|---|
-| `01_preparacion_datos.ipynb` | Descarga datasets (HF) + dedup (MD5 + pHash, sin fuga train/test) + split train/val + Test; máscaras COCO (Roboflow + SoyCotton) | `splits/` |
-| `02_entrenamiento_segmentacion.ipynb` | M_seg ResNet50 U-Net hoja/fondo (COCO fusionado) | `model_seg.keras` (+ `.tflite`) |
-| `03_entrenamiento_m1_estado_sanitario.ipynb` | M1 EfficientNetB1 doble entrada (hoja aislada por M_seg + Shades-of-Gray) | `model1_binary.keras` |
-| `04_entrenamiento_m2_patogeno.ipynb` | M2 EfficientNetB0 doble entrada softmax | `model2_pathogen.keras` |
-| `05_evaluacion_modelos.ipynb` | Métricas en test (M1/M2 + IC95% bootstrap; M_seg recall/Dice/IoU vs COCO) | `training_metrics.json`, `mseg_test_metrics.json` |
-| `06_exportacion_tflite.ipynb` | Export TFLite float32 + int8, equivalencia Keras↔TFLite, labels | `.tflite`, `model_metadata.json` |
-| `07_validacion_frente_a_experto.ipynb` | Severidad CIELab (M_seg + reglas de color) y patógeno de la app vs. experto (n=60): Pearson, CCC, MAE, RMSE, Bland-Altman, McNemar | `comparacion_app_vs_experto.json` |
-| `08_diagnostico_baselines.ipynb` | Diagnóstico rápido de baselines vs. propuesto (M2, 1 semilla, presupuesto reducido) | `diagnostico_m2.csv` |
-| `09_ablacion_presupuesto_reducido.ipynb` | Baselines y ablación por componente (M2, 3 semillas): media ± desviación | `baselines_m2.csv`, `ablation_m2.csv` |
-| `10_verificacion_presupuesto_completo.ipynb` | Verificación al presupuesto completo (propuesto vs. EfficientNetB0 de una entrada) | `verificacion_full_m2.csv` |
-| `11_ablacion_presupuesto_completo.ipynb` | Ablación por componente al presupuesto completo (20+45, datos completos, 3 semillas) | `ablation_full_m2.csv` |
-| `12_calibracion_probabilidades.ipynb` | Calibración de M1 y M2: ECE, MCE, Brier y diagramas de confiabilidad | `calibracion.csv`, `calibracion.json` |
-| `13_evaluacion_variantes_exportadas.ipynb` | Keras vs. TFLite float32 vs. int8 en el test: exactitud, F1 y diferencias | `evaluacion_variantes.csv`, `.json` |
+| `01_preparacion_datos` | Descarga, filtros de calidad, deduplicación por MD5 y pHash, particiones | `splits/` |
+| `02_entrenamiento_segmentacion` | U-Net ResNet50 sobre máscaras COCO fusionadas | `model_seg.keras` |
+| `03_entrenamiento_m1_estado_sanitario` | EfficientNetB1 de doble entrada | `model1_binary.keras` |
+| `04_entrenamiento_m2_patogeno` | EfficientNetB0 de doble entrada | `model2_pathogen.keras` |
+| `05_evaluacion_modelos` | Métricas en test con IC 95 % por bootstrap | `training_metrics.json` |
+| `06_exportacion_tflite` | Exportación float32 e int8, verificación de equivalencia | `*.tflite` |
+| `07_validacion_frente_a_experto` | Cascada completa sobre las hojas evaluadas por el experto | `comparacion_app_vs_experto.json` |
+| `08`–`11` | Baselines y ablación por componente, presupuesto reducido y completo | `ablation_full_m2.csv` |
+| `12_calibracion_probabilidades` | ECE, MCE y Brier con diagramas de confiabilidad | `calibracion.json` |
+| `13_evaluacion_variantes_exportadas` | Keras frente a TFLite float32 e int8 | `evaluacion_variantes.csv` |
 
-**Máscaras de segmentación (M_seg):**
-- Tus máscaras de Roboflow → `training/splits/masks/` (con `_annotations.coco.json`).
-- Dataset SoyCotton (figshare CC BY 4.0) → `training/splits/masks_soycotton/annotations/` (JSON COCO) + `training/splits/masks_soycotton/images/` (imágenes). El notebook 02 las **fusiona** automáticamente. La celda de descarga del notebook 01 reproduce esa estructura.
+El detalle de dependencias entre notebooks, las rutas de datos y el procedimiento de despliegue están en [`docs/reproducibilidad.md`](docs/reproducibilidad.md).
 
-Tras mejorar solo M_seg: reentrenar `02`, reejecutar `05` (métricas) y `06` (export). M1/M2 (`03`/`04`) no requieren reentrenamiento.
+## Estructura del repositorio
 
----
-
-## Desplegar modelos entrenados
-
-Desde la raíz del proyecto, tras completar los notebooks:
-
-```powershell
-$SRC = "training/outputs"; $APP = "app/assets/models"; $MOD = "models"
-
-Copy-Item "$SRC/model1_int8.tflite"    "$APP/hs/model.tflite" -Force
-Copy-Item "$SRC/labels_m1.txt"         "$APP/hs/labels.txt" -Force
-Copy-Item "$SRC/model2.tflite"         "$APP/pd/model_unquant.tflite" -Force
-Copy-Item "$SRC/labels_m2.txt"         "$APP/pd/labels.txt" -Force
-Copy-Item "$SRC/model_seg_int8.tflite" "$APP/seg/model_seg.tflite" -Force
-
-Copy-Item "$SRC/model1.tflite"         "$MOD/health/model.tflite" -Force
-Copy-Item "$SRC/model1_int8.tflite"    "$MOD/health/model_int8.tflite" -Force
-Copy-Item "$SRC/labels_m1.txt"         "$MOD/health/labels.txt" -Force
-Copy-Item "$SRC/model2.tflite"         "$MOD/disease/model.tflite" -Force
-Copy-Item "$SRC/model2_int8.tflite"    "$MOD/disease/model_int8.tflite" -Force
-Copy-Item "$SRC/labels_m2.txt"         "$MOD/disease/labels.txt" -Force
-Copy-Item "$SRC/model_seg.tflite"      "$MOD/segmentation/model.tflite" -Force
-Copy-Item "$SRC/model_seg_int8.tflite" "$MOD/segmentation/model_int8.tflite" -Force
-Write-Host "Deploy OK"
 ```
+glycine-vision-dss/
+├── app/                  Aplicación Flutter (dominio · aplicación · infraestructura · presentación)
+│   └── assets/models/    Modelos desplegados en el dispositivo (Git LFS)
+├── backend/              Servicio FastAPI e implementación de referencia de la inferencia
+├── training/notebooks/   Notebooks 01–13 de reproducción
+├── scripts/              Utilidades de validación y mantenimiento
+├── docs/                 Tarjetas de datos y modelos, trazabilidad, arquitectura
+├── paper/                Manuscrito y figuras
+└── .github/workflows/    Integración continua
+```
+
+La implementación de referencia de la inferencia vive en `backend/inference/`: es la fuente de verdad del preprocesamiento, los umbrales y el encadenamiento, y la app replica su comportamiento.
+
+## Recursos publicados
+
+| Recurso | Enlace |
+|---|---|
+| Conjunto de datos curado | [`soybean_image_dataset`](https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset) |
+| Modelos entrenados, float32 e int8 | [`glycine-vision-models`](https://huggingface.co/alejandroramirezucb/glycine-vision-models) |
+| Resultados numéricos del artículo | [Release `v1.0-paper`](https://github.com/alejandroramirezucb/glycine-vision-dss/releases/tag/v1.0-paper) |
+| Manuscrito | [`paper/articulo-cientifico.pdf`](paper/articulo-cientifico.pdf) |
+
+## Uso responsable
+
+El sistema puede influir en decisiones de aplicación de fitosanitarios. Sus recomendaciones son orientativas, nunca prescriptivas:
+
+- No reemplazan al agrónomo ni al diagnóstico de laboratorio.
+- Las dosis deben verificarse contra la etiqueta del producto y la normativa local (SENASAG en Bolivia).
+- Deben considerarse el riesgo ambiental, la resistencia y la seguridad del aplicador.
+
+No se ha validado con imágenes propias de Santa Cruz: la aplicabilidad regional es plausible pero **no está demostrada**.
+
+## Licencias
+
+El proyecto combina tres componentes con condiciones distintas. No pueden unificarse bajo una sola licencia porque los datos derivan de fuentes de terceros con restricciones propias.
+
+| Componente | Licencia | Alcance |
+|---|---|---|
+| Código (app, backend, notebooks) | [MIT](LICENSE) | Uso libre con atribución |
+| Manuscrito | CC BY 4.0 | Declarado en el propio artículo |
+| Conjunto de datos curado | Indeterminada, no comercial | Véase [`docs/dataset-card.md`](docs/dataset-card.md) |
+| Modelos entrenados | Heredan la condición del conjunto de datos | Uso académico |
+
+El conjunto de datos hereda **CC BY-NC-SA 4.0** de PlantVillage e incluye dos fuentes sin licencia declarada, por lo que **no debe asumirse reutilizable comercialmente**.
+
+## Cómo citar
+
+```bibtex
+@software{jaldin_ramirez_2026_glycine_vision,
+  author  = {Jaldín Torrico, Edgar and Ramírez Vallejos, Alejandro},
+  title   = {Glycine Vision DSS},
+  version = {1.0.0},
+  year    = {2026},
+  url     = {https://github.com/alejandroramirezucb/glycine-vision-dss}
+}
+```
+
+Los metadatos completos están en [`CITATION.cff`](CITATION.cff). Para contribuir, véase [`CONTRIBUTING.md`](CONTRIBUTING.md).
