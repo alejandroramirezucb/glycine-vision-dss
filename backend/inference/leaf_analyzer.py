@@ -23,7 +23,11 @@ class SeverityAnalyzer:
         chlorosis = leaf & (~green) & (blue_yellow > _CHLOROSIS_B_MIN) & (luminance > _CHLOROSIS_L_MIN)
         necrosis = leaf & (~green) & (luminance < _NECROSIS_L_MAX) & (blue_yellow > _NECROSIS_B_MIN)
 
-        soil_like = (np.abs(green_red - 128) < _SOIL_AB_TOL) & (np.abs(blue_yellow - 128) < _SOIL_AB_TOL + 6) & (luminance > _SOIL_L_MIN)
+        soil_like = (
+            (np.abs(green_red - 128) < _SOIL_AB_TOL)
+            & (np.abs(blue_yellow - 128) < _SOIL_AB_TOL + 6)
+            & (luminance > _SOIL_L_MIN)
+        )
         holes = self._enclosed_holes(leaf) & soil_like
 
         expected_area = int(np.count_nonzero(leaf)) + int(np.count_nonzero(holes)) or 1

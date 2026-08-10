@@ -1,5 +1,5 @@
 import base64
-from typing import Callable, Optional
+from collections.abc import Callable
 
 import cv2
 import numpy as np
@@ -13,12 +13,12 @@ from inference.segmenter import LeafSegmenter
 class DiagnosisService:
     def __init__(
         self,
-        segmenter: Optional[LeafSegmenter],
+        segmenter: LeafSegmenter | None,
         health: LeafClassifier,
         disease: LeafClassifier,
         severity: SeverityAnalyzer,
         preprocessor: Preprocessor,
-        climate_provider: Callable[[float, float], Optional[dict]],
+        climate_provider: Callable[[float, float], dict | None],
         health_gate: float,
         disease_confidence: float,
         max_image_side: int,
@@ -33,7 +33,7 @@ class DiagnosisService:
         self._disease_confidence = disease_confidence
         self._max_side = max_image_side
 
-    def diagnose(self, image_bgr: np.ndarray, lat: Optional[float], lon: Optional[float]) -> dict:
+    def diagnose(self, image_bgr: np.ndarray, lat: float | None, lon: float | None) -> dict:
         image_bgr = self._resize_to_max(image_bgr)
         height, width = image_bgr.shape[:2]
         norm = self._pre.normalize(cv2.cvtColor(image_bgr, cv2.COLOR_BGR2RGB))
@@ -49,7 +49,7 @@ class DiagnosisService:
         p_diseased = self._health.probability_diseased(health_scores)
 
         findings: list[dict] = []
-        mask3: Optional[np.ndarray] = None
+        mask3: np.ndarray | None = None
         severity = 0.0
 
         if leaf is not None and p_diseased >= self._gate:
@@ -58,16 +58,18 @@ class DiagnosisService:
             mask3, severity, components = self._severity.analyze(self._pre.to_mask_size(norm), leaf)
             if detected is not None:
                 label, confidence = detected
-                findings = [{
-                    "clase": label,
-                    "coverage_pct": severity,
-                    "avg_severidad_pct": severity,
-                    "max_severidad_pct": severity,
-                    "nivel": self._severity.level(severity),
-                    "avg_probability": round(confidence, 3),
-                    "zone_count": 1,
-                    **components,
-                }]
+                findings = [
+                    {
+                        "clase": label,
+                        "coverage_pct": severity,
+                        "avg_severidad_pct": severity,
+                        "max_severidad_pct": severity,
+                        "nivel": self._severity.level(severity),
+                        "avg_probability": round(confidence, 3),
+                        "zone_count": 1,
+                        **components,
+                    }
+                ]
         elif leaf is not None:
             mask3 = leaf.astype(np.uint8)
 

@@ -1,11 +1,10 @@
-from typing import Optional
 import requests
 
 _API_URL = "https://api.open-meteo.com/v1/forecast"
 _TIMEOUT_S = 5
 
 
-def fetch_climate(lat: float, lon: float) -> Optional[dict]:
+def fetch_climate(lat: float, lon: float) -> dict | None:
     try:
         resp = requests.get(
             _API_URL,

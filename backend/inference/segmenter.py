@@ -16,11 +16,8 @@ class LeafSegmenter:
         self._interp.invoke()
         raw = self._interp.get_tensor(out["index"])[0]
         arr = raw.reshape(self._size, self._size, -1) if raw.ndim == 1 else raw
-        if arr.ndim == 3:
-            leaf = (np.argmax(arr, axis=-1) == 1).astype(np.uint8)
-        else:
-            leaf = (arr > 0).astype(np.uint8)
-        return self._largest_component(leaf)
+        leaf = (np.argmax(arr, axis=-1) == 1) if arr.ndim == 3 else (arr > 0)
+        return self._largest_component(leaf.astype(np.uint8))
 
     @staticmethod
     def _largest_component(mask: np.ndarray) -> np.ndarray:

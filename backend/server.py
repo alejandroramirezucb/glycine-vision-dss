@@ -1,5 +1,3 @@
-from typing import Optional
-
 import cv2
 import numpy as np
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
@@ -42,8 +40,8 @@ print(f"[ok] Segmenter: {'loaded' if _registry.segmenter else 'not available'}")
 @app.post("/api/diagnose")
 async def diagnose(
     image: UploadFile = File(...),
-    lat: Optional[float] = Form(None),
-    lon: Optional[float] = Form(None),
+    lat: float | None = Form(None),
+    lon: float | None = Form(None),
 ):
     payload = await image.read()
     if len(payload) > MAX_UPLOAD_BYTES:

@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 import tensorflow as tf
 
@@ -14,14 +13,14 @@ class ModelRegistry:
         self.health = LeafClassifier(self._load("health/model_int8.tflite"), self._load_labels("health/labels.txt"))
         self.disease = LeafClassifier(self._load("disease/model.tflite"), self._load_labels("disease/labels.txt"))
         segmenter = self._try_load("segmentation/model_int8.tflite")
-        self.segmenter: Optional[LeafSegmenter] = LeafSegmenter(segmenter) if segmenter is not None else None
+        self.segmenter: LeafSegmenter | None = LeafSegmenter(segmenter) if segmenter is not None else None
 
     def _load(self, name: str) -> tf.lite.Interpreter:
         interpreter = tf.lite.Interpreter(model_path=str(self._dir / name), num_threads=TFLITE_THREADS)
         interpreter.allocate_tensors()
         return interpreter
 
-    def _try_load(self, name: str) -> Optional[tf.lite.Interpreter]:
+    def _try_load(self, name: str) -> tf.lite.Interpreter | None:
         try:
             return self._load(name)
         except Exception as error:
