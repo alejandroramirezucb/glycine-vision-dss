@@ -1,1 +1,22 @@
+# Normalización de fin de línea
+* text=auto eol=lf
+
+# Binarios versionados con Git LFS
 *.tflite filter=lfs diff=lfs merge=lfs -text
+
+# Binarios: sin diff ni normalización
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.keras binary
+*.pdf   binary
+*.docx  binary
+
+# Los notebooks son JSON: diff legible, sin fusión automática
+*.ipynb text merge=binary
+
+# Excluidos del cálculo de lenguajes de GitHub
+app/ios/**        linguist-vendored
+app/android/**    linguist-vendored
+paper/**          linguist-documentation
+docs/**           linguist-documentation

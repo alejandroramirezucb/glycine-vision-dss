@@ -1,0 +1,57 @@
+name: Reporte de error
+description: Informar de un comportamiento incorrecto en la aplicación, el backend o los notebooks
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Gracias por el reporte. Cuanto más concreto sea, antes podremos reproducirlo.
+        Si se trata de una vulnerabilidad de seguridad, **no la publiques aquí**: sigue [SECURITY.md](../blob/main/SECURITY.md).
+
+  - type: dropdown
+    id: componente
+    attributes:
+      label: Componente
+      options:
+        - Aplicación Flutter
+        - Backend FastAPI
+        - Notebooks de entrenamiento
+        - Documentación
+    validations:
+      required: true
+
+  - type: textarea
+    id: descripcion
+    attributes:
+      label: Qué ocurre
+      description: Comportamiento observado frente al esperado.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduccion
+    attributes:
+      label: Cómo reproducirlo
+      placeholder: |
+        1. Abrir la pantalla de diagnóstico
+        2. Capturar una hoja con fondo de suelo
+        3. La severidad se reporta como 100 %
+    validations:
+      required: true
+
+  - type: textarea
+    id: entorno
+    attributes:
+      label: Entorno
+      description: Sistema operativo, versión de Flutter o de Python, y modelo de dispositivo si aplica.
+      placeholder: |
+        Android 14, Xiaomi 2203129G
+        Flutter 3.24.0, Dart 3.5.0
+    validations:
+      required: true
+
+  - type: textarea
+    id: extra
+    attributes:
+      label: Registros o capturas
+      description: Salida de consola, trazas de error o capturas de pantalla.

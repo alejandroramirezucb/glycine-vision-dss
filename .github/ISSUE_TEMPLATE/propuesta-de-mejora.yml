@@ -1,0 +1,33 @@
+name: Propuesta de mejora
+description: Sugerir una funcionalidad o un cambio de comportamiento
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problema
+    attributes:
+      label: Qué problema resuelve
+      description: Describe la necesidad antes que la solución.
+    validations:
+      required: true
+
+  - type: textarea
+    id: propuesta
+    attributes:
+      label: Propuesta
+      description: Qué debería hacer el sistema.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternativas
+    attributes:
+      label: Alternativas consideradas
+
+  - type: checkboxes
+    id: alcance
+    attributes:
+      label: Alcance
+      options:
+        - label: Requiere reentrenar uno o más modelos
+        - label: Cambia el contrato de la API del backend
+        - label: Afecta a las recomendaciones fitosanitarias

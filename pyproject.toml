@@ -1,0 +1,43 @@
+[project]
+name = "glycine-vision-dss"
+version = "1.0.0"
+description = "Sistema de apoyo al triaje fitosanitario en soya con inferencia local"
+readme = "README.md"
+requires-python = ">=3.12"
+license = { file = "LICENSE" }
+authors = [
+    { name = "Edgar Jaldín Torrico" },
+    { name = "Alejandro Ramírez Vallejos", email = "alejandro.ramirez.v@ucb.edu.bo" },
+]
+
+[project.urls]
+Repository = "https://github.com/alejandroramirezucb/glycine-vision-dss"
+Dataset = "https://huggingface.co/datasets/alejandroramirezucb/soybean_image_dataset"
+Models = "https://huggingface.co/alejandroramirezucb/glycine-vision-models"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+extend-exclude = ["training/outputs", "models"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle
+    "F",   # pyflakes
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+    "SIM", # flake8-simplify
+    "RUF", # reglas propias de ruff
+]
+
+[tool.ruff.lint.per-file-ignores]
+# En FastAPI, File(...) y Form(...) como valores por defecto son el idioma
+# documentado del framework, no la trampa que B008 pretende evitar.
+"backend/server.py" = ["B008"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["config", "inference", "services"]
+
+[tool.ruff.format]
+quote-style = "double"
