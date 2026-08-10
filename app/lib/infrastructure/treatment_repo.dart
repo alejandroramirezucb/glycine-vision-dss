@@ -18,7 +18,11 @@ class JsonTreatmentRepository implements TreatmentRepository {
     caseSensitive: false,
   );
   static const Map<String, int> _severityRank = {
-    'minima': 0, 'leve': 1, 'moderada': 2, 'severa': 3, 'critica': 4,
+    'minima': 0,
+    'leve': 1,
+    'moderada': 2,
+    'severa': 3,
+    'critica': 4,
   };
   static const Map<String, String> _keyAliases = {
     'bacterial_diseases': 'bacterianas',
@@ -60,9 +64,12 @@ class JsonTreatmentRepository implements TreatmentRepository {
     );
   }
 
-  static List<Incompatibility> _parseIncompatibilities(Map<String, dynamic> meta) {
+  static List<Incompatibility> _parseIncompatibilities(
+      Map<String, dynamic> meta) {
     final raw = meta['incompatibilities'] as List? ?? [];
-    return raw.map((e) => Incompatibility.fromJson(e as Map<String, dynamic>)).toList();
+    return raw
+        .map((e) => Incompatibility.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   static Map<String, String> _parseWindows(Map<String, dynamic> meta) {
@@ -76,7 +83,8 @@ class JsonTreatmentRepository implements TreatmentRepository {
     ClimateData? climate,
     double fieldAreaHa = 1.0,
   }) {
-    final relevant = findings.where((f) => f.coveragePct >= _minCoveragePct).toList();
+    final relevant =
+        findings.where((f) => f.coveragePct >= _minCoveragePct).toList();
     if (relevant.isEmpty)
       return const TreatmentPlan(priorities: [], warnings: []);
 
@@ -84,7 +92,8 @@ class JsonTreatmentRepository implements TreatmentRepository {
         .map((f) => _buildPriority(f, climate, fieldAreaHa))
         .whereType<TreatmentPriority>()
         .toList()
-      ..sort((a, b) => _rank(b.severityLevel).compareTo(_rank(a.severityLevel)));
+      ..sort(
+          (a, b) => _rank(b.severityLevel).compareTo(_rank(a.severityLevel)));
 
     return TreatmentPlan(
       priorities: priorities,
@@ -92,7 +101,8 @@ class JsonTreatmentRepository implements TreatmentRepository {
       applicationWindow: _worstWindow(priorities),
       climateGuidance: climate == null ? null : _climateGuidance(climate),
       fieldAreaHa: fieldAreaHa,
-      sprayVolume: '${(fieldAreaHa * _sprayLitersPerHa).round()} L de caldo (~200 L/ha)',
+      sprayVolume:
+          '${(fieldAreaHa * _sprayLitersPerHa).round()} L de caldo (~200 L/ha)',
     );
   }
 
@@ -129,11 +139,13 @@ class JsonTreatmentRepository implements TreatmentRepository {
       total /= 1000;
       outUnit = 'L';
     }
-    final amount = total >= 100 ? total.toStringAsFixed(0) : total.toStringAsFixed(1);
+    final amount =
+        total >= 100 ? total.toStringAsFixed(0) : total.toStringAsFixed(1);
     return 'Para ${_fmtArea(fieldAreaHa)} ha: ~$amount $outUnit de producto en ${liters.round()} L de caldo';
   }
 
-  String _fmtArea(double ha) => ha % 1 == 0 ? ha.toStringAsFixed(0) : ha.toStringAsFixed(1);
+  String _fmtArea(double ha) =>
+      ha % 1 == 0 ? ha.toStringAsFixed(0) : ha.toStringAsFixed(1);
 
   String _resolveKey(String label) {
     final norm = normalizeKey(label);
@@ -141,19 +153,24 @@ class JsonTreatmentRepository implements TreatmentRepository {
   }
 
   TreatmentActions? _readActions(Map<String, dynamic> body, String severity) {
-    final bySeverity = body['by_severity'] as Map<String, dynamic>?
-        ?? body['por_severidad'] as Map<String, dynamic>?;
+    final bySeverity = body['by_severity'] as Map<String, dynamic>? ??
+        body['por_severidad'] as Map<String, dynamic>?;
     if (bySeverity == null) return null;
-    final entry = bySeverity[severity] as Map<String, dynamic>?
-        ?? bySeverity['moderada'] as Map<String, dynamic>?
-        ?? bySeverity.values.first as Map<String, dynamic>;
-    final rawRefs = ((body['references'] as List?) ?? (body['fuentes'] as List?) ?? []);
-    final refs = rawRefs.map((f) => Reference.fromJson(f as Map<String, dynamic>)).toList();
+    final entry = bySeverity[severity] as Map<String, dynamic>? ??
+        bySeverity['moderada'] as Map<String, dynamic>? ??
+        bySeverity.values.first as Map<String, dynamic>;
+    final rawRefs =
+        ((body['references'] as List?) ?? (body['fuentes'] as List?) ?? []);
+    final refs = rawRefs
+        .map((f) => Reference.fromJson(f as Map<String, dynamic>))
+        .toList();
     return TreatmentActions(
       chemical: _resolveChemical(entry),
       cultural: entry['cultural'] as String? ?? '',
       biological: _resolveBiological(entry),
-      preventive: entry['preventive'] as String? ?? entry['preventivo'] as String? ?? '',
+      preventive: entry['preventive'] as String? ??
+          entry['preventivo'] as String? ??
+          '',
       references: refs,
     );
   }
@@ -180,7 +197,8 @@ class JsonTreatmentRepository implements TreatmentRepository {
 
   String _rationale(DiseaseFinding f, String level, ClimateData? climate) {
     final coverage = f.coveragePct.toStringAsFixed(0);
-    final base = '${coverage}% del área foliar · severidad promedio ${f.avgSeverityPct.toStringAsFixed(1)}%';
+    final base =
+        '${coverage}% del área foliar · severidad promedio ${f.avgSeverityPct.toStringAsFixed(1)}%';
     return (climate != null && level != f.severityLevel)
         ? '$base · urgencia elevada por el clima'
         : base;
@@ -199,11 +217,14 @@ class JsonTreatmentRepository implements TreatmentRepository {
   String? _climateGuidance(ClimateData c) {
     final parts = <String>[];
     if (c.humidity > 80)
-      parts.add('Humedad ${c.humidity.toStringAsFixed(0)}% — aplicar al amanecer para evitar dispersión por rocío');
+      parts.add(
+          'Humedad ${c.humidity.toStringAsFixed(0)}% — aplicar al amanecer para evitar dispersión por rocío');
     if (c.tempC > 32)
-      parts.add('Temperatura ${c.tempC.toStringAsFixed(1)}°C — evitar el mediodía; aplicar antes de las 9h o después de las 17h');
+      parts.add(
+          'Temperatura ${c.tempC.toStringAsFixed(1)}°C — evitar el mediodía; aplicar antes de las 9h o después de las 17h');
     if (c.precipMm > 3)
-      parts.add('Lluvia reciente ${c.precipMm.toStringAsFixed(1)} mm — adelantar la aplicación 24h');
+      parts.add(
+          'Lluvia reciente ${c.precipMm.toStringAsFixed(1)} mm — adelantar la aplicación 24h');
     return parts.isEmpty ? null : parts.join(' · ');
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
-Color pathogenColor(String pathogenClass) => switch (pathogenClass.toLowerCase()) {
+Color pathogenColor(String pathogenClass) =>
+    switch (pathogenClass.toLowerCase()) {
       'roya' => const Color(0xFFFF6F00),
       'fungicas' => const Color(0xFF1B5E20),
       'bacterianas' => const Color(0xFF0D47A1),

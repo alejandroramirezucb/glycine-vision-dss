@@ -77,7 +77,11 @@ class CompositeTreatmentCard extends StatelessWidget {
 
 class _PriorityBlock extends StatelessWidget {
   static const _labels = ['ACCIÓN INMEDIATA', 'SECUNDARIO', 'COMPLEMENTARIO'];
-  static const _icons = [Icons.warning_amber_rounded, Icons.flag_outlined, Icons.spa_outlined];
+  static const _icons = [
+    Icons.warning_amber_rounded,
+    Icons.flag_outlined,
+    Icons.spa_outlined
+  ];
 
   final TreatmentPriority priority;
   final int index;
@@ -129,10 +133,12 @@ class _PriorityBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _ActionSection(title: 'Químico', text: priority.actions.chemical),
-          if (priority.dosageNote.isNotEmpty) _DosageNote(text: priority.dosageNote, accent: accent),
+          if (priority.dosageNote.isNotEmpty)
+            _DosageNote(text: priority.dosageNote, accent: accent),
           _ActionSection(title: 'Cultural', text: priority.actions.cultural),
           _ActionSection(title: 'Biológico', text: priority.actions.biological),
-          _ActionSection(title: 'Preventivo', text: priority.actions.preventive),
+          _ActionSection(
+              title: 'Preventivo', text: priority.actions.preventive),
         ],
       ),
     );

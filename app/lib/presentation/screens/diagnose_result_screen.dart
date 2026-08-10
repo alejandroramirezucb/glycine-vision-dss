@@ -116,7 +116,8 @@ class _TreatmentNavButtonState extends State<_TreatmentNavButton> {
           child: const Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.medical_services_outlined, size: 18, color: Colors.white),
+              Icon(Icons.medical_services_outlined,
+                  size: 18, color: Colors.white),
               SizedBox(width: 8),
               Text(
                 'Ver tratamiento',
@@ -128,7 +129,8 @@ class _TreatmentNavButtonState extends State<_TreatmentNavButton> {
                 ),
               ),
               SizedBox(width: 6),
-              Icon(Icons.arrow_forward_ios_rounded, color: Colors.white, size: 16),
+              Icon(Icons.arrow_forward_ios_rounded,
+                  color: Colors.white, size: 16),
             ],
           ),
         ),
@@ -177,7 +179,8 @@ class _StaggeredCardState extends State<_StaggeredCard>
       animation: _ctrl,
       builder: (_, child) => Opacity(
         opacity: _opacity.value,
-        child: Transform.translate(offset: Offset(0, _slide.value), child: child),
+        child:
+            Transform.translate(offset: Offset(0, _slide.value), child: child),
       ),
       child: widget.child,
     );

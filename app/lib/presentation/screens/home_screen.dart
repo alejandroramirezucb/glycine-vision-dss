@@ -30,8 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
       maxHeight: 1920,
       imageQuality: 90,
     );
-    if (file != null && mounted)
-      context.read<AppState>().selectImage(file);
+    if (file != null && mounted) context.read<AppState>().selectImage(file);
   }
 
   Future<void> _pickCamera() async {
@@ -43,8 +42,7 @@ class _HomeScreenState extends State<HomeScreen> {
     );
     if (file == null) return;
     final result = kIsWeb ? file : await _crop(file.path);
-    if (result != null && mounted)
-      context.read<AppState>().selectImage(result);
+    if (result != null && mounted) context.read<AppState>().selectImage(result);
   }
 
   Future<XFile?> _crop(String sourcePath) async {
@@ -104,7 +102,8 @@ class _HomeScreenState extends State<HomeScreen> {
       if (permission != LocationPermission.always &&
           permission != LocationPermission.whileInUse) return null;
       final position = await Geolocator.getCurrentPosition(
-        locationSettings: const LocationSettings(timeLimit: Duration(seconds: 6)),
+        locationSettings:
+            const LocationSettings(timeLimit: Duration(seconds: 6)),
       );
       return (position.latitude, position.longitude);
     } catch (_) {
@@ -130,8 +129,8 @@ class _HomeScreenState extends State<HomeScreen> {
             child: const Text('Cancelar'),
           ),
           TextButton(
-            onPressed: () =>
-                Navigator.pop(ctx, double.tryParse(controller.text.replaceAll(',', '.'))),
+            onPressed: () => Navigator.pop(
+                ctx, double.tryParse(controller.text.replaceAll(',', '.'))),
             child: const Text('Guardar'),
           ),
         ],
@@ -266,8 +265,6 @@ class _AnimatedSubtitle extends StatelessWidget {
   }
 }
 
-
-
 class _UploadArea extends StatelessWidget {
   final dynamic imageFile;
   final bool isLoading;
@@ -284,8 +281,7 @@ class _UploadArea extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (isLoading)
-      return _LoadingFrame(step: step, onCancel: onCancel);
+    if (isLoading) return _LoadingFrame(step: step, onCancel: onCancel);
 
     if (imageFile == null)
       return _PlaceholderFrame(
@@ -334,7 +330,8 @@ class _LoadingFrame extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          const CircularProgressIndicator(color: AppTheme.accent, strokeWidth: 2),
+          const CircularProgressIndicator(
+              color: AppTheme.accent, strokeWidth: 2),
           const SizedBox(height: 14),
           AnimatedSwitcher(
             duration: AppTheme.animNormal,
@@ -471,7 +468,8 @@ class _OptionChip extends StatelessWidget {
                 children: [
                   Text(
                     label,
-                    style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                    style: const TextStyle(
+                        fontSize: 10, color: AppTheme.textMuted),
                   ),
                   Text(
                     value,

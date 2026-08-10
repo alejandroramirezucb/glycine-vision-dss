@@ -39,8 +39,10 @@ class _HealthyBannerState extends State<HealthyBanner>
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color.lerp(const Color(0xFFE8F5E9), const Color(0xFFC8E6C9), _shimmer.value)!,
-              Color.lerp(const Color(0xFFC8E6C9), const Color(0xFFE8F5E9), _shimmer.value)!,
+              Color.lerp(const Color(0xFFE8F5E9), const Color(0xFFC8E6C9),
+                  _shimmer.value)!,
+              Color.lerp(const Color(0xFFC8E6C9), const Color(0xFFE8F5E9),
+                  _shimmer.value)!,
             ],
           ),
           borderRadius: BorderRadius.circular(AppTheme.radiusChip),
@@ -48,7 +50,8 @@ class _HealthyBannerState extends State<HealthyBanner>
         ),
         child: const Row(
           children: [
-            Icon(Icons.check_circle_outline, color: Color(0xFF2E7D32), size: 22),
+            Icon(Icons.check_circle_outline,
+                color: Color(0xFF2E7D32), size: 22),
             SizedBox(width: 10),
             Expanded(
               child: Column(

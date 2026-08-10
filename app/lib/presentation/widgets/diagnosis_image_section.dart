@@ -29,9 +29,8 @@ class _DiagnosisImageSectionState extends State<DiagnosisImageSection> {
 
     Widget overlay;
     if (result.hasSegmentation && _showSeg) {
-      final aspect = result.imageHeight > 0
-          ? result.imageWidth / result.imageHeight
-          : 1.0;
+      final aspect =
+          result.imageHeight > 0 ? result.imageWidth / result.imageHeight : 1.0;
       overlay = SegmentationOverlay(
         rgbaMask: result.diseaseColoredMask!,
         imageChild: preview,
@@ -65,7 +64,9 @@ class _DiagnosisImageSectionState extends State<DiagnosisImageSection> {
             ],
           ),
         ),
-        if (result.hasSegmentation && _showSeg && result.findings.isNotEmpty) ...[
+        if (result.hasSegmentation &&
+            _showSeg &&
+            result.findings.isNotEmpty) ...[
           const SizedBox(height: 8),
           DiseaseLegend(findings: result.findings),
         ],
@@ -111,7 +112,9 @@ class _SegToggleState extends State<_SegToggle> {
             mainAxisSize: MainAxisSize.min,
             children: [
               Icon(
-                widget.active ? Icons.layers_rounded : Icons.layers_clear_rounded,
+                widget.active
+                    ? Icons.layers_rounded
+                    : Icons.layers_clear_rounded,
                 color: Colors.white,
                 size: 14,
               ),

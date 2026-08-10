@@ -1,7 +1,13 @@
 import '../domain/climate_data.dart';
 
 class ClimateSeverityAdjuster {
-  static const List<String> _severityOrder = ['minima', 'leve', 'moderada', 'severa', 'critica'];
+  static const List<String> _severityOrder = [
+    'minima',
+    'leve',
+    'moderada',
+    'severa',
+    'critica'
+  ];
 
   String adjust(String baseSeverity, String diseaseKey, ClimateData? climate) {
     if (climate == null) return baseSeverity;

@@ -34,7 +34,8 @@ class OnsetBadge extends StatelessWidget {
               if (onset.explanation.isNotEmpty)
                 Text(
                   onset.explanation,
-                  style: const TextStyle(fontSize: 10, color: AppTheme.textMuted),
+                  style:
+                      const TextStyle(fontSize: 10, color: AppTheme.textMuted),
                 ),
             ],
           ),

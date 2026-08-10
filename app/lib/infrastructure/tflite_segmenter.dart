@@ -30,7 +30,8 @@ class TfliteSegmenter {
       _interp.getInputTensor(0).data.buffer.asUint8List().setAll(0, src);
       _interp.invoke();
       final out = _interp.getOutputTensor(0).data.buffer.asUint8List();
-      return _largestComponent(_leafArgmax(out, n, channels, (i) => out[i].toDouble()));
+      return _largestComponent(
+          _leafArgmax(out, n, channels, (i) => out[i].toDouble()));
     }
 
     final inputFlat = Float32List(n * 3);
@@ -77,7 +78,9 @@ class TfliteSegmenter {
     var sr = 0.0, sg = 0.0, sb = 0.0;
     final pixels = rgb.length ~/ 3;
     for (var i = 0; i < rgb.length; i += 3) {
-      final r = rgb[i].toDouble(), g = rgb[i + 1].toDouble(), b = rgb[i + 2].toDouble();
+      final r = rgb[i].toDouble(),
+          g = rgb[i + 1].toDouble(),
+          b = rgb[i + 2].toDouble();
       sr += r * r * r * r * r * r;
       sg += g * g * g * g * g * g;
       sb += b * b * b * b * b * b;
@@ -100,7 +103,8 @@ class TfliteSegmenter {
 
   double _pow6root(double v) => v <= 0 ? 0 : math.pow(v, 1.0 / 6.0).toDouble();
 
-  Uint8List _leafArgmax(List flat, int n, int channels, double Function(int) at) {
+  Uint8List _leafArgmax(
+      List flat, int n, int channels, double Function(int) at) {
     final mask = Uint8List(n);
     for (var i = 0; i < n; i++) {
       var best = 0;

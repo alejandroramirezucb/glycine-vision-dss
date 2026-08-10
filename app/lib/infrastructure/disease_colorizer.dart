@@ -26,7 +26,8 @@ class DiseaseColorizer {
         rgba[px + 2] = _healthyRgb.b;
         rgba[px + 3] = _healthyAlpha;
       } else {
-        final col = dominant != null ? _colorFor(dominant.pathogenClass) : _healthyRgb;
+        final col =
+            dominant != null ? _colorFor(dominant.pathogenClass) : _healthyRgb;
         rgba[px] = col.r;
         rgba[px + 1] = col.g;
         rgba[px + 2] = col.b;

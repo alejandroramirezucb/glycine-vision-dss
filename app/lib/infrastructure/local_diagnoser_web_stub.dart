@@ -14,6 +14,10 @@ class LocalDiagnoser implements Diagnoser {
   });
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0, DateTime? onsetDate}) =>
+  Future<DiagnoseResult> diagnose(XFile image,
+          {double? lat,
+          double? lon,
+          double fieldAreaHa = 1.0,
+          DateTime? onsetDate}) =>
       throw UnsupportedError('LocalDiagnoser no disponible en web');
 }

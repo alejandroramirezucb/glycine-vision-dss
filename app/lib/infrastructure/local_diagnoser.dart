@@ -48,7 +48,11 @@ class LocalDiagnoser implements Diagnoser {
         _onsetEstimator = onsetEstimator;
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0, DateTime? onsetDate}) async {
+  Future<DiagnoseResult> diagnose(XFile image,
+      {double? lat,
+      double? lon,
+      double fieldAreaHa = 1.0,
+      DateTime? onsetDate}) async {
     final bytes = await image.readAsBytes();
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw Exception('Imagen inválida');
@@ -67,16 +71,21 @@ class LocalDiagnoser implements Diagnoser {
       leafIsolated = seg.applyMask(original, leaf256);
     }
 
-    final pDiseased = _probabilityDiseased(_healthModel.runDual(original, leafIsolated));
+    final pDiseased =
+        _probabilityDiseased(_healthModel.runDual(original, leafIsolated));
 
     final findings = <DiseaseFinding>[];
     final zones = <Zone>[];
     Uint8List? diseaseColoredMask;
     double globalSeverityPct = 0.0;
 
-    if (seg != null && leaf256 != null && norm256 != null && pDiseased >= healthGate) {
+    if (seg != null &&
+        leaf256 != null &&
+        norm256 != null &&
+        pDiseased >= healthGate) {
       await Future.delayed(Duration.zero);
-      final detected = _topDisease(_diseaseModel.runDual(original, leafIsolated));
+      final detected =
+          _topDisease(_diseaseModel.runDual(original, leafIsolated));
       final sev = _severity.analyze(norm256, leaf256);
       globalSeverityPct = sev.percent;
 
@@ -87,7 +96,8 @@ class LocalDiagnoser implements Diagnoser {
           severityPct: sev.percent,
         );
         zones.add(Zone(
-          bbox: Rect.fromLTWH(0, 0, resized.width.toDouble(), resized.height.toDouble()),
+          bbox: Rect.fromLTWH(
+              0, 0, resized.width.toDouble(), resized.height.toDouble()),
           severityPct: sev.percent,
           severityLevel: sev.level,
           activeDiseases: [active],
@@ -111,7 +121,8 @@ class LocalDiagnoser implements Diagnoser {
 
     final climate = await _fetchClimate(lat, lon);
     final onset = _resolveOnset(findings, climate, onsetDate);
-    final plan = _treatments.buildComposite(findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
+    final plan = _treatments.buildComposite(
+        findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
 
     return DiagnoseResult(
       zones: zones,
@@ -174,12 +185,13 @@ class LocalDiagnoser implements Diagnoser {
     }
   }
 
-  OnsetEstimate? _resolveOnset(
-      List<DiseaseFinding> findings, ClimateData? climate, DateTime? onsetDate) {
+  OnsetEstimate? _resolveOnset(List<DiseaseFinding> findings,
+      ClimateData? climate, DateTime? onsetDate) {
     if (findings.isEmpty) return null;
     if (onsetDate != null) {
       final days = DateTime.now().difference(onsetDate).inDays.clamp(0, 999);
-      return OnsetEstimate(minDays: days, maxDays: days, explanation: '', indicated: true);
+      return OnsetEstimate(
+          minDays: days, maxDays: days, explanation: '', indicated: true);
     }
     final worst = findings.first;
     return _onsetEstimator.estimate(

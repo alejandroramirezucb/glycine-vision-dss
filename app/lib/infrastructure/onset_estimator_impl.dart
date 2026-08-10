@@ -54,26 +54,33 @@ class OnsetEstimatorImpl implements OnsetEstimator {
     final nivel = normalizeKey(severityLevel);
     final byClass = _table[clase];
     if (byClass == null) {
-      return const OnsetEstimate(minDays: 0, maxDays: 0, explanation: 'Clase desconocida');
+      return const OnsetEstimate(
+          minDays: 0, maxDays: 0, explanation: 'Clase desconocida');
     }
     final base = byClass[nivel];
     if (base == null) {
-      return const OnsetEstimate(minDays: 0, maxDays: 0, explanation: 'Nivel desconocido');
+      return const OnsetEstimate(
+          minDays: 0, maxDays: 0, explanation: 'Nivel desconocido');
     }
 
     var minD = base[0];
     var maxD = base[1];
 
     if (climate == null) {
-      return OnsetEstimate(minDays: minD, maxDays: maxD, explanation: '$minD-$maxD dias (sin clima)');
+      return OnsetEstimate(
+          minDays: minD,
+          maxDays: maxD,
+          explanation: '$minD-$maxD dias (sin clima)');
     }
 
     final (factor, note) = _climateAdjustment(clase, climate);
     final adjMin = (minD * factor).round().clamp(1, 999);
     final adjMax = (maxD * factor).round().clamp(adjMin + 1, 999);
-    final explanation = note.isEmpty ? '$minD-$maxD dias' : '$note → $adjMin-$adjMax dias';
+    final explanation =
+        note.isEmpty ? '$minD-$maxD dias' : '$note → $adjMin-$adjMax dias';
 
-    return OnsetEstimate(minDays: adjMin, maxDays: adjMax, explanation: explanation);
+    return OnsetEstimate(
+        minDays: adjMin, maxDays: adjMax, explanation: explanation);
   }
 
   (double, String) _climateAdjustment(String clase, ClimateData climate) {
@@ -82,12 +89,21 @@ class OnsetEstimatorImpl implements OnsetEstimator {
     final p = climate.precipMm;
 
     return switch (clase) {
-      'roya' when h > 80 && t >= 20 && t <= 28 => (0.7, 'clima favorable acelera onset'),
+      'roya' when h > 80 && t >= 20 && t <= 28 => (
+          0.7,
+          'clima favorable acelera onset'
+        ),
       'roya' when h < 50 => (1.3, 'humedad baja desacelera onset'),
       'fungicas' when h > 75 => (0.8, 'alta humedad acelera fungicas'),
-      'bacterianas' when p > 3 => (0.8, 'lluvia favorece dispersion bacteriana'),
+      'bacterianas' when p > 3 => (
+          0.8,
+          'lluvia favorece dispersion bacteriana'
+        ),
       'virales' when t > 28 => (0.85, 'temperatura alta favorece vectores'),
-      'plagas_insectos' when t >= 24 && t <= 32 => (0.75, 'temperatura optima acelera ciclo'),
+      'plagas_insectos' when t >= 24 && t <= 32 => (
+          0.75,
+          'temperatura optima acelera ciclo'
+        ),
       _ => (1.0, ''),
     };
   }

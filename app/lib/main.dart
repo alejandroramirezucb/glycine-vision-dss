@@ -65,7 +65,8 @@ class MainScreen extends StatelessWidget {
         final isDesktop = switch (Theme.of(context).platform) {
           TargetPlatform.windows ||
           TargetPlatform.macOS ||
-          TargetPlatform.linux => true,
+          TargetPlatform.linux =>
+            true,
           _ => false,
         };
         final width = isDesktop

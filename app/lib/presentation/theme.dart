@@ -36,11 +36,11 @@ class AppTheme {
   static const Color sevCritica = Color(0xFFB23A2E);
 
   static const Map<String, Color> _severityLevelColors = {
-    'critica':  sevCritica,
-    'severa':   sevSevera,
+    'critica': sevCritica,
+    'severa': sevSevera,
     'moderada': sevModerada,
-    'leve':     sevLeve,
-    'minima':   sevMinima,
+    'leve': sevLeve,
+    'minima': sevMinima,
   };
 
   static Color severityLevelColor(String level) =>
@@ -109,8 +109,8 @@ class AppTheme {
           thickness: WidgetStateProperty.all(5),
           radius: const Radius.circular(8),
           crossAxisMargin: 4,
-          thumbColor: WidgetStateProperty.all(
-              Colors.grey.withValues(alpha: 0.35)),
+          thumbColor:
+              WidgetStateProperty.all(Colors.grey.withValues(alpha: 0.35)),
           trackColor: WidgetStateProperty.all(Colors.transparent),
           trackBorderColor: WidgetStateProperty.all(Colors.transparent),
         ),

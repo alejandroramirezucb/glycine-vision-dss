@@ -32,7 +32,8 @@ class TfliteClassifier {
   }) async {
     final options = InterpreterOptions();
     if (!kIsWeb) options.threads = 4;
-    final interpreter = await Interpreter.fromAsset(modelAsset, options: options);
+    final interpreter =
+        await Interpreter.fromAsset(modelAsset, options: options);
     final labels = await _loadLabels(labelsAsset);
     final thresholds = thresholdsAsset == null
         ? <String, double>{}
@@ -77,8 +78,7 @@ class TfliteClassifier {
 
   List<String> get labels => List.unmodifiable(_labels);
 
-  double thresholdFor(String label) =>
-      _thresholds[label] ?? _defaultThreshold;
+  double thresholdFor(String label) => _thresholds[label] ?? _defaultThreshold;
 
   List<double> run(img.Image image) => runBatch([image]).first;
 
@@ -92,7 +92,8 @@ class TfliteClassifier {
       final size = tensor.shape[1];
       final name = tensor.name.toLowerCase();
       final isLeaf = _leafInputKeys.any(name.contains);
-      final resized = img.copyResize(isLeaf ? isolated : original, width: size, height: size);
+      final resized = img.copyResize(isLeaf ? isolated : original,
+          width: size, height: size);
       final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
       if (isQuantized) {
         tensor.data.buffer.asUint8List().setAll(0, bytes);
@@ -106,7 +107,8 @@ class TfliteClassifier {
     final out = _interpreter.getOutputTensor(0);
     final outSize = out.shape.skip(1).reduce((a, b) => a * b);
     final scores = isQuantized
-        ? List.generate(outSize, (j) => out.data.buffer.asUint8List()[j] / 255.0)
+        ? List.generate(
+            outSize, (j) => out.data.buffer.asUint8List()[j] / 255.0)
         : List.generate(outSize, (j) => out.data.buffer.asFloat32List()[j]);
     return _expandBinary(scores);
   }
@@ -115,55 +117,66 @@ class TfliteClassifier {
     final n = images.length;
     if (n == 0) return const [];
 
-    final isQuantized =
-        _interpreter.getInputTensor(0).type == TensorType.uint8;
+    final isQuantized = _interpreter.getInputTensor(0).type == TensorType.uint8;
     if (_lastBatchSize != n) {
       _interpreter.resizeInputTensor(0, [n, _inputSize, _inputSize, 3]);
       _interpreter.allocateTensors();
       _lastBatchSize = n;
     }
 
-    final outSize = _interpreter
-        .getOutputTensor(0)
-        .shape
-        .skip(1)
-        .reduce((a, b) => a * b);
+    final outSize =
+        _interpreter.getOutputTensor(0).shape.skip(1).reduce((a, b) => a * b);
     final pixelsPerImage = _inputSize * _inputSize * 3;
 
     if (isQuantized) {
       final inputFlat = Uint8List(n * pixelsPerImage);
       for (var i = 0; i < n; i++) {
-        final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
+        final resized =
+            img.copyResize(images[i], width: _inputSize, height: _inputSize);
         final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
         inputFlat.setRange(i * pixelsPerImage, (i + 1) * pixelsPerImage, bytes);
       }
-      _interpreter.getInputTensor(0).data.buffer
+      _interpreter
+          .getInputTensor(0)
+          .data
+          .buffer
           .asUint8List()
           .setAll(0, inputFlat);
       _interpreter.invoke();
-      final outBuffer = _interpreter.getOutputTensor(0).data.buffer.asUint8List();
-      return List.generate(n, (i) => _expandBinary(
-        List.generate(outSize, (j) => outBuffer[i * outSize + j] / 255.0),
-      ));
+      final outBuffer =
+          _interpreter.getOutputTensor(0).data.buffer.asUint8List();
+      return List.generate(
+          n,
+          (i) => _expandBinary(
+                List.generate(
+                    outSize, (j) => outBuffer[i * outSize + j] / 255.0),
+              ));
     }
 
     final inputFlat = Float32List(n * pixelsPerImage);
     for (var i = 0; i < n; i++) {
-      final resized = img.copyResize(images[i], width: _inputSize, height: _inputSize);
+      final resized =
+          img.copyResize(images[i], width: _inputSize, height: _inputSize);
       final bytes = resized.getBytes(order: img.ChannelOrder.rgb);
       var off = i * pixelsPerImage;
       for (final b in bytes) {
         inputFlat[off++] = b.toDouble();
       }
     }
-    _interpreter.getInputTensor(0).data.buffer
+    _interpreter
+        .getInputTensor(0)
+        .data
+        .buffer
         .asFloat32List()
         .setAll(0, inputFlat);
     _interpreter.invoke();
-    final outBuffer = _interpreter.getOutputTensor(0).data.buffer.asFloat32List();
-    return List.generate(n, (i) => _expandBinary(
-      List.generate(outSize, (j) => outBuffer[i * outSize + j]),
-    ));
+    final outBuffer =
+        _interpreter.getOutputTensor(0).data.buffer.asFloat32List();
+    return List.generate(
+        n,
+        (i) => _expandBinary(
+              List.generate(outSize, (j) => outBuffer[i * outSize + j]),
+            ));
   }
 
   List<double> _expandBinary(List<double> scores) {

@@ -19,5 +19,4 @@ const Map<String, String> _severityEs = {
 String labelToEs(String label) =>
     _labelEs[label.toLowerCase().replaceAll(' ', '_')] ?? label;
 
-String severityToEs(String level) =>
-    _severityEs[level.toLowerCase()] ?? level;
+String severityToEs(String level) => _severityEs[level.toLowerCase()] ?? level;

@@ -17,7 +17,8 @@ class IncompatibilityChecker {
           .where((prod) => texts.any((t) => t.contains(prod.toLowerCase())))
           .toList();
       if (present.length >= 2)
-        hits.add('Avoid combining ${rule.products.join(' + ')}: ${rule.reason}');
+        hits.add(
+            'Avoid combining ${rule.products.join(' + ')}: ${rule.reason}');
     }
     return hits;
   }

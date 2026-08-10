@@ -27,7 +27,11 @@ class HttpDiagnoser implements Diagnoser {
   });
 
   @override
-  Future<DiagnoseResult> diagnose(XFile image, {double? lat, double? lon, double fieldAreaHa = 1.0, DateTime? onsetDate}) async {
+  Future<DiagnoseResult> diagnose(XFile image,
+      {double? lat,
+      double? lon,
+      double fieldAreaHa = 1.0,
+      DateTime? onsetDate}) async {
     final compressed = await _compress(image);
 
     final request = http.MultipartRequest('POST', Uri.parse(endpoint))
@@ -46,10 +50,12 @@ class HttpDiagnoser implements Diagnoser {
     }
 
     final json = jsonDecode(body) as Map<String, dynamic>;
-    return _parseResult(json, compressed.width, compressed.height, fieldAreaHa, onsetDate);
+    return _parseResult(
+        json, compressed.width, compressed.height, fieldAreaHa, onsetDate);
   }
 
-  DiagnoseResult _parseResult(Map<String, dynamic> json, int width, int height, double fieldAreaHa, DateTime? onsetDate) {
+  DiagnoseResult _parseResult(Map<String, dynamic> json, int width, int height,
+      double fieldAreaHa, DateTime? onsetDate) {
     final zones = (json['zonas'] as List? ?? [])
         .map((e) => Zone.fromJson(e as Map<String, dynamic>))
         .toList();
@@ -57,7 +63,8 @@ class HttpDiagnoser implements Diagnoser {
         .map((e) => DiseaseFinding.fromJson(e as Map<String, dynamic>))
         .toList();
     final climateRaw = json['climate'] as Map<String, dynamic>?;
-    final climate = climateRaw == null ? null : ClimateData.fromJson(climateRaw);
+    final climate =
+        climateRaw == null ? null : ClimateData.fromJson(climateRaw);
     final patchSize = (json['patch_size'] as num?)?.toInt() ?? 150;
     final totalPatches = (json['total_patches'] as num?)?.toInt() ?? 0;
     final leafPatches = (json['leaf_patches'] as num?)?.toInt() ?? totalPatches;
@@ -79,7 +86,7 @@ class HttpDiagnoser implements Diagnoser {
 
     final onset = _resolveOnset(findings, climate, onsetDate);
     final plan = treatments.buildComposite(
-      findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
+        findings: findings, climate: climate, fieldAreaHa: fieldAreaHa);
 
     return DiagnoseResult(
       zones: zones,
@@ -97,8 +104,8 @@ class HttpDiagnoser implements Diagnoser {
     );
   }
 
-  OnsetEstimate? _resolveOnset(
-      List<DiseaseFinding> findings, ClimateData? climate, DateTime? onsetDate) {
+  OnsetEstimate? _resolveOnset(List<DiseaseFinding> findings,
+      ClimateData? climate, DateTime? onsetDate) {
     if (findings.isEmpty) return null;
     if (onsetDate != null) {
       final days = DateTime.now().difference(onsetDate).inDays.clamp(0, 999);
@@ -134,7 +141,8 @@ class HttpDiagnoser implements Diagnoser {
         height: (decoded.height * scale).round(),
       );
     }
-    final bytes = Uint8List.fromList(img.encodeJpg(image, quality: _jpegQuality));
+    final bytes =
+        Uint8List.fromList(img.encodeJpg(image, quality: _jpegQuality));
     return _CompressedImage(bytes, image.width, image.height);
   }
 }
