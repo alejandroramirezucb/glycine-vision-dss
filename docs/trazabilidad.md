@@ -16,9 +16,10 @@ Los notebooks están en `training/notebooks/`, sus salidas en `training/outputs/
 | Exactitud de M2 con IC 95 % | 0.969 (0.949–0.986) | `05_evaluacion_modelos` | `training_metrics.json` → `m2.accuracy`, `m2.ci95.accuracy` |
 | F1 macro de M2 | 0.968 | `05_evaluacion_modelos` | `training_metrics.json` → `m2.f1_macro` |
 | F1 por clase de M2 | 0.950 / 0.920 / 0.986 / 0.986 / 1.000 | `05_evaluacion_modelos` | `training_metrics.json` → `m2.per_class_f1` |
-| Severidad frente al experto: r, CCC, MAE, RMSE | 0.967, 0.941, 5.7 %, 7.4 % | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `severidad` |
-| Bland-Altman: sesgo y límites de acuerdo | −5.0 %, [−15.8, 5.9] | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `severidad.bias`, `loa_low`, `loa_high` |
-| Patógeno, app frente a experto, y McNemar | 0.950 frente a 0.867; p = 0.0625 | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `patogeno` |
+| Severidad frente al experto: r, CCC, MAE, RMSE | 0.953, 0.923, 6.5 %, 8.5 % | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `severidad` |
+| Bland-Altman: sesgo y límites de acuerdo | −5.4 %, [−18.3, 7.5] | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `severidad.bias`, `loa_low`, `loa_high` |
+| Patógeno, app frente a experto, y McNemar | 0.917 frente a 0.883; p = 0.754 | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json` → `patogeno` |
+| Predicción por hoja de la validación experta | 60 hojas, 10 por clase | `07_validacion_frente_a_experto` | `validacion_experto_predicciones.csv` |
 | Predicción por hoja de la validación experta | 60 filas | `07_validacion_frente_a_experto` | `validacion_experto_predicciones.csv` |
 | Costo computacional: parámetros, MACs, tamaño | Tabla 3 | `06_exportacion_tflite` | `model_metadata.json` y tamaño de los `.tflite` |
 | Variantes exportadas: Keras, float32, int8 | Tabla 4 | `13_evaluacion_variantes_exportadas` | `evaluacion_variantes.csv`, `.json` |

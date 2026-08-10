@@ -17,7 +17,7 @@
 
 El diagnóstico foliar de soya depende hoy de inspección visual o de laboratorio: caro, lento y poco accesible en campo. Glycine Vision encadena tres modelos que corren **en el propio dispositivo** para dar un diagnóstico trazable en menos de 200 ms por hoja, sin enviar una sola imagen a ningún servidor.
 
-Sobre conjuntos de prueba independientes alcanza **0.980** de exactitud en el estado sanitario, **0.969** en la identificación del patógeno y una concordancia de severidad con criterio experto de **r = 0.967** (MAE 5.7 %).
+Sobre conjuntos de prueba independientes alcanza **0.980** de exactitud en el estado sanitario, **0.969** en la identificación del patógeno y una concordancia de severidad con criterio experto de **r = 0.953** (MAE 6.5 %).
 
 > **Herramienta de apoyo, no de diagnóstico.** Las recomendaciones son orientativas y no sustituyen al criterio agronómico ni al análisis de laboratorio. Léase [Uso responsable](#uso-responsable) antes de aplicar cualquier producto fitosanitario.
 
@@ -65,7 +65,7 @@ La aplicación consulta además Open-Meteo y desplaza el nivel de severidad un e
 | Estado sanitario | Exactitud (recall clase enferma) | 0.980 (1.000) | 0.960–0.995 |
 | Patógeno | Exactitud / F1 macro | 0.969 / 0.968 | 0.949–0.986 |
 
-Frente a un evaluador experto sobre 60 hojas, la severidad concordó con r = 0.967 y CCC = 0.941, y el diagnóstico fue comparable (0.95 frente a 0.867; McNemar p = 0.0625).
+Frente a un evaluador experto sobre 60 hojas, la severidad concordó con r = 0.953 y CCC = 0.923, y el diagnóstico resultó estadísticamente indistinguible (0.917 frente a 0.883; McNemar p = 0.754).
 
 En un Xiaomi 2203129G de gama media, el flujo completo tarda unos **157 ms** por hoja con las variantes int8.
 
