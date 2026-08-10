@@ -102,7 +102,13 @@ pip install -r requirements.txt
 python server.py
 ```
 
-Los modelos del backend no se versionan: se generan desde `training/outputs/` con el procedimiento descrito en [`docs/reproducibilidad.md`](docs/reproducibilidad.md).
+Los modelos del backend no se versionan, así que **tras clonar hay que generarlos** desde `training/outputs/`; si faltan, el servidor aborta al arrancar:
+
+```powershell
+pwsh scripts/desplegar_modelos.ps1
+```
+
+El detalle de qué variante va a cada destino y por qué está en [`docs/reproducibilidad.md`](docs/reproducibilidad.md).
 
 | Variable de entorno | Valor por defecto | Descripción |
 |---|---|---|

@@ -75,30 +75,30 @@ La celda de descarga del notebook `01` reproduce esa estructura.
 
 ## Despliegue de los modelos
 
-Tras ejecutar el notebook `06`, los artefactos quedan en `training/outputs/`. Este comando los coloca donde los esperan la aplicación y el backend:
+Tras ejecutar el notebook `06`, los artefactos quedan en `training/outputs/`. Este script los coloca donde los esperan la aplicación y el backend, creando los directorios que falten:
 
 ```powershell
-$SRC = "training/outputs"; $APP = "app/assets/models"; $MOD = "models"
-
-Copy-Item "$SRC/model1_int8.tflite"    "$APP/hs/model.tflite" -Force
-Copy-Item "$SRC/labels_m1.txt"         "$APP/hs/labels.txt" -Force
-Copy-Item "$SRC/model2.tflite"         "$APP/pd/model_unquant.tflite" -Force
-Copy-Item "$SRC/labels_m2.txt"         "$APP/pd/labels.txt" -Force
-Copy-Item "$SRC/model_seg_int8.tflite" "$APP/seg/model_seg.tflite" -Force
-
-Copy-Item "$SRC/model1.tflite"         "$MOD/health/model.tflite" -Force
-Copy-Item "$SRC/model1_int8.tflite"    "$MOD/health/model_int8.tflite" -Force
-Copy-Item "$SRC/labels_m1.txt"         "$MOD/health/labels.txt" -Force
-Copy-Item "$SRC/model2.tflite"         "$MOD/disease/model.tflite" -Force
-Copy-Item "$SRC/model2_int8.tflite"    "$MOD/disease/model_int8.tflite" -Force
-Copy-Item "$SRC/labels_m2.txt"         "$MOD/disease/labels.txt" -Force
-Copy-Item "$SRC/model_seg.tflite"      "$MOD/segmentation/model.tflite" -Force
-Copy-Item "$SRC/model_seg_int8.tflite" "$MOD/segmentation/model_int8.tflite" -Force
+pwsh scripts/desplegar_modelos.ps1
 ```
+
+Falla de entrada, sin copiar nada a medias, si algún artefacto no está en el origen. Acepta `-Origen` para leer desde otra carpeta.
+
+| Artefacto | Destino en la app | Destino en el backend |
+|---|---|---|
+| `model_seg_int8.tflite` | `seg/model_seg.tflite` | `segmentation/model_int8.tflite` |
+| `model_seg.tflite` | — | `segmentation/model.tflite` |
+| `model1_int8.tflite` | `hs/model.tflite` | `health/model_int8.tflite` |
+| `model1.tflite` | — | `health/model.tflite` |
+| `model2.tflite` | `pd/model_unquant.tflite` | `disease/model.tflite` |
+| `model2_int8.tflite` | — | `disease/model_int8.tflite` |
 
 La asignación no es arbitraria. El segmentador y M1 se despliegan en **int8**, porque la cuantización les cuesta 0.005 de F1 o menos. M2 se despliega en **float32**, porque perdía 0.040 de F1 al cuantizarse: un coste inaceptable para la etapa que decide el patógeno. Esa decisión se sostiene en el notebook `13`.
 
-`models/` no se versiona; `app/assets/models/` sí, mediante Git LFS.
+`app/assets/models/` se versiona mediante Git LFS, así que llega con el clon. **`models/` no se versiona**, porque son 270 MB de los que el backend solo carga una parte: hay que ejecutar el script tras clonar. Si falta, `python server.py` aborta al construir el registro:
+
+```
+ValueError: Could not open '...\models\health\model_int8.tflite'.
+```
 
 ## Medición en dispositivo
 
