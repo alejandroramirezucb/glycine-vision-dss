@@ -2,6 +2,8 @@ import cv2
 import numpy as np
 import tensorflow as tf
 
+from .quantization import dequantize
+
 _LEAF_INPUT_KEYS = ("hoja", "aislada", "leaf")
 
 
@@ -26,9 +28,7 @@ class LeafClassifier:
                 self._interp.set_tensor(detail["index"], self._prep(source, detail))
         self._interp.invoke()
         raw = self._interp.get_tensor(out["index"])[0]
-        if out["dtype"] == np.uint8:
-            return raw.astype(np.float32) / 255.0
-        return raw.astype(np.float32)
+        return dequantize(raw, out)
 
     def probability_diseased(self, scores: np.ndarray) -> float:
         expanded = self._expand_binary(scores)

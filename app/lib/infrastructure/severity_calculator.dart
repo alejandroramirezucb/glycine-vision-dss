@@ -8,7 +8,7 @@ class SeverityResult {
   final Uint8List mask3;
   final double clorosisPct;
   final double necrosisPct;
-  final double defoliacionPct;
+  final double perforacionPct;
 
   const SeverityResult({
     required this.percent,
@@ -16,7 +16,7 @@ class SeverityResult {
     required this.mask3,
     required this.clorosisPct,
     required this.necrosisPct,
-    required this.defoliacionPct,
+    required this.perforacionPct,
   });
 }
 
@@ -79,7 +79,7 @@ class SeverityCalculator {
       mask3: mask3,
       clorosisPct: double.parse((clorosis / expected * 100).toStringAsFixed(1)),
       necrosisPct: double.parse((necrosis / expected * 100).toStringAsFixed(1)),
-      defoliacionPct: double.parse((holes / expected * 100).toStringAsFixed(1)),
+      perforacionPct: double.parse((holes / expected * 100).toStringAsFixed(1)),
     );
   }
 

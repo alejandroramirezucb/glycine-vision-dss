@@ -1,6 +1,7 @@
 {
-  "schema_version": "2.0",
+  "schema_version": "3.0",
   "_meta": {
+    "alcance": "Orientaciones de manejo integrado sin dosis. La seleccion del producto, su dosis, el intervalo entre aplicaciones y las mezclas de tanque son decision del profesional responsable y deben verificarse contra la etiqueta vigente del producto y el registro del SENASAG.",
     "incompatibilities": [
       {
         "products": ["cobre", "aceite mineral"],
@@ -21,10 +22,10 @@
     ],
     "application_windows": {
       "minima": "monitorear cada 7 días, sin tratamiento inmediato",
-      "leve": "aplicar dentro de 7 días",
-      "moderada": "aplicar en 48-72 horas",
-      "severa": "aplicar dentro de 24 horas",
-      "critica": "aplicación inmediata; consultar a un agrónomo"
+      "leve": "consultar al agrónomo dentro de la semana",
+      "moderada": "consultar al agrónomo en las próximas 48-72 horas",
+      "severa": "consulta agronómica prioritaria en las próximas 24 horas",
+      "critica": "consulta agronómica inmediata"
     }
   },
   "bacterianas": {
@@ -34,35 +35,35 @@
     "sintomas": "Manchas angulares acuosas marrón rojizo con halos amarillos. En etapas avanzadas, las lesiones se unen formando áreas necróticas irregulares. Pústulas bacterianas como pequeñas protuberancias en el envés de la hoja.",
     "por_severidad": {
       "minima": {
-        "quimico": "Aplicación preventiva de oxicloruro de cobre 50 WP a 300 g/100 L de agua. Solo si hay condiciones favorables (lluvia, humedad alta).",
+        "quimico": "Puede considerarse un bactericida cúprico preventivo si hay condiciones favorables (lluvia, humedad alta). Consultar al agrónomo antes de aplicar.",
         "cultural": "Mejorar drenaje del lote. Evitar riego por aspersión. Inspección semanal de hojas inferiores.",
-        "biologico": "Aplicación foliar de Bacillus subtilis QST 713 a 100 mL/100 L como complemento preventivo.",
+        "biologico": "Bacillus subtilis en aplicación foliar como complemento preventivo.",
         "preventivo": "Semilla certificada libre de patógeno. Rotación con maíz o sorgo. Distancia adecuada entre plantas.",
         "urgencia": "baja"
       },
       "leve": {
-        "quimico": "Cobre oxicloruro 50 WP 400 g/100 L + Mancozeb 80 WP 200 g/100 L. Cada 10 días, mínimo 2 aplicaciones.",
+        "quimico": "Suele indicarse un bactericida cúprico, en algunos casos acompañado de un fungicida protectante. Definir producto, dosis e intervalo con el agrónomo.",
         "cultural": "Eliminar hojas muy afectadas. No trabajar el lote con follaje mojado para reducir dispersión mecánica.",
-        "biologico": "Bacillus subtilis cada 7 días manteniendo el control biológico activo.",
-        "preventivo": "Monitoreo semanal. Aplicar antes de lluvias previstas para protección preventiva.",
+        "biologico": "Mantener el control biológico con Bacillus subtilis activo.",
+        "preventivo": "Monitoreo semanal. Anticipar la protección antes de lluvias previstas.",
         "urgencia": "media"
       },
       "moderada": {
-        "quimico": "Kasugamicina 2 SL 100 mL/100 L + Cobre 300 g/100 L. Repetir cada 7 días por 3 ciclos.",
+        "quimico": "A este nivel suele recurrirse a un bactericida sistémico combinado con cúpricos. Requiere prescripción agronómica.",
         "cultural": "Suspender riego por aspersión. Mejorar ventilación entre plantas reduciendo densidad si es posible.",
-        "biologico": "Combinar Bacillus subtilis + Pseudomonas fluorescens para amplio espectro antagonista.",
+        "biologico": "Combinar Bacillus subtilis con Pseudomonas fluorescens para amplio espectro antagonista.",
         "preventivo": "Notificar al técnico agrónomo. Revisar lotes vecinos como posibles fuentes de inóculo.",
         "urgencia": "alta"
       },
       "severa": {
-        "quimico": "Streptomicina 15 WP 100 g/100 L + Cobre oxicloruro 400 g/100 L cada 5-7 días. Bajo prescripción agronómica.",
-        "cultural": "Eliminar plantas con más del 50% de hojas afectadas. Desinfectar herramientas con hipoclorito al 1%.",
-        "biologico": "Suspender control biológico durante el ataque químico intenso. Reanudar tras controlar.",
+        "quimico": "El manejo químico en este nivel exige prescripción agronómica. Varios bactericidas de uso intensivo tienen restricciones de registro; verificar disponibilidad legal antes de considerarlos.",
+        "cultural": "Eliminar plantas con más del 50% de hojas afectadas. Desinfectar herramientas con hipoclorito.",
+        "biologico": "Suspender el control biológico durante el tratamiento químico intenso. Reanudar tras controlar.",
         "preventivo": "Evaluar cosecha anticipada si el cultivo está en etapa R6 o posterior.",
         "urgencia": "alta"
       },
       "critica": {
-        "quimico": "Control químico ya insuficiente. Streptomicina + Cobre solo para limitar dispersión a lotes vecinos.",
+        "quimico": "El control químico ya es insuficiente para recuperar el lote; su papel se limita a contener la dispersión hacia lotes vecinos. Decisión agronómica.",
         "cultural": "Eliminar plantas afectadas. Cuarentena del área. Rotar cultivo la próxima campaña.",
         "biologico": "Suspender temporalmente. Reanudar tras erradicación completa del foco.",
         "preventivo": "Desinfectar herramientas y vestimenta. Notificar al SENASAG sobre el brote.",
@@ -82,35 +83,35 @@
     "sintomas": "Manchas foliares de morfología variable: circulares con borde oscuro y centro claro (ojo de rana), angulares marrón oscuro (septoria), con anillos concéntricos (mancha objetivo). Mildiú genera esporulación grisácea en el envés.",
     "por_severidad": {
       "minima": {
-        "quimico": "Azufre coloidal 80 WP a 300 g/100 L como preventivo. Solo aplicar si la humedad ambiental es alta.",
-        "cultural": "Mejorar ventilación entre surcos. No aplicar productos con temperatura mayor a 35°C.",
+        "quimico": "Puede considerarse un protectante preventivo si la humedad ambiental es alta. Consultar al agrónomo antes de aplicar.",
+        "cultural": "Mejorar ventilación entre surcos. Evitar aplicaciones con temperatura elevada.",
         "biologico": "Trichoderma harzianum aplicado al suelo y foliar para fortalecer la defensa natural.",
         "preventivo": "Sembrar variedades tolerantes. Monitoreo desde V4 con lupa para detectar primeras manchas.",
         "urgencia": "baja"
       },
       "leve": {
-        "quimico": "Mancozeb 80 WP 200-250 g/100 L cada 10-12 días desde los primeros síntomas visibles.",
-        "cultural": "Aplicar en horas frescas (mañana o tarde). Lograr cobertura total del follaje.",
-        "biologico": "Trichoderma + Bacillus subtilis como complemento al control químico inicial.",
-        "preventivo": "Alternar principios activos químicos para evitar desarrollo de resistencia en el patógeno.",
+        "quimico": "Suele indicarse un fungicida protectante de contacto desde los primeros síntomas visibles. Definir producto, dosis e intervalo con el agrónomo.",
+        "cultural": "Aplicar en horas frescas. Lograr cobertura total del follaje.",
+        "biologico": "Trichoderma y Bacillus subtilis como complemento al control químico inicial.",
+        "preventivo": "Alternar modos de acción para evitar desarrollo de resistencia en el patógeno.",
         "urgencia": "media"
       },
       "moderada": {
-        "quimico": "Tebuconazol 25 EC 75-100 mL/100 L + Mancozeb 80 WP 200 g/100 L. Cada 10 días, 2-3 aplicaciones.",
+        "quimico": "A este nivel suele recurrirse a un triazol sistémico acompañado de un protectante. Requiere prescripción agronómica.",
         "cultural": "Eliminar hojas basales muy afectadas. Revisar y ajustar densidad de siembra para próxima campaña.",
         "biologico": "Mantener Trichoderma como complemento. No suspender durante el tratamiento químico.",
         "preventivo": "Monitorear lotes vecinos. Iniciar control regional si hay focos en la zona.",
         "urgencia": "alta"
       },
       "severa": {
-        "quimico": "Trifloxistrobina 50 WG 75 g/100 L + Tebuconazol 25 EC 75 mL/100 L. Cada 7 días, máximo 3 aplicaciones por campaña.",
+        "quimico": "Suele combinarse una estrobilurina con un triazol, respetando el número máximo de aplicaciones por campaña que fija la etiqueta. Requiere prescripción agronómica.",
         "cultural": "Revisar el lote completo. Evaluar pérdida económica proyectada.",
-        "biologico": "Suspender durante ataque químico intenso. Reanudar tras estabilizar.",
+        "biologico": "Suspender durante el tratamiento químico intenso. Reanudar tras estabilizar.",
         "preventivo": "Notificar al técnico agrónomo. Evaluar uso de variedades resistentes en próxima campaña.",
         "urgencia": "alta"
       },
       "critica": {
-        "quimico": "Fluxapiroxad 20 SC 60 mL/100 L + Mancozeb 80 WP 200 g/100 L cada 5 días hasta controlar.",
+        "quimico": "El manejo en este nivel combina carboxamidas y protectantes bajo prescripción agronómica, atendiendo a los límites de aplicaciones por campaña.",
         "cultural": "Evaluar viabilidad económica de cosecha anticipada si está en R6 o posterior.",
         "biologico": "Suspender temporalmente.",
         "preventivo": "Planificar variedades resistentes y rotación con gramíneas para la próxima campaña.",
@@ -127,41 +128,41 @@
     "nombre_es": "Roya Asiática de la Soya",
     "nombre_en": "Asian Soybean Rust",
     "patogenos": "Phakopsora pachyrhizi",
-    "sintomas": "Lesiones foliares pequeñas (1-2 mm) marrón grisáceo a marrón rojizo en el envés. Pústulas que liberan esporas color canela. En infecciones severas defoliación masiva con pérdida drástica de rendimiento.",
+    "sintomas": "Lesiones foliares pequeñas (1-2 mm) marrón grisáceo a marrón rojizo en el envés. Pústulas que liberan esporas color canela. En infecciones severas hay caída masiva de hojas con pérdida drástica de rendimiento.",
     "por_severidad": {
       "minima": {
-        "quimico": "Tebuconazol 25 EC 75 mL/100 L PREVENTIVO desde la etapa R1 (inicio de floración).",
+        "quimico": "El manejo de roya es esencialmente preventivo y suele iniciarse con un triazol desde la etapa R1 (inicio de floración). Definir el esquema con el agrónomo.",
         "cultural": "Monitoreo cada 5 días con lupa en el envés de hojas inferiores. Eliminar soyas voluntarias (puente verde).",
-        "biologico": "Bacillus subtilis QST 713 como complemento. No reemplaza el tratamiento químico.",
-        "preventivo": "CRÍTICO aplicar antes que avance. La roya asiática puede destruir el cultivo en 2-3 semanas si no se controla.",
+        "biologico": "Bacillus subtilis como complemento. No reemplaza el tratamiento químico.",
+        "preventivo": "Actuar antes de que avance: la roya asiática puede comprometer el cultivo en dos o tres semanas si no se controla.",
         "urgencia": "media"
       },
       "leve": {
-        "quimico": "Azoxistrobina 25 SC 80 mL/100 L + Tebuconazol 25 EC 75 mL/100 L cada 10-12 días.",
-        "cultural": "Aplicar antes de lluvia prevista. Usar adyuvante adherente para mejor cobertura del activo.",
+        "quimico": "Suele combinarse una estrobilurina con un triazol. Definir producto, dosis e intervalo con el agrónomo.",
+        "cultural": "Anticipar la protección antes de lluvia prevista. Usar adyuvante adherente para mejor cobertura.",
         "biologico": "Mantener Bacillus subtilis como complemento. Avisar a productores vecinos.",
         "preventivo": "Coordinar con vecinos del lote para aplicación regional sincronizada.",
         "urgencia": "alta"
       },
       "moderada": {
-        "quimico": "Picoxistrobina + Ciproconazol (Priori Xtra) 300 mL/ha cada 10 días, mínimo 2 ciclos.",
-        "cultural": "Monitoreo diario 48 horas post-aplicación. Cobertura total de toda la planta es obligatoria.",
-        "biologico": "Suspender control biológico durante el ataque químico intenso.",
+        "quimico": "A este nivel suele recurrirse a mezclas comerciales de estrobilurina y triazol. Requiere prescripción agronómica.",
+        "cultural": "Monitoreo diario tras la aplicación. La cobertura total de la planta es determinante.",
+        "biologico": "Suspender el control biológico durante el tratamiento químico intenso.",
         "preventivo": "Coordinar aplicación regional con productores vecinos para reducir presión de inóculo.",
         "urgencia": "alta"
       },
       "severa": {
-        "quimico": "Fluxapiroxad + Piraclostrobina (Opera Ultra) en dosis alta según etiqueta, cada 7 días.",
-        "cultural": "EMERGENCIA. Notificar técnico agrónomo. Monitoreo diario del avance.",
+        "quimico": "Situación de emergencia fitosanitaria: el esquema debe definirlo el agrónomo responsable, respetando los límites de la etiqueta.",
+        "cultural": "Notificar al técnico agrónomo. Monitoreo diario del avance.",
         "biologico": "Suspender. La carga química es alta.",
-        "preventivo": "Evaluar pérdida proyectada. Considerar uso de variedades resistentes próxima campaña.",
+        "preventivo": "Evaluar pérdida proyectada. Considerar variedades resistentes próxima campaña.",
         "urgencia": "critica"
       },
       "critica": {
-        "quimico": "Triazol + estrobilurina + protectante en dosis máximas cada 5-7 días.",
-        "cultural": "Si el cultivo está en R6, evaluar cosecha anticipada. Pérdida probable mayor al 50%.",
+        "quimico": "Manejo bajo prescripción agronómica exclusiva. Verificar el número máximo de aplicaciones por campaña y el período de carencia.",
+        "cultural": "Si el cultivo está en R6, evaluar cosecha anticipada.",
         "biologico": "Suspender.",
-        "preventivo": "NOTIFICAR AL SENASAG. Planificar variedades resistentes para la próxima campaña.",
+        "preventivo": "Notificar al SENASAG. Planificar variedades resistentes para la próxima campaña.",
         "urgencia": "critica"
       }
     },
@@ -179,38 +180,38 @@
     "sintomas": "Mosaico verde claro y verde oscuro en hojas, deformación del limbo (arrugamiento, encrespamiento), reducción de tamaño foliar. En infecciones tempranas, enanismo generalizado de la planta.",
     "por_severidad": {
       "minima": {
-        "quimico": "No hay cura viral. Control de vectores: Aceite de neem 1% + Imidacloprid 35 SC 60 mL/100 L.",
+        "quimico": "No existe control curativo del virus. El manejo se dirige a los insectos vectores y debe definirlo el agrónomo.",
         "cultural": "Eliminar malezas hospederas alrededor del lote. Controlar áfidos y mosca blanca.",
         "biologico": "Trampas amarillas pegajosas para vectores. Liberar Encarsia formosa para mosca blanca.",
         "preventivo": "Semilla certificada libre de virus. Sembrar variedades tolerantes con genes Rsv1/Rsv3.",
         "urgencia": "media"
       },
       "leve": {
-        "quimico": "Imidacloprid 35 SC 60 mL/100 L + Thiamethoxam 25 WG 80 g/100 L cada 7-10 días contra vectores.",
-        "cultural": "Eliminar plantas muy afectadas (síntomas claros) para reducir fuentes de inóculo.",
+        "quimico": "Control de vectores con insecticidas sistémicos, alternando modos de acción. Definir producto, dosis e intervalo con el agrónomo.",
+        "cultural": "Eliminar plantas muy afectadas para reducir fuentes de inóculo.",
         "biologico": "Mantener trampas y enemigos naturales (mariquitas, crisopas) en los bordes.",
         "preventivo": "Revisar la fuente de semilla utilizada. Cambiar proveedor si hay sospecha.",
         "urgencia": "alta"
       },
       "moderada": {
-        "quimico": "Thiamethoxam 25 WG 100 g/100 L + Clorpirifós 48 EC 150 mL/100 L cada 7 días.",
+        "quimico": "Control intensivo de vectores bajo prescripción agronómica. Algunos insecticidas de amplio espectro tienen restricciones de registro; verificar antes de considerarlos.",
         "cultural": "Eliminar todas las plantas sintomáticas del área central del lote.",
         "biologico": "Implementar barrera insecticida en el perímetro del lote para vectores.",
         "preventivo": "Evaluar la pérdida económica proyectada. Considerar reemplazo del lote.",
         "urgencia": "alta"
       },
       "severa": {
-        "quimico": "Continuar control intensivo de vectores. No hay tratamiento contra el virus en sí.",
-        "cultural": "Eliminar plantas infectadas. Aplicar insecticida al suelo. Limpiar herramientas con hipoclorito.",
+        "quimico": "Continuar el control de vectores. No hay tratamiento contra el virus en sí.",
+        "cultural": "Eliminar plantas infectadas. Limpiar herramientas con hipoclorito.",
         "biologico": "Suspender.",
         "preventivo": "Notificar al técnico agrónomo. Replantear variedades para la próxima campaña.",
         "urgencia": "critica"
       },
       "critica": {
-        "quimico": "Continuar control de vectores para limitar dispersión a lotes vecinos.",
+        "quimico": "Continuar el control de vectores para limitar la dispersión a lotes vecinos.",
         "cultural": "Destrucción del lote infectado. Cuarentena del área. Certificar semillas para próxima campaña.",
         "biologico": "Suspender.",
-        "preventivo": "NO usar semillas propias del lote afectado. Notificar al SENASAG.",
+        "preventivo": "No usar semillas propias del lote afectado. Notificar al SENASAG.",
         "urgencia": "critica"
       }
     },
@@ -224,39 +225,39 @@
     "nombre_es": "Daño por Plagas (Insectos)",
     "nombre_en": "Insect Pest Damage",
     "patogenos": "Lepidoptera spp. (orugas defoliadoras), Diabrotica speciosa (vaquita), Anticarsia gemmatalis",
-    "sintomas": "Defoliación con patrones irregulares: agujeros de diversos tamaños, bordes consumidos, esqueletización. Diabrotica produce agujeros circulares pequeños y daño en raíces que afecta absorción de nutrientes.",
+    "sintomas": "Pérdida de tejido foliar con patrones irregulares: agujeros de diversos tamaños, bordes consumidos, esqueletización. Diabrotica produce agujeros circulares pequeños y daño en raíces que afecta absorción de nutrientes.",
     "por_severidad": {
       "minima": {
-        "quimico": "No requiere químico aún. Aplicar solo si supera umbral de acción (30% defoliación en vegetativo).",
+        "quimico": "No se justifica control químico mientras no se supere el umbral de acción del manejo integrado.",
         "cultural": "Trampas amarillas y de feromonas. Revisar bordes del lote con paño de batida.",
-        "biologico": "Bacillus thuringiensis (Dipel WP) 100 g/100 L. Trichogramma para parasitar huevos.",
+        "biologico": "Bacillus thuringiensis en aplicación foliar. Trichogramma para parasitar huevos.",
         "preventivo": "Monitoreo semanal con paño de batida desde emergencia.",
         "urgencia": "baja"
       },
       "leve": {
-        "quimico": "Spinosad 480 SC 20-30 mL/100 L cada 10 días, 2 aplicaciones. Selectivo y de bajo impacto.",
-        "cultural": "Aplicar al atardecer para mayor contacto del producto con las larvas activas.",
-        "biologico": "Mantener Bt + Trichogramma para preservar enemigos naturales en el lote.",
+        "quimico": "Superado el umbral, suele preferirse un insecticida selectivo de bajo impacto sobre enemigos naturales. Definir producto, dosis e intervalo con el agrónomo.",
+        "cultural": "Aplicar al atardecer, cuando las larvas están activas.",
+        "biologico": "Mantener Bacillus thuringiensis y Trichogramma para preservar enemigos naturales.",
         "preventivo": "Rotación con maíz o sorgo para romper el ciclo de plagas específicas.",
         "urgencia": "media"
       },
       "moderada": {
-        "quimico": "Clorpirifós 48 EC 150 mL/100 L + Bt 100 g/100 L combinado. Cada 7 días.",
-        "cultural": "Monitoreo diario para estimar densidad de plaga. Ajustar dosis si avanza.",
+        "quimico": "Puede combinarse control biológico con un insecticida de mayor espectro. Requiere prescripción agronómica; varios organofosforados tienen restricciones de registro.",
+        "cultural": "Monitoreo diario para estimar densidad de plaga.",
         "biologico": "Liberación masiva de Trichogramma como apoyo al control químico.",
-        "preventivo": "Evaluar el daño económico real vs costo del tratamiento.",
+        "preventivo": "Evaluar el daño económico real frente al costo del tratamiento.",
         "urgencia": "alta"
       },
       "severa": {
-        "quimico": "Lambda-cialotrina 5 EC 100-150 mL/100 L cada 5-7 días. Rotar con otro principio activo.",
+        "quimico": "Manejo bajo prescripción agronómica, rotando modos de acción para retrasar la resistencia.",
         "cultural": "Evitar aplicar cerca de cosecha. Respetar el período de carencia del producto.",
-        "biologico": "Suspender durante ataque químico intenso. Reanudar tras pico.",
+        "biologico": "Suspender durante el tratamiento químico intenso. Reanudar tras el pico.",
         "preventivo": "Notificar a lotes vecinos para control coordinado.",
         "urgencia": "alta"
       },
       "critica": {
-        "quimico": "Lambda-cialotrina 5 EC 100 mL/100 L + Clorpirifós 48 EC 150 mL/100 L cada 4-5 días.",
-        "cultural": "Evaluar pérdida económica. Plan de control biológico masivo posterior al control químico.",
+        "quimico": "Manejo bajo prescripción agronómica exclusiva, verificando registro vigente y período de carencia de cada producto.",
+        "cultural": "Evaluar pérdida económica. Plan de control biológico posterior al control químico.",
         "biologico": "Reanudar tras controlar el pico de población.",
         "preventivo": "Planificar variedades menos susceptibles para la próxima campaña.",
         "urgencia": "critica"

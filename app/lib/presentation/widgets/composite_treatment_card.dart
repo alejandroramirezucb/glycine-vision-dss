@@ -41,13 +41,6 @@ class CompositeTreatmentCard extends StatelessWidget {
               style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
             ),
           ],
-          if (plan.sprayVolume != null) ...[
-            const SizedBox(height: 2),
-            Text(
-              'Volumen para ${plan.fieldAreaHa % 1 == 0 ? plan.fieldAreaHa.toStringAsFixed(0) : plan.fieldAreaHa.toStringAsFixed(1)} ha: ${plan.sprayVolume}',
-              style: const TextStyle(fontSize: 11, color: AppTheme.textMuted),
-            ),
-          ],
           const SizedBox(height: 12),
           for (var i = 0; i < plan.priorities.length; i++) ...[
             _PriorityBlock(priority: plan.priorities[i], index: i),
@@ -62,6 +55,7 @@ class CompositeTreatmentCard extends StatelessWidget {
             _WarningsBlock(warnings: plan.warnings),
           ],
           _SourcesBlock(priorities: plan.priorities),
+          const _OrientativeNote(),
           if (!climateAvailable) ...[
             const SizedBox(height: 10),
             const Text(
@@ -133,8 +127,6 @@ class _PriorityBlock extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           _ActionSection(title: 'Químico', text: priority.actions.chemical),
-          if (priority.dosageNote.isNotEmpty)
-            _DosageNote(text: priority.dosageNote, accent: accent),
           _ActionSection(title: 'Cultural', text: priority.actions.cultural),
           _ActionSection(title: 'Biológico', text: priority.actions.biological),
           _ActionSection(
@@ -145,35 +137,36 @@ class _PriorityBlock extends StatelessWidget {
   }
 }
 
-class _DosageNote extends StatelessWidget {
-  final String text;
-  final Color accent;
+class _OrientativeNote extends StatelessWidget {
+  static const String _text =
+      'Orientación de manejo, no una prescripción. La selección del producto, '
+      'su dosis y el intervalo entre aplicaciones corresponden al profesional '
+      'responsable y deben verificarse contra la etiqueta vigente y el registro del SENASAG.';
 
-  const _DosageNote({required this.text, required this.accent});
+  const _OrientativeNote();
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.only(top: 12),
       child: Container(
         width: double.infinity,
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: accent.withValues(alpha: 0.10),
+          color: AppTheme.textMuted.withValues(alpha: 0.10),
           borderRadius: BorderRadius.circular(10),
         ),
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Icon(Icons.science_outlined, size: 14, color: accent),
+            const Icon(Icons.info_outline, size: 14, color: AppTheme.textMuted),
             const SizedBox(width: 6),
-            Expanded(
+            const Expanded(
               child: Text(
-                text,
+                _text,
                 style: TextStyle(
                   fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  color: accent,
+                  color: AppTheme.textMuted,
                   height: 1.3,
                 ),
               ),

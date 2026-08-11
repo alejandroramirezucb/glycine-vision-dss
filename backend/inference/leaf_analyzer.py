@@ -41,7 +41,7 @@ class SeverityAnalyzer:
         components = {
             "clorosis_pct": round(float(np.count_nonzero(chlorosis)) / expected_area * 100, 1),
             "necrosis_pct": round(float(np.count_nonzero(necrosis)) / expected_area * 100, 1),
-            "defoliacion_pct": round(float(np.count_nonzero(holes)) / expected_area * 100, 1),
+            "perforacion_pct": round(float(np.count_nonzero(holes)) / expected_area * 100, 1),
         }
         return mask3, min(severity, 100.0), components
 

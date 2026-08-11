@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 import 'package:tflite_flutter/tflite_flutter.dart';
+import 'quantization.dart';
 
 class TfliteClassifier {
   static const int _defaultInputSize = 224;
@@ -106,11 +107,13 @@ class TfliteClassifier {
     _interpreter.invoke();
     final out = _interpreter.getOutputTensor(0);
     final outSize = out.shape.skip(1).reduce((a, b) => a * b);
-    final scores = isQuantized
-        ? List.generate(
-            outSize, (j) => out.data.buffer.asUint8List()[j] / 255.0)
-        : List.generate(outSize, (j) => out.data.buffer.asFloat32List()[j]);
-    return _expandBinary(scores);
+    if (!isQuantized) {
+      return _expandBinary(
+          List.generate(outSize, (j) => out.data.buffer.asFloat32List()[j]));
+    }
+    final quant = OutputQuantization.of(out);
+    final bytes = out.data.buffer.asUint8List();
+    return _expandBinary(List.generate(outSize, (j) => quant(bytes[j])));
   }
 
   List<List<double>> runBatch(List<img.Image> images) {
@@ -143,13 +146,14 @@ class TfliteClassifier {
           .asUint8List()
           .setAll(0, inputFlat);
       _interpreter.invoke();
-      final outBuffer =
-          _interpreter.getOutputTensor(0).data.buffer.asUint8List();
+      final outTensor = _interpreter.getOutputTensor(0);
+      final quant = OutputQuantization.of(outTensor);
+      final outBuffer = outTensor.data.buffer.asUint8List();
       return List.generate(
           n,
           (i) => _expandBinary(
                 List.generate(
-                    outSize, (j) => outBuffer[i * outSize + j] / 255.0),
+                    outSize, (j) => quant(outBuffer[i * outSize + j])),
               ));
     }
 

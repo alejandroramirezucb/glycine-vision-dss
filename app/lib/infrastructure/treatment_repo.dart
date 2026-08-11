@@ -12,11 +12,6 @@ import 'incompatibility_checker.dart';
 
 class JsonTreatmentRepository implements TreatmentRepository {
   static const double _minCoveragePct = 5.0;
-  static const double _sprayLitersPerHa = 200.0;
-  static final RegExp _doseRe = RegExp(
-    r'(\d+(?:[.,]\d+)?)\s*(kg|g|ml|l)\s*/\s*100\s*l',
-    caseSensitive: false,
-  );
   static const Map<String, int> _severityRank = {
     'minima': 0,
     'leve': 1,
@@ -101,8 +96,6 @@ class JsonTreatmentRepository implements TreatmentRepository {
       applicationWindow: _worstWindow(priorities),
       climateGuidance: climate == null ? null : _climateGuidance(climate),
       fieldAreaHa: fieldAreaHa,
-      sprayVolume:
-          '${(fieldAreaHa * _sprayLitersPerHa).round()} L de caldo (~200 L/ha)',
     );
   }
 
@@ -119,33 +112,8 @@ class JsonTreatmentRepository implements TreatmentRepository {
       severityLevel: level,
       rationale: _rationale(finding, level, climate),
       actions: actions,
-      dosageNote: _dosageNote(actions.chemical, fieldAreaHa),
     );
   }
-
-  String _dosageNote(String chemical, double fieldAreaHa) {
-    final match = _doseRe.firstMatch(chemical);
-    if (match == null) return '';
-    final value = double.tryParse(match.group(1)!.replaceAll(',', '.'));
-    if (value == null) return '';
-    final unit = match.group(2)!.toLowerCase();
-    final liters = fieldAreaHa * _sprayLitersPerHa;
-    var total = value * liters / 100.0;
-    var outUnit = unit;
-    if (unit == 'g' && total >= 1000) {
-      total /= 1000;
-      outUnit = 'kg';
-    } else if (unit == 'ml' && total >= 1000) {
-      total /= 1000;
-      outUnit = 'L';
-    }
-    final amount =
-        total >= 100 ? total.toStringAsFixed(0) : total.toStringAsFixed(1);
-    return 'Para ${_fmtArea(fieldAreaHa)} ha: ~$amount $outUnit de producto en ${liters.round()} L de caldo';
-  }
-
-  String _fmtArea(double ha) =>
-      ha % 1 == 0 ? ha.toStringAsFixed(0) : ha.toStringAsFixed(1);
 
   String _resolveKey(String label) {
     final norm = normalizeKey(label);
@@ -177,21 +145,13 @@ class JsonTreatmentRepository implements TreatmentRepository {
 
   String _resolveChemical(Map<String, dynamic> entry) {
     final chem = entry['chemical'];
-    if (chem is Map<String, dynamic>) {
-      final product = chem['product'] as String? ?? '';
-      final dose = chem['dose_g_per_100L'];
-      return dose != null ? '$product — ${dose}g/100 L' : product;
-    }
+    if (chem is Map<String, dynamic>) return chem['product'] as String? ?? '';
     return entry['quimico'] as String? ?? '';
   }
 
   String _resolveBiological(Map<String, dynamic> entry) {
     final bio = entry['biological'];
-    if (bio is Map<String, dynamic>) {
-      final agent = bio['agent'] as String? ?? '';
-      final dose = bio['dose_mL_per_100L'];
-      return dose != null ? '$agent — ${dose}mL/100 L' : agent;
-    }
+    if (bio is Map<String, dynamic>) return bio['agent'] as String? ?? '';
     return entry['biologico'] as String? ?? '';
   }
 
