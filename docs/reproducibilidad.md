@@ -52,7 +52,7 @@ Los notebooks `08` a `11` son costosos: una corrida completa de ablación ocupa 
 | `02_entrenamiento_segmentacion` | `model_seg.keras`, `M_seg_curves.png` |
 | `03_entrenamiento_m1_estado_sanitario` | `model1_binary.keras`, `class_indices_model1_binary.json` |
 | `04_entrenamiento_m2_patogeno` | `model2_pathogen.keras`, `class_indices_model2_pathogen.json` |
-| `05_evaluacion_modelos` | `training_metrics.json`, `mseg_test_metrics.json`, matrices de confusión |
+| `05_evaluacion_modelos` | `training_metrics.json`, matrices de confusión |
 | `06_exportacion_tflite` | `*.tflite` en float32 e int8, `model_metadata.json`, `labels_*.txt` |
 | `07_validacion_frente_a_experto` | `comparacion_app_vs_experto.json`, `validacion_experto_predicciones.csv` |
 | `08_diagnostico_baselines` | `diagnostico_m2.csv` |
@@ -60,7 +60,14 @@ Los notebooks `08` a `11` son costosos: una corrida completa de ablación ocupa 
 | `10_verificacion_presupuesto_completo` | `verificacion_full_m2.csv` |
 | `11_ablacion_presupuesto_completo` | `ablation_full_m2.csv` |
 | `12_calibracion_probabilidades` | `calibracion.json`, `calibracion.csv`, diagramas de confiabilidad |
-| `13_evaluacion_variantes_exportadas` | `evaluacion_variantes.csv`, `.json` |
+| `13_evaluacion_variantes_exportadas` | `evaluacion_variantes.csv`, `.json`, `evaluacion_variantes_mseg.csv`, `.json` |
+
+El notebook `13` tiene además una variante para Kaggle, `13_evaluacion_variantes_exportadas_kaggle.ipynb`. Sus
+siete celdas de cálculo son **byte a byte idénticas** a las de la versión de Colab; solo difieren la celda de
+instalación y la de descubrimiento de rutas, porque Kaggle monta los datos en `/kaggle/input/` en modo solo
+lectura y escribe en `/kaggle/working/`. Hay que adjuntar en *Add Input* la carpeta `splits/` (con `test/`,
+`masks/` y `masks_soycotton/`) y los nueve artefactos de modelo; la celda de descubrimiento los busca de forma
+recursiva y aborta indicando cuáles faltan.
 
 ## Máscaras de segmentación
 
@@ -92,7 +99,7 @@ Falla de entrada, sin copiar nada a medias, si algún artefacto no está en el o
 | `model2.tflite` | `pd/model_unquant.tflite` | `disease/model.tflite` |
 | `model2_int8.tflite` | — | `disease/model_int8.tflite` |
 
-La asignación no es arbitraria. El segmentador y M1 se despliegan en **int8**, porque la cuantización les cuesta 0.005 de F1 o menos. M2 se despliega en **float32**, porque perdía 0.040 de F1 al cuantizarse: un coste inaceptable para la etapa que decide el patógeno. Esa decisión se sostiene en el notebook `13`.
+La asignación no es arbitraria. El segmentador y M1 se despliegan en **int8**, porque la cuantización les cuesta 0.005 de F1 o menos. M2 se despliega en **float32**, porque perdía 0.040 de F1 al cuantizarse: un coste inaceptable para la etapa que decide la categoría de afección. Esa decisión se sostiene en el notebook `13`.
 
 `app/assets/models/` se versiona mediante Git LFS, así que llega con el clon. **`models/` no se versiona**, porque son 270 MB de los que el backend solo carga una parte: hay que ejecutar el script tras clonar. Si falta, `python server.py` aborta al construir el registro:
 

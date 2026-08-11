@@ -17,7 +17,7 @@
 
 El diagnóstico foliar de soya depende hoy de inspección visual o de laboratorio: caro, lento y poco accesible en campo. Glycine Vision encadena tres modelos que corren **en el propio dispositivo** para dar un diagnóstico trazable en menos de 200 ms por hoja, sin enviar una sola imagen a ningún servidor.
 
-Sobre conjuntos de prueba independientes alcanza **0.980** de exactitud en el estado sanitario, **0.969** en la identificación del patógeno y una concordancia de severidad con criterio experto de **r = 0.953** (MAE 6.5 %).
+Sobre conjuntos de prueba independientes alcanza **0.980** de exactitud en el estado sanitario, **0.969** en la categoría de afección foliar y una concordancia de severidad con criterio experto de **r = 0.953** (MAE 6.5 %).
 
 > **Herramienta de apoyo, no de diagnóstico.** Las recomendaciones son orientativas y no sustituyen al criterio agronómico ni al análisis de laboratorio. Léase [Uso responsable](#uso-responsable) antes de aplicar cualquier producto fitosanitario.
 
@@ -46,24 +46,24 @@ La imagen atraviesa cuatro etapas. Cada una acota el problema de la siguiente, d
 |---|---|---|---|
 | Segmentación | U-Net con codificador ResNet50 | 256 × 256 | Máscara hoja–fondo |
 | Estado sanitario | EfficientNetB1, doble entrada | 240 × 240 | Sana o enferma |
-| Patógeno | EfficientNetB0, doble entrada | 224 × 224 | Cinco categorías |
+| Categoría de afección | EfficientNetB0, doble entrada | 224 × 224 | Cinco clases operativas |
 | Severidad | Reglas de color en CIELab | Región segmentada | Porcentaje de área afectada |
 
 Dos decisiones de diseño sostienen el resto:
 
 **Doble entrada.** Los clasificadores no ven solo la foto: reciben también la hoja recortada por el segmentador, con el fondo a cero. Ambas ramas comparten codificador y sus vectores se concatenan antes de la cabeza. El estudio de ablación muestra que ese aislamiento es el componente de mayor aporte; sustituirlo por la imagen cruda rinde *peor* que usar una sola entrada.
 
-**Severidad sin red neuronal.** El porcentaje de área afectada se calcula con umbrales sobre L\*, a\* y b\* dentro de la región segmentada, separando clorosis, necrosis y defoliación. Es interpretable y auditable píxel a píxel, a cambio de requerir recalibración si cambian mucho las condiciones de captura.
+**Severidad sin red neuronal.** El porcentaje de área afectada se calcula con umbrales sobre L\*, a\* y b\* dentro de la región segmentada, separando clorosis, necrosis y pérdida de tejido foliar. Es interpretable y auditable píxel a píxel, a cambio de requerir recalibración si cambian mucho las condiciones de captura.
 
-La aplicación consulta además Open-Meteo y desplaza el nivel de severidad un escalón según reglas específicas por patógeno, sin que ello altere el diagnóstico.
+La aplicación consulta además Open-Meteo y desplaza el nivel de severidad un escalón según reglas específicas por categoría, sin que ello altere el diagnóstico.
 
 ## Resultados
 
 | Modelo | Métrica | Valor | IC 95 % |
 |---|---|---|---|
-| Segmentador | Recall de hoja (Dice; IoU) | 0.977 (0.885; 0.808) | — |
+| Segmentador | Recall de hoja (Dice; IoU) | 0.974 (0.885; 0.808) | — |
 | Estado sanitario | Exactitud (recall clase enferma) | 0.980 (1.000) | 0.960–0.995 |
-| Patógeno | Exactitud / F1 macro | 0.969 / 0.968 | 0.949–0.986 |
+| Categoría de afección | Exactitud / F1 macro | 0.969 / 0.968 | 0.949–0.986 |
 
 Frente a un evaluador experto sobre 60 hojas, la severidad concordó con r = 0.953 y CCC = 0.923, y el diagnóstico resultó estadísticamente indistinguible (0.917 frente a 0.883; McNemar p = 0.754).
 
@@ -140,7 +140,7 @@ Los notebooks se ejecutan en orden en Google Colab o Kaggle con GPU. El segmenta
 | `07_validacion_frente_a_experto` | Cascada completa sobre las hojas evaluadas por el experto | `comparacion_app_vs_experto.json` |
 | `08`–`11` | Baselines y ablación por componente, presupuesto reducido y completo | `ablation_full_m2.csv` |
 | `12_calibracion_probabilidades` | ECE, MCE y Brier con diagramas de confiabilidad | `calibracion.json` |
-| `13_evaluacion_variantes_exportadas` | Keras frente a TFLite float32 e int8 | `evaluacion_variantes.csv` |
+| `13_evaluacion_variantes_exportadas` | Keras frente a TFLite float32 e int8, para los tres modelos | `evaluacion_variantes.csv`, `evaluacion_variantes_mseg.csv` |
 
 El detalle de dependencias entre notebooks, las rutas de datos y el procedimiento de despliegue están en [`docs/reproducibilidad.md`](docs/reproducibilidad.md).
 
@@ -174,7 +174,7 @@ La implementación de referencia de la inferencia vive en `backend/inference/`: 
 El sistema puede influir en decisiones de aplicación de fitosanitarios. Sus recomendaciones son orientativas, nunca prescriptivas:
 
 - No reemplazan al agrónomo ni al diagnóstico de laboratorio.
-- Las dosis deben verificarse contra la etiqueta del producto y la normativa local (SENASAG en Bolivia).
+- El sistema **no calcula dosis, intervalos ni mezclas**: entrega orientaciones de manejo cuya ejecución corresponde al profesional responsable, contra la etiqueta vigente y el registro del SENASAG.
 - Deben considerarse el riesgo ambiental, la resistencia y la seguridad del aplicador.
 
 No se ha validado con imágenes propias de Santa Cruz: la aplicabilidad regional es plausible pero **no está demostrada**.

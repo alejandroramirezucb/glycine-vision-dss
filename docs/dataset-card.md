@@ -18,7 +18,7 @@ size_categories:
 
 # Soybean Image Dataset
 
-Conjunto curado de imágenes de hojas de soya (*Glycine max*) para tres tareas: clasificación del estado sanitario (sana o enferma), clasificación del patógeno en cinco categorías (bacterianas, fúngicas, roya, virales y plagas o insectos) y segmentación hoja–fondo.
+Conjunto curado de imágenes de hojas de soya (*Glycine max*) para tres tareas: clasificación del estado sanitario (sana o enferma), clasificación de la categoría de afección foliar en cinco clases operativas (bacterianas, fúngicas, roya, virales y plagas o insectos) y segmentación hoja–fondo.
 
 Se construyó consolidando ocho fuentes públicas, aplicando filtros de calidad y deduplicación, y muestreando aleatoriamente entre las imágenes con mejores criterios de visibilidad. Es el conjunto con el que se entrenó **Glycine Vision**.
 
@@ -80,13 +80,14 @@ Este conjunto **deriva** de datasets públicos de investigación. El crédito co
 1. **Filtros de calidad.** Apertura válida, formato RGB y resolución mínima de 224 × 224 px.
 2. **Deduplicación.** Hash exacto (MD5) y hash perceptual (pHash), con registro compartido por tarea. El conjunto de entrenamiento se procesa **antes** que el de prueba, de modo que ante un duplicado se conserve la imagen de prueba y se descarte la de entrenamiento, nunca al revés.
 3. **Selección.** Muestreo aleatorio con semilla fija (42) entre las imágenes con mejores criterios de visibilidad.
-4. **Particiones.** Entrenamiento y validación al 80/20, más un conjunto de prueba independiente (100 imágenes por clase para estado sanitario, 70 por clase para patógeno). Para segmentación, partición 75/25 con 15 % de validación.
+4. **Particiones.** Entrenamiento y validación al 80/20, más un conjunto de prueba independiente (100 imágenes por clase para estado sanitario, 70 por clase para la categoría de afección). Para segmentación, partición 75/25 con 15 % de validación.
 
 ## Limitaciones
 
 - **No existe partición por procedencia.** Imágenes distintas de una misma planta, sesión o condición de captura pueden quedar repartidas entre entrenamiento y prueba. Las métricas obtenidas con este conjunto deben interpretarse como **desempeño interno del corpus**, no como evidencia de generalización a dominios nuevos. Es la limitación más importante de este conjunto.
 - **No incluye imágenes de Santa Cruz (Bolivia)**, la región a la que apunta el proyecto. La aplicabilidad regional es plausible pero no demostrada.
-- **La verdad de campo del patógeno proviene de las etiquetas de las fuentes originales**, no de diagnóstico de laboratorio.
+- **La verdad de campo de la categoría proviene de las etiquetas de las fuentes originales**, no de diagnóstico de laboratorio.
+- **Las cinco clases son categorías operativas, no una taxonomía patogénica.** La roya (*Phakopsora pachyrhizi*) es un hongo pero se mantiene separada de las demás fúngicas por su relevancia epidemiológica y su signo característico; plagas/insectos corresponde a daño por artrópodos, no a un patógeno.
 - Los umbrales de calidad y el muestreo aleatorio pueden introducir sesgos de selección.
 
 ## Licencia

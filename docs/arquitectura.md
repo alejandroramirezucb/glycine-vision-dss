@@ -58,7 +58,7 @@ Shades-of-Gray y el promediado exponencial de pesos no mejoran la exactitud en e
 
 ### Por qué la severidad no es una red
 
-El porcentaje de área afectada se calcula con umbrales sobre L\*, a\* y b\* dentro de la región segmentada, separando clorosis, necrosis y defoliación. Se eligió así por tres razones:
+El porcentaje de área afectada se calcula con umbrales sobre L\*, a\* y b\* dentro de la región segmentada, separando clorosis, necrosis y pérdida de tejido foliar. Se eligió así por tres razones:
 
 1. **Auditabilidad.** Cada píxel clasificado como sintomático puede señalarse en la superposición que ve la persona usuaria. Una regresión no ofrece eso.
 2. **Datos.** Anotar severidad píxel a píxel para entrenar una red exigiría un esfuerzo de etiquetado que el proyecto no tenía.
@@ -73,7 +73,9 @@ El precio es que **los umbrales son fijos**: están calibrados sobre las condici
 | M1 (F1) | 0.980 | 0.980 | 0.975 (−0.005) |
 | M2 (F1) | 0.968 | 0.968 | 0.928 (−0.040) |
 
-La conversión a float32 es exacta: verifica que la exportación no introduce error. La cuantización entera, en cambio, tiene un coste desigual. En M1 es despreciable; en M2 cuesta cuatro puntos de F1, demasiado para la etapa que decide qué patógeno se reporta.
+La conversión a float32 es exacta: verifica que la exportación no introduce error. La cuantización entera, en cambio, tiene un coste desigual. En M1 es despreciable; en M2 cuesta cuatro puntos de F1, demasiado para la etapa que decide qué categoría de afección se reporta. El segmentador se evalúa en las mismas tres variantes sobre el 25 % reservado de las máscaras COCO, porque es la variante int8 la que se despliega.
+
+Las salidas enteras se convierten a probabilidad con los parámetros reales del tensor, `(q − zero_point) × scale`, no con una división fija. En los modelos exportados aquí `scale = 1/256`, de modo que dividir entre 255 introducía un sesgo sistemático del 0.39 %. No alteraba ninguna decisión —tanto el `argmax` del segmentador y de M2 como el umbral de M1 son invariantes a un reescalado monótono— pero sí las confianzas mostradas al usuario. `scripts/verificar_paridad.py` comprueba la equivalencia contra el intérprete de referencia.
 
 Por eso la configuración desplegada usa **segmentador e M1 en int8 y M2 en float32**. Es una decisión guiada por la medición, no por la preferencia de empaquetar todo igual.
 
@@ -81,7 +83,7 @@ Durante el desarrollo, una versión anterior de M1 en int8 colapsaba a predecir 
 
 ### Por qué el clima no toca el diagnóstico
 
-El servicio climático consulta temperatura, humedad, precipitación y punto de rocío, y con reglas específicas por patógeno desplaza el **nivel de severidad** un escalón y adelanta o retrasa la ventana estimada de aparición. No modifica en ningún caso qué patógeno se identificó.
+El servicio climático consulta temperatura, humedad, precipitación y punto de rocío, y con reglas específicas por categoría desplaza el **nivel de severidad** un escalón y adelanta o retrasa la ventana estimada de aparición. No modifica en ningún caso qué categoría se identificó.
 
 La separación es deliberada: el diagnóstico debe poder auditarse contra la imagen, y mezclar en él una señal externa lo haría irreproducible.
 
@@ -105,4 +107,4 @@ Estas no son defectos por corregir en una versión menor: son propiedades del di
 - **Sin partición por procedencia.** Las métricas reflejan desempeño interno del corpus, no generalización a dominios nuevos.
 - **Umbrales CIELab fijos**, con la recalibración manual que eso implica.
 - **Modelos empaquetados, sin actualización remota.** Es una decisión de seguridad, pero obliga a publicar una versión de la app para corregir un modelo.
-- **Cinco categorías de patógeno.** Una enfermedad fuera de esas clases se asignará a la más parecida, con confianza posiblemente alta.
+- **Cinco categorías de afección.** Una enfermedad fuera de esas clases se asignará a la más parecida, con confianza posiblemente alta.

@@ -62,3 +62,4 @@ training/outputs/
 /hf_upload/
 *.log
 *.tmp
+/dist/
