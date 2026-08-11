@@ -12,7 +12,6 @@ El proyecto sigue [versionado semántico](https://semver.org/lang/es/).
 - Plantillas de incidencia y de pull request, `.editorconfig` y configuración de Ruff en `pyproject.toml`.
 - El notebook 07 exporta `validacion_experto_predicciones.csv`, un manifiesto por hoja con la procedencia de cada imagen y la predicción de cada etapa de la cascada.
 - El notebook 13 evalúa también el segmentador en sus tres variantes (Keras, TFLite float32 e int8) sobre el 25 % reservado de las máscaras COCO, porque int8 es la variante desplegada. Produce `evaluacion_variantes_mseg.csv` y `.json`.
-- `13_evaluacion_variantes_exportadas_kaggle.ipynb`: variante para Kaggle del notebook 13, con las celdas de cálculo idénticas a las de Colab.
 - `scripts/verificar_paridad.py`: comprueba que la des-cuantización del backend reproduce exactamente la del intérprete de TensorFlow Lite.
 - `scripts/desplegar_modelos.ps1`: coloca los artefactos del notebook 06 donde los esperan la app y el backend, creando los directorios que falten.
 

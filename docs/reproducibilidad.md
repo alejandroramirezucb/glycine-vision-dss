@@ -62,12 +62,10 @@ Los notebooks `08` a `11` son costosos: una corrida completa de ablación ocupa 
 | `12_calibracion_probabilidades` | `calibracion.json`, `calibracion.csv`, diagramas de confiabilidad |
 | `13_evaluacion_variantes_exportadas` | `evaluacion_variantes.csv`, `.json`, `evaluacion_variantes_mseg.csv`, `.json` |
 
-El notebook `13` tiene además una variante para Kaggle, `13_evaluacion_variantes_exportadas_kaggle.ipynb`. Sus
-siete celdas de cálculo son **byte a byte idénticas** a las de la versión de Colab; solo difieren la celda de
-instalación y la de descubrimiento de rutas, porque Kaggle monta los datos en `/kaggle/input/` en modo solo
-lectura y escribe en `/kaggle/working/`. Hay que adjuntar en *Add Input* la carpeta `splits/` (con `test/`,
-`masks/` y `masks_soycotton/`) y los nueve artefactos de modelo; la celda de descubrimiento los busca de forma
-recursiva y aborta indicando cuáles faltan.
+El notebook `13` necesita los nueve artefactos de modelo (tres `.keras` y seis `.tflite`) y, para la sección del
+segmentador, `splits/masks/` y `splits/masks_soycotton/`. Su celda de descubrimiento los localiza en Drive,
+imprime un inventario de lo encontrado y aborta indicando cuáles faltan. Si solo faltan los artefactos del
+segmentador, evalúa M1 y M2 y omite esa sección en lugar de interrumpirse.
 
 ## Máscaras de segmentación
 
