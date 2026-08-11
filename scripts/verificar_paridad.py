@@ -5,6 +5,7 @@ backend/inference frente al calculo de referencia (q - zero_point) * scale
 leido de los parametros reales del tensor, y frente a la formula q / 255
 que se usaba antes. Sirve de evidencia para la observacion 3 del informe.
 """
+
 import sys
 from pathlib import Path
 
